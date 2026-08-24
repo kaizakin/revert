@@ -28,9 +28,11 @@ const SPACE = {
  */
 const ROOMS = [
   {
+    // The slug stays "general" so existing links keep working; only the
+    // display name changes.
     slug: "general",
-    name: "general",
-    topic: "Jobs, questions and everything else.",
+    name: "Mini Anon Hub",
+    topic: "Jobs, questions and everything else. No phone numbers, ever.",
     type: "chat" as const,
     isDefault: true,
   },

@@ -266,3 +266,84 @@ export async function roomMemberCount(conversationId: string): Promise<number> {
 
   return Number(row?.value ?? 0);
 }
+
+/** Considered online if seen within this window. */
+export const ACTIVE_WINDOW_MINUTES = 5;
+
+export type RoomStats = { total: number; active: number };
+
+/**
+ * Member counts for the room header.
+ *
+ * `active` only counts people who have not hidden their last-seen. Counting
+ * hidden users would leak the very thing the toggle exists to hide — with a
+ * small membership, watching the number move tells you who is online.
+ */
+export async function roomStats(conversationId: string): Promise<RoomStats> {
+  const [row] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      active: sql<number>`count(*) filter (
+        where ${users.showLastActive}
+          and ${users.lastActiveAt} > now() - (${ACTIVE_WINDOW_MINUTES} || ' minutes')::interval
+      )::int`,
+    })
+    .from(conversationMembers)
+    .innerJoin(users, eq(users.id, conversationMembers.userId))
+    .where(and(eq(conversationMembers.conversationId, conversationId), isNull(users.deletedAt)));
+
+  return { total: Number(row?.total ?? 0), active: Number(row?.active ?? 0) };
+}
+
+export type RoomMember = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  headline: string | null;
+  isOnline: boolean;
+  joinedAt: Date;
+};
+
+/** Everyone in the room, for the group info panel. */
+export async function listRoomMembers(conversationId: string): Promise<RoomMember[]> {
+  const rows = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      headline: users.headline,
+      showLastActive: users.showLastActive,
+      lastActiveAt: users.lastActiveAt,
+      joinedAt: conversationMembers.joinedAt,
+    })
+    .from(conversationMembers)
+    .innerJoin(users, eq(users.id, conversationMembers.userId))
+    .where(and(eq(conversationMembers.conversationId, conversationId), isNull(users.deletedAt)))
+    .orderBy(asc(users.username));
+
+  const cutoff = Date.now() - ACTIVE_WINDOW_MINUTES * 60_000;
+
+  return rows.map((row) => ({
+    id: row.id,
+    username: row.username,
+    displayName: row.displayName,
+    avatarUrl: row.avatarUrl,
+    headline: row.headline,
+    isOnline:
+      row.showLastActive && row.lastActiveAt ? row.lastActiveAt.getTime() > cutoff : false,
+    joinedAt: row.joinedAt,
+  }));
+}
+
+/**
+ * Stamp the user as recently seen.
+ *
+ * Nothing else wrote lastActiveAt, so the online count would have been
+ * permanently zero. Called from the read marker, which fires when a room is
+ * open, so it doubles as a cheap heartbeat.
+ */
+export async function touchLastActive(userId: string): Promise<void> {
+  await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, userId));
+}

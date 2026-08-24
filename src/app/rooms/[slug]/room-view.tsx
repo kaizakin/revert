@@ -21,11 +21,13 @@ import {
   toggleReactionAction,
   type SendState,
 } from "../actions";
+import { GroupPanel } from "./group-panel";
 import { MemberPanel } from "./member-panel";
 import { MessageBubble } from "./message-bubble";
 
 type Props = {
   slug: string;
+  header: React.ReactNode;
   conversationId: string;
   meId: string;
   meUsername: string;
@@ -56,6 +58,7 @@ function dayLabel(value: Date | string) {
 
 export function RoomView({
   slug,
+  header,
   conversationId,
   meId,
   meUsername,
@@ -74,7 +77,13 @@ export function RoomView({
   const [live, setLive] = useState<MessageRow[]>([]);
   const [draft, setDraft] = useState("");
   const [reactError, setReactError] = useState<string | null>(null);
-  const [openProfile, setOpenProfile] = useState<string | null>(null);
+  /**
+   * One slot for the right-hand panel. Group info and a member profile are
+   * mutually exclusive, so a single value avoids the state where both are set.
+   */
+  const [panel, setPanel] = useState<
+    { kind: "member"; username: string } | { kind: "group" } | null
+  >(null);
 
   const [state, action, pending] = useActionState<SendState, FormData>(sendMessageAction, {});
   const formRef = useRef<HTMLFormElement>(null);
@@ -200,6 +209,14 @@ export function RoomView({
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col">
+      <button
+        type="button"
+        onClick={() => setPanel({ kind: "group" })}
+        aria-label="Open group info"
+        className="w-full text-left transition-colors hover:bg-raised/50"
+      >
+        {header}
+      </button>
       <div className="chat-pattern flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-[3px] px-3 py-4 sm:px-8">
           {rendered.length === 0 && (
@@ -228,7 +245,7 @@ export function RoomView({
                   isPending={isPending}
                   startsRun={startsRun}
                   onReact={handleReact}
-                  onOpenProfile={setOpenProfile}
+                  onOpenProfile={(username) => setPanel({ kind: "member", username })}
                 />
               </div>
             );
@@ -311,11 +328,19 @@ export function RoomView({
       </div>
       </div>
 
-      {openProfile && (
+      {panel?.kind === "member" && (
         <MemberPanel
-          key={openProfile}
-          username={openProfile}
-          onClose={() => setOpenProfile(null)}
+          key={panel.username}
+          username={panel.username}
+          onClose={() => setPanel(null)}
+        />
+      )}
+
+      {panel?.kind === "group" && (
+        <GroupPanel
+          slug={slug}
+          onClose={() => setPanel(null)}
+          onOpenMember={(username) => setPanel({ kind: "member", username })}
         />
       )}
     </div>

@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 
 import { SocialIcon } from "@/components/social-icon";
-import { avatarColour, initials } from "@/lib/avatar";
+import { AvatarLightbox } from "@/components/avatar-lightbox";
 import { SOCIAL_PROVIDERS } from "@/lib/profile";
 import { USERNAME_MAX, USERNAME_MIN } from "@/lib/username";
 import type { AvatarPreset } from "@/server/users/avatar-presets";
@@ -154,24 +154,7 @@ function AvatarField({
       <input type="hidden" name="avatarPreset" value={preset ?? ""} />
 
       <div className="flex items-center gap-4">
-        {shown ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={shown}
-            alt="Your avatar"
-            width={72}
-            height={72}
-            className="h-18 w-18 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            className="flex h-18 w-18 items-center justify-center rounded-full text-xl font-semibold text-white"
-            style={{ backgroundColor: avatarColour(username) }}
-            aria-hidden
-          >
-            {initials(username)}
-          </span>
-        )}
+        <AvatarLightbox url={shown} username={username} size={72} />
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="avatar" className="text-[13px] font-medium text-ink">
@@ -273,10 +256,7 @@ export function ProfileForm({
 
         <UsernameField current={profile.username} />
 
-        <Field
-          label="Display name"
-          hint={`Optional. Your username stays @${profile.username} unless you change it above.`}
-        >
+        <Field label="Display name" hint="Optional.">
           <input
             name="displayName"
             defaultValue={profile.displayName ?? ""}

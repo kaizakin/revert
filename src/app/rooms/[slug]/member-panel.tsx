@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { avatarColour, initials } from "@/lib/avatar";
+import { AvatarLightbox } from "@/components/avatar-lightbox";
 import { SocialIcon } from "@/components/social-icon";
 import {
   profileLinkLabel,
@@ -109,24 +109,11 @@ export function MemberPanel({
         {state === "ready" && profile && (
           <>
             <div className="flex flex-col items-center gap-3 px-6 py-7">
-              {profile.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatarUrl}
-                  alt=""
-                  width={96}
-                  height={96}
-                  className="h-24 w-24 rounded-full object-cover"
-                />
-              ) : (
-                <span
-                  className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-semibold text-white"
-                  style={{ backgroundColor: avatarColour(profile.username) }}
-                  aria-hidden
-                >
-                  {initials(profile.username)}
-                </span>
-              )}
+              <AvatarLightbox
+                url={profile.avatarUrl}
+                username={profile.username}
+                size={96}
+              />
 
               <div className="flex flex-col items-center gap-0.5 text-center">
                 {profile.displayName && (
