@@ -40,10 +40,11 @@ export type RenameResult = { ok: true; username: string } | { ok: false; error: 
 /**
  * Change a username.
  *
- * Our table is authoritative for everything the app shows, but Clerk also holds
- * the username and can be used to sign in, so both have to move. Clerk goes
- * first: if it rejects the name we have changed nothing, whereas the reverse
- * order can leave Clerk holding a name the app no longer knows about.
+ * Our table is authoritative for everything the app shows. Clerk only matters
+ * here when usernames are enabled there too, since it can then be used as a
+ * sign-in identifier — in which case Clerk goes first: if it rejects the name we
+ * have changed nothing, whereas the reverse order can leave Clerk holding a name
+ * the app no longer knows about.
  */
 export async function renameUser(
   userId: string,
@@ -64,12 +65,32 @@ export async function renameUser(
     return { ok: true, username: candidate.username };
   }
 
+  /**
+   * Only sync Clerk if Clerk is actually holding a username for this account.
+   *
+   * With usernames disabled in Clerk — which is the setup we want, so that the
+   * reserved list and availability check in this codebase are the only rules —
+   * Clerk has no username to update and the call would fail on every rename.
+   * Reading it first makes this self-configuring rather than depending on a
+   * flag that can drift out of sync with the dashboard.
+   */
+  const clerk = await clerkClient();
+  let clerkHasUsername = false;
+
   try {
-    const clerk = await clerkClient();
-    await clerk.users.updateUser(clerkId, { username: candidate.username });
+    const clerkUser = await clerk.users.getUser(clerkId);
+    clerkHasUsername = Boolean(clerkUser.username);
   } catch (err) {
-    console.error("[rename] clerk rejected", err);
-    return { ok: false, error: "That username is not available." };
+    console.error("[rename] could not read the Clerk user", err);
+  }
+
+  if (clerkHasUsername) {
+    try {
+      await clerk.users.updateUser(clerkId, { username: candidate.username });
+    } catch (err) {
+      console.error("[rename] clerk rejected", err);
+      return { ok: false, error: "That username is not available." };
+    }
   }
 
   try {
@@ -78,13 +99,14 @@ export async function renameUser(
       .set({ username: candidate.username, updatedAt: new Date() })
       .where(eq(users.id, userId));
   } catch (err) {
-    // Put Clerk back, otherwise the two disagree and sign-in uses a name the
-    // app does not recognise.
-    try {
-      const clerk = await clerkClient();
-      await clerk.users.updateUser(clerkId, { username: current.username });
-    } catch (rollbackErr) {
-      console.error("[rename] could not roll Clerk back", rollbackErr);
+    // Put Clerk back, but only if we actually changed it, otherwise the two
+    // disagree and username sign-in uses a name the app does not recognise.
+    if (clerkHasUsername) {
+      try {
+        await clerk.users.updateUser(clerkId, { username: current.username });
+      } catch (rollbackErr) {
+        console.error("[rename] could not roll Clerk back", rollbackErr);
+      }
     }
 
     if (
