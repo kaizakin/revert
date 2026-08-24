@@ -20,7 +20,7 @@ Job hunting in India runs on WhatsApp and Telegram groups. It works badly for ev
 
 Every part of this is fixable. None of it is fixable inside a WhatsApp group.
 
-## What Revert is
+## What Revert is ?
 
 A place where you are a **username, not a phone number**.
 
@@ -111,7 +111,7 @@ Built in phases. Each one has to earn the next.
 - Android and iOS, with notifications and calls that behave properly
 - Paid services stay on the web, so app store fees never take a cut of a creator's income
 
-## Business model
+## Business model 
 
 Three sides pay, in this order.
 
