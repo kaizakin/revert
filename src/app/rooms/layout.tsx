@@ -2,13 +2,68 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 
-import { listRoomsForUser } from "@/server/messaging/queries";
+import { listRoomsForUser, type RoomSummary } from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
 
 const TYPE_HINT: Record<string, string> = {
-  announce: "mods",
+  announce: "mods only",
   ama: "quiet",
 };
+
+function shortTime(value: Date | null) {
+  if (!value) return "";
+
+  const today = new Date();
+  const isToday = value.toDateString() === today.toDateString();
+  if (isToday) {
+    return value
+      .toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+      .toLowerCase();
+  }
+
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (value.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+  return value.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+function RoomRow({ room }: { room: RoomSummary }) {
+  const preview = room.lastBody
+    ? `${room.lastAuthor ? `${room.lastAuthor}: ` : ""}${room.lastBody}`
+    : (TYPE_HINT[room.type] ?? room.topic ?? "No messages yet");
+
+  return (
+    <Link
+      href={`/rooms/${room.slug}`}
+      className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-raised"
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-raised text-base font-semibold text-muted">
+        #
+      </span>
+
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-[15px] font-medium text-ink">{room.name}</span>
+          <span
+            className={`shrink-0 text-[11px] ${room.unread > 0 ? "font-semibold text-accent" : "text-faint"}`}
+          >
+            {shortTime(room.lastAt)}
+          </span>
+        </span>
+
+        <span className="flex items-center justify-between gap-2">
+          <span className="truncate text-[13px] text-muted">{preview}</span>
+          {room.unread > 0 && (
+            <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-accent-ink">
+              {room.unread > 99 ? "99+" : room.unread}
+            </span>
+          )}
+        </span>
+      </span>
+    </Link>
+  );
+}
 
 export default async function RoomsLayout({ children }: LayoutProps<"/rooms">) {
   // Signed in but not onboarded means there are no rooms to show yet.
@@ -19,50 +74,25 @@ export default async function RoomsLayout({ children }: LayoutProps<"/rooms">) {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-canvas">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-line bg-surface">
-        <div className="flex items-center justify-between px-4 py-4">
+      <aside className="hidden w-80 shrink-0 flex-col border-r border-line bg-surface sm:flex">
+        <div className="flex items-center justify-between px-4 py-3.5">
           <Link
             href="/"
-            className="text-sm font-semibold tracking-tight text-ink transition-opacity hover:opacity-70"
+            className="text-base font-semibold tracking-tight text-ink transition-opacity hover:opacity-70"
           >
             Revert
           </Link>
-          <UserButton
-            appearance={{ elements: { avatarBox: { width: 28, height: 28 } } }}
-          />
+          <UserButton appearance={{ elements: { avatarBox: { width: 30, height: 30 } } }} />
         </div>
 
-        <p className="px-4 pb-2 text-[11px] font-semibold uppercase tracking-widest text-faint">
-          Rooms
-        </p>
-
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-4">
+        <div className="flex-1 overflow-y-auto">
           {rooms.map((room) => (
-            <Link
-              key={room.id}
-              href={`/rooms/${room.slug}`}
-              className="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-muted transition-colors hover:bg-raised hover:text-ink"
-            >
-              <span className="text-faint">#</span>
-              <span className="min-w-0 flex-1 truncate">{room.name}</span>
-
-              {TYPE_HINT[room.type] && room.unread === 0 && (
-                <span className="shrink-0 text-[10px] uppercase tracking-wide text-faint">
-                  {TYPE_HINT[room.type]}
-                </span>
-              )}
-
-              {room.unread > 0 && (
-                <span className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                  {room.unread > 99 ? "99+" : room.unread}
-                </span>
-              )}
-            </Link>
+            <RoomRow key={room.id} room={room} />
           ))}
-        </nav>
+        </div>
 
         <div className="border-t border-line px-4 py-3">
-          <p className="truncate text-xs font-medium text-ink">@{me.username}</p>
+          <p className="truncate text-[13px] font-medium text-ink">@{me.username}</p>
           <p className="truncate text-[11px] text-faint">
             {me.company ?? me.college ?? "Add your profile"}
           </p>

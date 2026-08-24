@@ -30,11 +30,32 @@ type Props = {
   initialMessages: MessageRow[];
 };
 
-/** Consecutive messages from the same person inside this window share a header. */
+/** Consecutive messages from the same person inside this window share a tail. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
 
+/** Stable per-username colour for sender names, the way group chats do it. */
+const NAME_COLOURS = [
+  "#e542a3",
+  "#5b8def",
+  "#1fa855",
+  "#e6a11f",
+  "#9b5de5",
+  "#00a3a3",
+  "#e8624a",
+  "#7d8bd4",
+];
+
+function nameColour(username: string | null) {
+  if (!username) return "var(--bubble-meta)";
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) hash = (hash * 31 + username.charCodeAt(i)) | 0;
+  return NAME_COLOURS[Math.abs(hash) % NAME_COLOURS.length];
+}
+
 const timeOf = (value: Date | string) =>
-  new Date(value).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  new Date(value)
+    .toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+    .toLowerCase();
 
 const dayOf = (value: Date | string) =>
   new Date(value).toLocaleDateString("en-IN", {
@@ -44,37 +65,13 @@ const dayOf = (value: Date | string) =>
   });
 
 function dayLabel(value: Date | string) {
-  const date = new Date(value);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  if (dayOf(date) === dayOf(today)) return "Today";
-  if (dayOf(date) === dayOf(yesterday)) return "Yesterday";
-  return dayOf(date);
-}
-
-function Avatar({ username, url }: { username: string | null; url: string | null }) {
-  if (url) {
-    return (
-      // Remote avatars come from Clerk; a plain img avoids configuring remote
-      // patterns for a 32px image.
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt=""
-        width={32}
-        height={32}
-        className="h-8 w-8 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-
-  return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-raised text-xs font-semibold uppercase text-muted">
-      {(username ?? "?").slice(0, 2)}
-    </span>
-  );
+  if (dayOf(value) === dayOf(today)) return "Today";
+  if (dayOf(value) === dayOf(yesterday)) return "Yesterday";
+  return dayOf(value);
 }
 
 export function RoomView({
@@ -88,7 +85,7 @@ export function RoomView({
 }: Props) {
   /**
    * Only messages that arrived over realtime live in state. The server-rendered
-   * page stays the base list, and the two are merged below.
+   * page stays the base list and the two are merged below.
    *
    * Copying props into state and syncing them in an effect is the obvious
    * approach and the wrong one: it triggers a second render on every
@@ -141,8 +138,7 @@ export function RoomView({
 
   /**
    * The broadcast carries only a message id, never its text, so a forged event
-   * can at most trigger a fetch that returns rows this user is already allowed
-   * to read.
+   * can at most trigger a fetch that returns rows this user may already read.
    */
   useEffect(() => {
     const supabase = supabaseBrowser();
@@ -168,7 +164,7 @@ export function RoomView({
   }, [slug, lastRealId]);
 
   /**
-   * Day separators and author grouping are derived from the previous element
+   * Day separators and bubble grouping are derived from the previous element
    * rather than by mutating a variable mid-render, which would produce
    * different output on a second render pass.
    */
@@ -176,102 +172,105 @@ export function RoomView({
     () =>
       optimistic.map((message, index) => {
         const previous = index > 0 ? optimistic[index - 1] : null;
+        const next = index < optimistic.length - 1 ? optimistic[index + 1] : null;
 
-        const showDay =
-          !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
+        const showDay = !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
 
-        const sameAuthor = previous?.authorId === message.authorId;
-        const withinWindow =
-          previous !== null &&
-          new Date(message.createdAt).getTime() -
-            new Date(previous.createdAt).getTime() <
-            GROUP_WINDOW_MS;
+        const withinWindow = (a: MessageRow, b: MessageRow) =>
+          Math.abs(new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) <
+          GROUP_WINDOW_MS;
 
-        return {
-          message,
-          showDay,
-          grouped: Boolean(sameAuthor && withinWindow && !showDay),
-        };
+        const startsRun =
+          showDay ||
+          !previous ||
+          previous.authorId !== message.authorId ||
+          !withinWindow(previous, message);
+
+        const endsRun =
+          !next ||
+          next.authorId !== message.authorId ||
+          !withinWindow(message, next) ||
+          dayOf(next.createdAt) !== dayOf(message.createdAt);
+
+        return { message, showDay, startsRun, endsRun };
       }),
     [optimistic],
   );
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-3xl flex-col px-6 py-6">
+      <div className="flex-1 overflow-y-auto bg-chat-bg">
+        <div className="mx-auto flex max-w-3xl flex-col gap-0.5 px-3 py-4 sm:px-6">
           {rendered.length === 0 && (
-            <p className="py-16 text-center text-sm text-faint">
-              Nothing here yet. Say something.
+            <p className="py-16 text-center text-sm text-bubble-meta">
+              No messages yet. Say something.
             </p>
           )}
 
-          <ul className="flex flex-col">
-            {rendered.map(({ message, showDay, grouped }) => {
-              const isPending = message.id.startsWith("pending-");
-              const isMine = message.authorId === meId;
+          {rendered.map(({ message, showDay, startsRun, endsRun }) => {
+            const isMine = message.authorId === meId;
+            const isPending = message.id.startsWith("pending-");
 
-              return (
-                <li key={message.id}>
-                  {showDay && (
-                    <div className="flex items-center gap-3 py-5">
-                      <span className="h-px flex-1 bg-line" />
-                      <span className="text-[11px] font-medium uppercase tracking-widest text-faint">
-                        {dayLabel(message.createdAt)}
-                      </span>
-                      <span className="h-px flex-1 bg-line" />
-                    </div>
-                  )}
+            // Square off the corner on the side the run continues from, so a
+            // run of bubbles reads as one block instead of separate cards.
+            const tail = isMine
+              ? endsRun
+                ? "rounded-br-sm"
+                : ""
+              : endsRun
+                ? "rounded-bl-sm"
+                : "";
 
+            return (
+              <div key={message.id}>
+                {showDay && (
+                  <div className="flex justify-center py-4">
+                    <span className="rounded-lg bg-bubble-in px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-bubble-meta shadow-sm">
+                      {dayLabel(message.createdAt)}
+                    </span>
+                  </div>
+                )}
+
+                <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`group flex gap-3 rounded-lg px-2 transition-colors hover:bg-surface ${
-                      grouped ? "py-0.5" : "pt-3 pb-0.5"
-                    } ${isPending ? "opacity-50" : ""}`}
+                    className={`max-w-[78%] rounded-xl px-2.5 py-1.5 shadow-sm sm:max-w-[70%] ${tail} ${
+                      isMine
+                        ? "bg-bubble-out text-bubble-out-ink"
+                        : "bg-bubble-in text-bubble-in-ink"
+                    } ${isPending ? "opacity-60" : ""}`}
                   >
-                    {grouped ? (
-                      <span className="w-8 shrink-0 pt-0.5 text-right text-[10px] text-transparent group-hover:text-faint">
-                        {timeOf(message.createdAt)}
-                      </span>
-                    ) : (
-                      <Avatar
-                        username={message.authorUsername}
-                        url={message.authorAvatarUrl}
-                      />
+                    {!isMine && startsRun && (
+                      <p
+                        className="mb-0.5 text-[13px] font-semibold"
+                        style={{ color: nameColour(message.authorUsername) }}
+                      >
+                        @{message.authorUsername ?? "deleted"}
+                      </p>
                     )}
 
-                    <div className="min-w-0 flex-1">
-                      {!grouped && (
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-semibold text-ink">
-                            @{message.authorUsername ?? "deleted"}
-                          </span>
-                          {isMine && (
-                            <span className="rounded bg-raised px-1.5 text-[10px] font-medium text-muted">
-                              you
-                            </span>
-                          )}
-                          <span className="text-[11px] text-faint">
-                            {timeOf(message.createdAt)}
-                            {message.editedAt ? " · edited" : ""}
-                          </span>
-                        </div>
-                      )}
+                    <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.35]">
+                      {message.body}
+                      {/* Reserves room on the last line so the timestamp never
+                          overlaps the text. */}
+                      <span className="inline-block w-14 select-none" aria-hidden />
+                    </p>
 
-                      <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-ink">
-                        {message.body}
-                      </p>
-                    </div>
+                    <span className="-mt-3.5 flex items-center justify-end gap-1 text-[11px] text-bubble-meta">
+                      {message.editedAt && <span>edited</span>}
+                      {timeOf(message.createdAt)}
+                      {isMine && <span aria-hidden>{isPending ? "🕘" : "✓"}</span>}
+                    </span>
                   </div>
-                </li>
-              );
-            })}
-          </ul>
+                </div>
+              </div>
+            );
+          })}
           <div ref={bottomRef} />
         </div>
       </div>
 
       <div className="border-t border-line bg-surface">
-        <div className="mx-auto w-full max-w-3xl px-6 py-4">
+        <div className="mx-auto w-full max-w-3xl px-3 py-3 sm:px-6">
           {canPost ? (
             <form
               ref={formRef}
@@ -282,18 +281,17 @@ export function RoomView({
                 formRef.current?.reset();
                 return action(formData);
               }}
-              className="flex flex-col gap-2"
             >
               <input type="hidden" name="slug" value={slug} />
 
-              <div className="flex items-end gap-2 rounded-xl border border-line bg-canvas px-3 py-2 transition-colors focus-within:border-accent">
+              <div className="flex items-end gap-2">
                 <textarea
                   name="body"
                   rows={1}
                   required
                   maxLength={4000}
-                  placeholder={`Message #${slug}`}
-                  className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-[15px] text-ink outline-none placeholder:text-faint"
+                  placeholder="Type a message"
+                  className="max-h-32 flex-1 resize-none rounded-3xl border border-line bg-canvas px-4 py-2.5 text-[15px] text-ink outline-none transition-colors placeholder:text-faint focus:border-line-strong"
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                       event.preventDefault();
@@ -304,22 +302,19 @@ export function RoomView({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="mb-0.5 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+                  aria-label="Send"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  Send
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+                    <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z" fill="currentColor" />
+                  </svg>
                 </button>
               </div>
 
-              {state.error ? (
-                <p className="px-1 text-xs text-danger">{state.error}</p>
-              ) : (
-                <p className="px-1 text-[11px] text-faint">
-                  Enter to send, Shift + Enter for a new line
-                </p>
-              )}
+              {state.error && <p className="mt-2 px-1 text-xs text-danger">{state.error}</p>}
             </form>
           ) : (
-            <p className="py-2 text-sm text-muted">{postDeniedReason}</p>
+            <p className="py-2 text-center text-sm text-muted">{postDeniedReason}</p>
           )}
         </div>
       </div>

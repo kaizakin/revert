@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import {
@@ -20,6 +20,9 @@ export type RoomSummary = {
   topic: string | null;
   type: "chat" | "announce" | "ama";
   unread: number;
+  lastBody: string | null;
+  lastAuthor: string | null;
+  lastAt: Date | null;
 };
 
 /** Rooms the user has joined, with unread counts. */
@@ -84,14 +87,56 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
 
   const unreadBy = new Map(counts.map((c) => [c.conversationId, Number(c.unread)]));
 
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug ?? "",
-    name: r.name ?? r.slug ?? "",
-    topic: r.topic,
-    type: r.type,
-    unread: unreadBy.get(r.id) ?? 0,
-  }));
+  /**
+   * Latest message per room for the list preview.
+   *
+   * DISTINCT ON does this in one indexed pass over
+   * (conversation_id, created_at). Fetching a fixed number of recent rows and
+   * deduplicating in JS looks equivalent and is not: a room whose last message
+   * falls outside that window silently loses its preview.
+   */
+  const previewRows = await db.execute<{
+    conversation_id: string;
+    body: string | null;
+    created_at: Date;
+    username: string | null;
+  }>(sql`
+    select distinct on (m.conversation_id)
+      m.conversation_id, m.body, m.created_at, u.username
+    from ${messages} m
+    left join ${users} u on u.id = m.author_id
+    where m.deleted_at is null
+    order by m.conversation_id, m.created_at desc
+  `);
+
+  const previewBy = new Map(
+    Array.from(previewRows, (row) => [
+      row.conversation_id,
+      {
+        body: row.body,
+        createdAt: new Date(row.created_at),
+        username: row.username,
+      },
+    ]),
+  );
+
+  const summaries = rows.map((r) => {
+    const preview = previewBy.get(r.id);
+    return {
+      id: r.id,
+      slug: r.slug ?? "",
+      name: r.name ?? r.slug ?? "",
+      topic: r.topic,
+      type: r.type,
+      unread: unreadBy.get(r.id) ?? 0,
+      lastBody: preview?.body ?? null,
+      lastAuthor: preview?.username ?? null,
+      lastAt: preview?.createdAt ?? null,
+    };
+  });
+
+  // Most recent conversation first, like any chat app. Silent rooms sink.
+  return summaries.sort((a, b) => (b.lastAt?.getTime() ?? 0) - (a.lastAt?.getTime() ?? 0));
 }
 
 /** The room, but only if this user is a member of it. */
@@ -199,4 +244,14 @@ export async function markRead(userId: string, conversationId: string, messageId
         lastReadAt: new Date(),
       },
     });
+}
+
+/** Member count for the room header. */
+export async function roomMemberCount(conversationId: string): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(conversationMembers)
+    .where(eq(conversationMembers.conversationId, conversationId));
+
+  return Number(row?.value ?? 0);
 }

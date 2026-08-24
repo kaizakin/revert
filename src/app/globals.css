@@ -18,6 +18,14 @@
   --accent-ink: #ffffff;
   --accent-soft: #e6f4ee;
   --danger: #b42318;
+
+  /* Chat surfaces: outgoing bubble, incoming bubble, conversation background. */
+  --bubble-out: #d9fdd3;
+  --bubble-out-ink: #111b21;
+  --bubble-in: #ffffff;
+  --bubble-in-ink: #111b21;
+  --chat-bg: #efeae2;
+  --bubble-meta: #667781;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +42,13 @@
     --accent-ink: #06251b;
     --accent-soft: #16241f;
     --danger: #fda29b;
+
+    --bubble-out: #005c4b;
+    --bubble-out-ink: #e9edef;
+    --bubble-in: #202c33;
+    --bubble-in-ink: #e9edef;
+    --chat-bg: #0b141a;
+    --bubble-meta: #8696a0;
   }
 }
 
@@ -50,6 +65,12 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-bubble-out: var(--bubble-out);
+  --color-bubble-out-ink: var(--bubble-out-ink);
+  --color-bubble-in: var(--bubble-in);
+  --color-bubble-in-ink: var(--bubble-in-ink);
+  --color-chat-bg: var(--chat-bg);
+  --color-bubble-meta: var(--bubble-meta);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
