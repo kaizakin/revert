@@ -35,15 +35,73 @@ These five things a WhatsApp group simply cannot do:
 
 Built in phases. Each one has to work before the next one starts.
 
-| Phase | What ships |
-|:---:|---|
-| **1** | **Group chat.** Separate rooms instead of one giant group. Profiles with photo, username, headline, about, company or college, and links to X, GitHub, LinkedIn, LeetCode and Codeforces. Job alerts get their own room. |
-| **2** | **Direct messages.** Text, media, seen status, last active, block, archive, status. Plus an Android app on the Play Store. |
-| **3** | **Community feed.** Posts with text, images or video. Anon mode for sharing salaries and interview experiences without revealing who you are. |
-| **4** | **Paid services.** Resume reviews, mock interviews, 1:1 guidance, priority DM. Mine only, to begin with. |
-| **5** | **Anyone can sell.** Other members offer their own services and Revert takes a small cut. Paid referral groups. |
-| **6** | **Memberships, verification badges, sponsored job posts and advertising.** |
-| **7** | **Native mobile app.** |
+### Phase 1 — Group chat
+
+- Separate rooms instead of one giant group, so a busy room never drowns the rest
+- Sign up with a username. No phone number, ever
+- Profile: photo, username, headline, about, company or college
+- Links to X, GitHub, LinkedIn, LeetCode and Codeforces — GitHub and LinkedIn get a verified tick by logging in, LeetCode and Codeforces by pasting a one-time code in your bio
+- A dedicated job alerts room, searchable and filterable by role, location and experience
+- Notifications per room: everything, mentions only, or muted. Big rooms default to mentions only
+- **QnA mode** — during a session, only the host and direct mentions notify you. Everything else stays readable and silent
+- One daily digest instead of a hundred pings
+- Reply, react, edit, delete, pin, and search old messages
+- Invite-code signup only, to keep the first wave clean
+- Report button, ban and mute tools, and limits on link posting for new accounts
+
+### Phase 2 — Direct messages
+
+- 1:1 and group DMs
+- Text, images, files
+- Seen status and last active — **reciprocal**: hide yours and you cannot see anyone else's
+- Block, archive, mute
+- Status updates that disappear after 24 hours
+- People you do not know send a **request** first, not a message. Keeps recruiter spam and creeps out
+- **Member directory** — find people by company, city or skill. This is the one WhatsApp can never do
+- Android app on the Play Store
+
+### Phase 3 — Community feed
+
+- Posts with text, images or video
+- Follow people, like, comment
+- **Anon mode** — share your salary or a full interview experience without revealing who you are: company, role, rounds, questions asked, outcome
+- **Karma** — the people who actually help others become visible instead of invisible
+- Mark a job post as saved or applied, then tell us whether you got a revert. Over time that gives everyone honest reply-rate numbers per company
+- Project showcase with a weekly leaderboard, plus a board for project ideas anyone can pick up and build
+
+### Phase 4 — Paid services (mine only, to start)
+
+- Resume reviews, mock interviews, 1:1 guidance
+- **Priority DM** — a small fee to reach my inbox, automatically refunded if I do not reply within 48 hours
+- Booking slots, payments, receipts
+- Voice and video calls land here, where there is finally a reason to call
+- Ratings and reviews after every session
+- A written refund policy, live from the first rupee
+
+### Phase 5 — Anyone can sell
+
+- Any member can open a storefront and sell their own guidance
+- Revert keeps 15–20%. They get the audience, we get the cut
+- Automatic split payouts, so sellers are paid without me in the middle
+- **Referral circles** — employees verify their work email, open up a few referral slots, and candidates request one
+- Tips on profiles and on genuinely useful answers
+- Question bounties — attach money to a question, the best answer collects it
+
+### Phase 6 — Memberships, badges and advertising
+
+- **Membership** — job posts a few hours early, keyword alerts, unlimited saved jobs, discounts on services, a boost in the directory
+- **Verification badges** — verified recruiter, verified employee, verified creator. Free, because the point is trust, not status
+- Sponsored and featured job posts
+- **Recruiter seats** — companies pay to search verified profiles and contact candidates. Only members who opt in are visible
+- Sponsored AMAs and hiring drives
+- Sponsorship slots in the daily digest email
+- Ordinary display advertising waits until there are 25,000+ active users. Before that it is not worth selling
+
+### Phase 7 — Native mobile app
+
+- A proper Android and iOS app
+- Notifications and calls that behave the way people expect
+- Paid services stay on the web, so app store fees do not eat 15–30% of every sale
 
 ## How it makes money
 
