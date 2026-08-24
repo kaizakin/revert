@@ -224,3 +224,23 @@ export async function searchInRoom(slug: string, query: string): Promise<SearchH
 
   return searchMessages(room.id, query);
 }
+
+/**
+ * Stamp the caller as present and return the room's current counts.
+ *
+ * One round trip does both deliberately. Presence has to be refreshed on a
+ * timer anyway — lastActiveAt was only written when messages changed, so
+ * someone reading a quiet room went "offline" after the activity window — and
+ * the counts need the same cadence. Two separate polls would double the
+ * traffic for no benefit.
+ */
+export async function syncPresence(slug: string): Promise<RoomStats | null> {
+  const me = await getDbUser();
+  if (!me) return null;
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return null;
+
+  await touchLastActive(me.id);
+  return roomStats(room.id);
+}

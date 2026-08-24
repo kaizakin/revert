@@ -16,6 +16,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import type { MessageRow } from "@/server/messaging/queries";
 
 import {
+  syncPresence,
   fetchPinned,
   setPinnedAction,
   fetchNewMessages,
@@ -70,7 +71,7 @@ export function RoomView({
   slug,
   name,
   note,
-  stats,
+  stats: initialStats,
   conversationId,
   meId,
   meUsername,
@@ -90,6 +91,18 @@ export function RoomView({
   const [live, setLive] = useState<MessageRow[]>([]);
   const [draft, setDraft] = useState("");
   const [reactError, setReactError] = useState<string | null>(null);
+  /**
+   * Polled counts are tagged with the room they came from, and the server
+   * render is used until a poll for this room lands. Copying the prop into
+   * state and re-syncing it in an effect would be the obvious approach and
+   * causes a cascading render — and briefly shows the previous room's counts.
+   */
+  const [polled, setPolled] = useState<{
+    slug: string;
+    stats: { total: number; active: number };
+  } | null>(null);
+
+  const stats = polled?.slug === slug ? polled.stats : initialStats;
   const [pinned, setPinned] = useState<{
     id: string;
     body: string | null;
@@ -97,6 +110,38 @@ export function RoomView({
   } | null>(null);
   const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
+
+  const refreshPresence = useCallback(() => {
+    void syncPresence(slug).then((next) => {
+      if (next) setPolled({ slug, stats: next });
+    });
+  }, [slug]);
+
+  /**
+   * Poll while the tab is visible.
+   *
+   * 45 seconds against a five-minute activity window, so a reader stays marked
+   * present with margin to spare. Hidden tabs are skipped — a backgrounded tab
+   * reporting presence would show people as online who walked away hours ago,
+   * and would keep polling for nothing.
+   */
+  useEffect(() => {
+    refreshPresence();
+
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshPresence();
+    }, 45_000);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshPresence();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [refreshPresence]);
 
   const refreshPinned = useCallback(() => {
     void fetchPinned(slug).then(setPinned);
@@ -623,6 +668,7 @@ export function RoomView({
           slug={slug}
           onClose={() => setPanel(null)}
           onOpenMember={(username) => setPanel({ kind: "member", username })}
+          refreshKey={stats.total}
         />
       )}
     </div>

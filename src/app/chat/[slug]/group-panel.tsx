@@ -10,10 +10,13 @@ export function GroupPanel({
   slug,
   onClose,
   onOpenMember,
+  /** Changes when membership does, so an open panel refetches instead of going stale. */
+  refreshKey,
 }: {
   slug: string;
   onClose: () => void;
   onOpenMember: (username: string) => void;
+  refreshKey?: number;
 }) {
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
@@ -30,7 +33,7 @@ export function GroupPanel({
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, refreshKey]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
