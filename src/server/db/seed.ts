@@ -21,35 +21,17 @@ const SPACE = {
  * `announce` marks a room where regular members do not post.
  * `ama` marks a room where only the host and direct mentions are allowed to push.
  */
+/**
+ * One room for now. Extra rooms split a small community into empty rooms —
+ * better to have a single busy chat and add #jobs and #ama back when there are
+ * enough people to fill them.
+ */
 const ROOMS = [
   {
     slug: "general",
     name: "general",
-    topic: "Introductions and everything else.",
+    topic: "Jobs, questions and everything else.",
     type: "chat" as const,
-    isDefault: true,
-  },
-  {
-    slug: "jobs",
-    name: "jobs",
-    topic: "Openings, searchable and filterable. Posted by mods.",
-    type: "announce" as const,
-    isDefault: true,
-  },
-  {
-    slug: "ask",
-    name: "ask",
-    topic: "Ask anything about resumes, interviews or offers.",
-    type: "chat" as const,
-    isDefault: true,
-  },
-  {
-    slug: "ama",
-    name: "ama",
-    topic: "Live sessions. Only the host and mentions of you will notify.",
-    type: "ama" as const,
-    // Joined by default so sessions are discoverable, but the notification
-    // default for an ama room is mentions-only, so joining is silent.
     isDefault: true,
   },
 ];

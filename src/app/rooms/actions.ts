@@ -2,8 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { listMessages, markRead, type MessageRow } from "@/server/messaging/queries";
-import { getRoomForUser } from "@/server/messaging/queries";
+import {
+  getRoomForUser,
+  listMessages,
+  markRead,
+  type MessageRow,
+} from "@/server/messaging/queries";
+import { toggleReaction } from "@/server/messaging/reactions";
 import { loadAuthor, sendMessage } from "@/server/messaging/send";
 import { getDbUser } from "@/server/users/sync";
 
@@ -31,7 +36,7 @@ export async function sendMessageAction(
 
 /**
  * Fetch messages newer than a timestamp. The realtime broadcast carries only an
- * id, so the client calls this to read the actual row — the database stays the
+ * id, so the client calls this to read the actual rows — the database stays the
  * only source of message content, and a spoofed broadcast cannot inject text.
  */
 export async function fetchNewMessages(
@@ -47,7 +52,35 @@ export async function fetchNewMessages(
   const after = new Date(afterIso);
   if (Number.isNaN(after.getTime())) return [];
 
-  return listMessages(room.id, { after });
+  return listMessages(room.id, me.id, { after });
+}
+
+/** Re-read the current page of messages, for when reactions change. */
+export async function refetchMessages(slug: string): Promise<MessageRow[]> {
+  const me = await getDbUser();
+  if (!me) return [];
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return [];
+
+  return listMessages(room.id, me.id);
+}
+
+export type ReactState = { error?: string };
+
+export async function toggleReactionAction(
+  slug: string,
+  messageId: string,
+  emoji: string,
+): Promise<ReactState> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+
+  const result = await toggleReaction(me.id, messageId, emoji);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath(`/rooms/${slug}`);
+  return {};
 }
 
 export async function markRoomRead(slug: string, messageId?: string) {

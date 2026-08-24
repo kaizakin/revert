@@ -27,7 +27,7 @@ export default async function RoomPage({ params }: PageProps<"/rooms/[slug]">) {
   if (!room) notFound();
 
   const [messages, members] = await Promise.all([
-    listMessages(room.id),
+    listMessages(room.id, me.id),
     roomMemberCount(room.id),
   ]);
 

@@ -1,5 +1,6 @@
 import { and, asc, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
 
+import type { ReactionSummary } from "@/lib/reactions";
 import { db } from "@/server/db";
 import {
   conversationMembers,
@@ -10,6 +11,8 @@ import {
   users,
 } from "@/server/db/schema";
 import { DEFAULT_SPACE_SLUG } from "@/server/users/onboard";
+
+import { loadReactions } from "./reactions";
 
 export const MESSAGE_PAGE_SIZE = 50;
 
@@ -179,6 +182,7 @@ export type MessageRow = {
   authorUsername: string | null;
   authorAvatarUrl: string | null;
   replyToId: string | null;
+  reactions: ReactionSummary[];
 };
 
 /**
@@ -187,6 +191,7 @@ export type MessageRow = {
  */
 export async function listMessages(
   conversationId: string,
+  viewerId: string,
   opts: { limit?: number; after?: Date } = {},
 ): Promise<MessageRow[]> {
   const limit = Math.min(opts.limit ?? MESSAGE_PAGE_SIZE, 200);
@@ -205,26 +210,32 @@ export async function listMessages(
     .from(messages)
     .leftJoin(users, eq(users.id, messages.authorId));
 
-  if (opts.after) {
-    const rows = await base
-      .where(
-        and(
-          eq(messages.conversationId, conversationId),
-          isNull(messages.deletedAt),
-          gt(messages.createdAt, opts.after),
-        ),
-      )
-      .orderBy(asc(messages.createdAt))
-      .limit(limit);
-    return rows;
-  }
+  const rows = opts.after
+    ? await base
+        .where(
+          and(
+            eq(messages.conversationId, conversationId),
+            isNull(messages.deletedAt),
+            gt(messages.createdAt, opts.after),
+          ),
+        )
+        .orderBy(asc(messages.createdAt))
+        .limit(limit)
+    : (
+        await base
+          .where(
+            and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt)),
+          )
+          .orderBy(desc(messages.createdAt))
+          .limit(limit)
+      ).reverse();
 
-  const rows = await base
-    .where(and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt)))
-    .orderBy(desc(messages.createdAt))
-    .limit(limit);
+  const byMessage = await loadReactions(
+    rows.map((row) => row.id),
+    viewerId,
+  );
 
-  return rows.reverse();
+  return rows.map((row) => ({ ...row, reactions: byMessage.get(row.id) ?? [] }));
 }
 
 /** Record how far the user has read. Safe to call often. */

@@ -16,9 +16,12 @@ import type { MessageRow } from "@/server/messaging/queries";
 import {
   fetchNewMessages,
   markRoomRead,
+  refetchMessages,
   sendMessageAction,
+  toggleReactionAction,
   type SendState,
 } from "../actions";
+import { MessageBubble } from "./message-bubble";
 
 type Props = {
   slug: string;
@@ -32,30 +35,6 @@ type Props = {
 
 /** Consecutive messages from the same person inside this window share a tail. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
-
-/** Stable per-username colour for sender names, the way group chats do it. */
-const NAME_COLOURS = [
-  "#e542a3",
-  "#5b8def",
-  "#1fa855",
-  "#e6a11f",
-  "#9b5de5",
-  "#00a3a3",
-  "#e8624a",
-  "#7d8bd4",
-];
-
-function nameColour(username: string | null) {
-  if (!username) return "var(--bubble-meta)";
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) hash = (hash * 31 + username.charCodeAt(i)) | 0;
-  return NAME_COLOURS[Math.abs(hash) % NAME_COLOURS.length];
-}
-
-const timeOf = (value: Date | string) =>
-  new Date(value)
-    .toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
-    .toLowerCase();
 
 const dayOf = (value: Date | string) =>
   new Date(value).toLocaleDateString("en-IN", {
@@ -93,6 +72,7 @@ export function RoomView({
    */
   const [live, setLive] = useState<MessageRow[]>([]);
   const [draft, setDraft] = useState("");
+  const [reactError, setReactError] = useState<string | null>(null);
 
   const [state, action, pending] = useActionState<SendState, FormData>(sendMessageAction, {});
   const formRef = useRef<HTMLFormElement>(null);
@@ -114,6 +94,7 @@ export function RoomView({
       authorUsername: meUsername,
       authorAvatarUrl: null,
       replyToId: null,
+      reactions: [],
     },
   ]);
 
@@ -137,9 +118,30 @@ export function RoomView({
     });
   }, [slug]);
 
+  const reload = useCallback(async () => {
+    const fresh = await refetchMessages(slug);
+    if (fresh.length) setLive(fresh);
+  }, [slug]);
+
+  const handleReact = useCallback(
+    async (messageId: string, emoji: string) => {
+      const result = await toggleReactionAction(slug, messageId, emoji);
+      if (result.error) {
+        setReactError(result.error);
+        return;
+      }
+      setReactError(null);
+      await reload();
+    },
+    [slug, reload],
+  );
+
   /**
    * The broadcast carries only a message id, never its text, so a forged event
    * can at most trigger a fetch that returns rows this user may already read.
+   *
+   * Reactions cannot use the "since this timestamp" path — they change older
+   * messages, which that query would never return — so they trigger a reload.
    */
   useEffect(() => {
     const supabase = supabaseBrowser();
@@ -148,12 +150,13 @@ export function RoomView({
     const channel = supabase
       .channel(`conversation:${conversationId}`)
       .on("broadcast", { event: "message.new" }, () => void catchUp())
+      .on("broadcast", { event: "reaction.changed" }, () => void reload())
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, catchUp]);
+  }, [conversationId, catchUp, reload]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -206,10 +209,6 @@ export function RoomView({
             const isMine = message.authorId === meId;
             const isPending = message.id.startsWith("pending-");
 
-            // The tail hangs off the first bubble of a run only, so a run reads
-            // as one block rather than a column of separate cards.
-            const tail = startsRun ? (isMine ? "tail-out" : "tail-in") : "";
-
             return (
               <div key={message.id}>
                 {showDay && (
@@ -220,38 +219,13 @@ export function RoomView({
                   </div>
                 )}
 
-                <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`relative max-w-[80%] px-2 py-[5px] shadow-sm sm:max-w-[65%] ${tail} ${
-                      isMine
-                        ? "bg-bubble-out text-bubble-out-ink"
-                        : "bg-bubble-in text-bubble-in-ink"
-                    } ${isPending ? "opacity-60" : ""}`}
-                    style={{ borderRadius: 8 }}
-                  >
-                    {!isMine && startsRun && (
-                      <p
-                        className="mb-px text-[12.5px] font-semibold"
-                        style={{ color: nameColour(message.authorUsername) }}
-                      >
-                        @{message.authorUsername ?? "deleted"}
-                      </p>
-                    )}
-
-                    <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">
-                      {message.body}
-                      {/* Reserves room on the last line so the timestamp never
-                          overlaps the text. */}
-                      <span className="inline-block w-16 select-none" aria-hidden />
-                    </p>
-
-                    <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] text-bubble-meta">
-                      {message.editedAt && <span>edited</span>}
-                      {timeOf(message.createdAt)}
-                      {isMine && <span aria-hidden>{isPending ? "🕘" : "✓"}</span>}
-                    </span>
-                  </div>
-                </div>
+                <MessageBubble
+                  message={message}
+                  isMine={isMine}
+                  isPending={isPending}
+                  startsRun={startsRun}
+                  onReact={handleReact}
+                />
               </div>
             );
           })}
@@ -322,7 +296,9 @@ export function RoomView({
                 </button>
               </div>
 
-              {state.error && <p className="mt-2 px-1 text-xs text-danger">{state.error}</p>}
+              {(state.error ?? reactError) && (
+                <p className="mt-2 px-1 text-xs text-danger">{state.error ?? reactError}</p>
+              )}
             </form>
           ) : (
             <p className="py-2 text-center text-sm text-muted">{postDeniedReason}</p>
