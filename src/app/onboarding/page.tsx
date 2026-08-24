@@ -28,8 +28,8 @@ export default async function OnboardingPage() {
           <span className="text-sm font-semibold tracking-tight text-ink">Revert</span>
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Almost in</h1>
           <p className="text-sm leading-relaxed text-muted">
-            Pick the name people will know you by. You can change your profile later, but
-            your username is permanent.
+            Pick the name people will know you by. You can change it later, along with
+            everything else, from your profile.
           </p>
         </div>
 

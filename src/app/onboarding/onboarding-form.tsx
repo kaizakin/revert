@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 
 import { AvatarField } from "@/components/avatar-field";
+import { SocialIcon } from "@/components/social-icon";
 import { UsernameField } from "@/components/username-field";
+import { SOCIAL_PROVIDERS } from "@/lib/profile";
 import type { AvatarPreset } from "@/server/users/avatar-presets";
 
 import { checkOnboardingUsername, onboardAction, type OnboardState } from "./actions";
@@ -157,9 +159,31 @@ export function OnboardingForm({ suggestedUsername, inviteRequired, presets }: P
           </Field>
         </div>
 
-        <p className="text-[11px] text-faint">
-          Links to GitHub, LinkedIn and the rest can be added on your profile.
-        </p>
+        <div className="flex flex-col gap-4">
+          <p className="text-[13px] font-medium text-ink">Links</p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {SOCIAL_PROVIDERS.map((provider) => (
+              <label key={provider.key} className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1.5 text-[12px] font-medium text-muted">
+                  <SocialIcon provider={provider.key} className="h-3.5 w-3.5" />
+                  {provider.label}
+                </span>
+                <input
+                  name={provider.key}
+                  className={inputClass}
+                  placeholder={provider.placeholder}
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </label>
+            ))}
+          </div>
+
+          <p className="text-[11px] text-faint">
+            Paste a handle or a full URL — either works.
+          </p>
+        </div>
       </div>
 
       {errorFor("form") && <p className="text-[11px] text-danger">{errorFor("form")}</p>}

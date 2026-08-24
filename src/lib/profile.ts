@@ -115,6 +115,25 @@ export const profileSchema = z.object({
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 
+/**
+ * Normalise one social value for storage.
+ *
+ * Branching on the provider matters: the custom link stores a whole URL, and
+ * running the handle normaliser over it strips the path — "https://site.com/blog"
+ * became "blog", which then rendered as a broken relative href. Returns null
+ * when the value is present but unusable.
+ */
+export function normalizeSocialValue(provider: SocialKey, raw: string): string | null {
+  if (URL_PROVIDERS.has(provider)) {
+    const url = normalizeUrl(raw);
+    return url === null ? null : url;
+  }
+
+  const handle = normalizeHandle(raw);
+  if (!handle) return "";
+  return /^[A-Za-z0-9._-]{1,60}$/.test(handle) ? handle : null;
+}
+
 export function profileUrl(provider: SocialKey, handle: string) {
   if (URL_PROVIDERS.has(provider)) return handle;
   return `${PROFILE_URL_BASE[provider as Exclude<SocialKey, "website">]}${handle}`;

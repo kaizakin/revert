@@ -3,7 +3,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MIME,
-  normalizeHandle,
+  normalizeSocialValue,
   type ProfileInput,
   type SocialKey,
   SOCIAL_PROVIDERS,
@@ -99,36 +99,45 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
       })
       .where(eq(users.id, userId));
 
-    for (const provider of SOCIAL_PROVIDERS) {
-      /**
-       * Normalised here as well as in the schema. People paste whole URLs, and
-       * a handle stored as a URL turns into a broken link when the profile URL
-       * is built from it. Relying only on the caller having validated makes
-       * this function a trap.
-       */
-      const handle = normalizeHandle(input[provider.key] ?? "");
-
-      if (!handle) {
-        await tx
-          .delete(socialAccounts)
-          .where(
-            and(
-              eq(socialAccounts.userId, userId),
-              eq(socialAccounts.provider, provider.key),
-            ),
-          );
-        continue;
-      }
-
-      await tx
-        .insert(socialAccounts)
-        .values({ userId, provider: provider.key, handle })
-        .onConflictDoUpdate({
-          target: [socialAccounts.userId, socialAccounts.provider],
-          set: { handle },
-        });
-    }
+    await writeSocials(tx, userId, input);
   });
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export type SocialValues = Partial<Record<SocialKey, string | undefined>>;
+
+/**
+ * Write the social links for a user, one row per provider.
+ *
+ * Shared by the profile page and onboarding so the normalisation rules cannot
+ * drift apart. An empty value deletes the row; an unusable one is skipped
+ * rather than stored, since a broken link on a public profile is worse than a
+ * missing one.
+ */
+export async function writeSocials(tx: Tx, userId: string, values: SocialValues) {
+  for (const provider of SOCIAL_PROVIDERS) {
+    const normalised = normalizeSocialValue(provider.key, values[provider.key] ?? "");
+
+    if (normalised === null) continue;
+
+    if (!normalised) {
+      await tx
+        .delete(socialAccounts)
+        .where(
+          and(eq(socialAccounts.userId, userId), eq(socialAccounts.provider, provider.key)),
+        );
+      continue;
+    }
+
+    await tx
+      .insert(socialAccounts)
+      .values({ userId, provider: provider.key, handle: normalised })
+      .onConflictDoUpdate({
+        target: [socialAccounts.userId, socialAccounts.provider],
+        set: { handle: normalised },
+      });
+  }
 }
 
 export async function setAvatarPreset(userId: string, url: string): Promise<boolean> {

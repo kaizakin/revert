@@ -14,6 +14,7 @@ import {
 import { inviteRequired } from "@/server/invites/policy";
 import { redeemInvite } from "@/server/invites/redeem";
 import { defaultLevelForRoom } from "@/server/notifications/defaults";
+import { writeSocials, type SocialValues } from "@/server/users/profile";
 
 export const DEFAULT_SPACE_SLUG = "revert";
 
@@ -35,6 +36,8 @@ export type OnboardInput = {
     college?: string | null;
     location?: string | null;
   };
+  /** Profile links answered during onboarding, written in the same transaction. */
+  socials?: SocialValues;
 };
 
 export type OnboardResult =
@@ -144,6 +147,10 @@ export async function completeOnboarding(input: OnboardInput): Promise<OnboardRe
             level: defaultLevelForRoom(room.type, Number(memberCount)),
           })),
         );
+      }
+
+      if (input.socials) {
+        await writeSocials(tx, user.id, input.socials);
       }
 
       // Global fallback row, used for any room joined later.
