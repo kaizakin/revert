@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useActionState,
   useCallback,
@@ -10,6 +11,7 @@ import {
   useState,
 } from "react";
 
+import { avatarColour, initials } from "@/lib/avatar";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import type { MessageRow } from "@/server/messaging/queries";
 
@@ -27,7 +29,9 @@ import { MessageBubble } from "./message-bubble";
 
 type Props = {
   slug: string;
-  header: React.ReactNode;
+  name: string;
+  note?: string;
+  stats: { total: number; active: number };
   conversationId: string;
   meId: string;
   meUsername: string;
@@ -58,7 +62,9 @@ function dayLabel(value: Date | string) {
 
 export function RoomView({
   slug,
-  header,
+  name,
+  note,
+  stats,
   conversationId,
   meId,
   meUsername,
@@ -209,14 +215,59 @@ export function RoomView({
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col">
-      <button
-        type="button"
-        onClick={() => setPanel({ kind: "group" })}
-        aria-label="Open group info"
-        className="w-full text-left transition-colors hover:bg-raised/50"
-      >
-        {header}
-      </button>
+        <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2.5">
+        {/* Back to the chat list, which is the only nav on a phone. */}
+        <Link
+          href="/chat"
+          aria-label="Back to chats"
+          className="-ml-1 rounded-full p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink sm:hidden"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+            <path
+              d="M15 5l-7 7 7 7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setPanel({ kind: "group" })}
+          aria-label="Open group info"
+          className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors hover:opacity-90"
+        >
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+            style={{ backgroundColor: avatarColour(slug) }}
+            aria-hidden
+          >
+            {initials(name)}
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[15px] font-semibold text-ink">{name}</h1>
+            <p className="truncate text-[12px] text-muted">
+              {stats.total} {stats.total === 1 ? "member" : "members"}
+              {stats.active > 0 && ` · ${stats.active} online`}
+              {note ? ` · ${note}` : ""}
+            </p>
+          </div>
+
+          <span
+            aria-hidden
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+              <circle cx="12" cy="5" r="1.6" fill="currentColor" />
+              <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+              <circle cx="12" cy="19" r="1.6" fill="currentColor" />
+            </svg>
+          </span>
+        </button>
+      </div>
       <div className="chat-pattern flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col gap-[3px] px-3 py-4 sm:px-8">
           {rendered.length === 0 && (

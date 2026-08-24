@@ -3,21 +3,19 @@ import { eq } from "drizzle-orm";
 
 import { checkUsername } from "@/lib/username";
 import { db } from "@/server/db";
-import { users } from "@/server/db/schema";
+import {
+  conversationMembers,
+  conversations,
+  notificationPrefs,
+  spaceMembers,
+  spaces,
+  users,
+} from "@/server/db/schema";
+import { defaultLevelForRoom } from "@/server/notifications/defaults";
 
 export type DbUser = typeof users.$inferSelect;
 
-/**
- * Clerk owns credentials; this table owns everything profile-shaped. Two paths
- * keep them in sync:
- *
- *  - the webhook at /api/webhooks/clerk, which is authoritative in production
- *  - lazy upsert on first request, below, which is what makes local
- *    development work at all since a webhook cannot reach localhost
- *
- * Both are needed. The webhook alone silently does nothing on a dev machine;
- * lazy sync alone misses updates made in the Clerk dashboard.
- */
+const DEFAULT_SPACE_SLUG = "revert";
 
 function primaryEmail(user: NonNullable<Awaited<ReturnType<typeof currentUser>>>) {
   const primaryId = user.primaryEmailAddressId;
@@ -32,6 +30,56 @@ export async function getDbUser(): Promise<DbUser | null> {
 
   const [row] = await db.select().from(users).where(eq(users.clerkId, userId)).limit(1);
   return row ?? null;
+}
+
+/** Ensure a newly synced user is a member of the default space and its rooms. */
+export async function ensureDefaultSpaceMembership(userId: string): Promise<void> {
+  const [space] = await db
+    .select()
+    .from(spaces)
+    .where(eq(spaces.slug, DEFAULT_SPACE_SLUG))
+    .limit(1);
+
+  if (!space) return;
+
+  await db
+    .insert(spaceMembers)
+    .values({ spaceId: space.id, userId, role: "member" })
+    .onConflictDoNothing();
+
+  const rooms = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.spaceId, space.id));
+
+  const joinable = rooms.filter((r) => r.isDefault);
+
+  if (joinable.length > 0) {
+    await db
+      .insert(conversationMembers)
+      .values(joinable.map((room) => ({ conversationId: room.id, userId })))
+      .onConflictDoNothing();
+
+    await db
+      .insert(notificationPrefs)
+      .values(
+        joinable.map((room) => ({
+          userId,
+          conversationId: room.id,
+          level: defaultLevelForRoom(room.type, 0),
+        })),
+      )
+      .onConflictDoNothing();
+  }
+
+  await db
+    .insert(notificationPrefs)
+    .values({
+      userId,
+      conversationId: null,
+      level: "all" as const,
+    })
+    .onConflictDoNothing();
 }
 
 /**
@@ -95,6 +143,10 @@ export async function upsertFromClerk(input: ClerkSyncInput): Promise<DbUser> {
       },
     })
     .returning();
+
+  if (row?.id) {
+    await ensureDefaultSpaceMembership(row.id);
+  }
 
   return row;
 }
