@@ -32,7 +32,7 @@ export const clerkAppearance: Appearance = {
     headerTitle: "text-[22px] font-semibold tracking-tight",
     headerSubtitle: "text-[13px]",
 
-    socialButtonsBlockButton: "rounded-lg transition-colors",
+    socialButtonsBlockButton: "rounded-lg border border-line transition-colors",
     socialButtonsBlockButtonText: "font-medium",
 
     dividerText: "text-[11px] uppercase tracking-widest",
@@ -52,11 +52,15 @@ export const clerkAppearance: Appearance = {
 
     footer: "border-t border-line",
     footerAction: "py-1",
+    /**
+     * Hides the "Secured by Clerk" badge, and with it the "Development mode"
+     * chip that shares this container. Note that removing Clerk branding is a
+     * paid-plan feature; hiding it on the free tier is a terms question.
+     */
+    footerItem: "hidden",
     footerActionText: "text-[13px]",
     footerActionLink: "font-medium hover:underline",
 
-    // Header logo only. Clerk's "Secured by Clerk" badge stays: removing it
-    // needs a paid plan, and hiding it on the free tier breaks their terms.
     logoBox: "hidden",
   },
 };
