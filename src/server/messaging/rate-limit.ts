@@ -23,12 +23,12 @@ export async function consumeRateLimit(
       set: {
         // Reset the window if it has expired, otherwise increment.
         count: sql`case
-          when ${rateLimits.windowStart} < now() - (${windowSeconds} || ' seconds')::interval
+          when ${rateLimits.windowStart} < now() - (${windowSeconds} * interval '1 second')
           then 1
           else ${rateLimits.count} + 1
         end`,
         windowStart: sql`case
-          when ${rateLimits.windowStart} < now() - (${windowSeconds} || ' seconds')::interval
+          when ${rateLimits.windowStart} < now() - (${windowSeconds} * interval '1 second')
           then now()
           else ${rateLimits.windowStart}
         end`,

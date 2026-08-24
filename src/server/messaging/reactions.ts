@@ -23,7 +23,7 @@ export async function loadReactions(
       messageId: reactions.messageId,
       emoji: reactions.emoji,
       count: sql<number>`count(*)::int`,
-      mine: sql<boolean>`bool_or(${reactions.userId} = ${viewerId})`,
+      mine: sql<boolean>`bool_or(${reactions.userId} = ${viewerId}::uuid)`,
     })
     .from(reactions)
     .where(inArray(reactions.messageId, messageIds))

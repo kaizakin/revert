@@ -82,7 +82,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .where(
       and(
         isNull(messages.deletedAt),
-        sql`${messages.authorId} is distinct from ${userId}`,
+        sql`${messages.authorId} is distinct from ${userId}::uuid`,
         sql`(${messageReads.lastReadAt} is null or ${messages.createdAt} > ${messageReads.lastReadAt})`,
       ),
     )
@@ -285,7 +285,7 @@ export async function roomStats(conversationId: string): Promise<RoomStats> {
       total: sql<number>`count(*)::int`,
       active: sql<number>`count(*) filter (
         where ${users.showLastActive}
-          and ${users.lastActiveAt} > now() - (${ACTIVE_WINDOW_MINUTES} || ' minutes')::interval
+          and ${users.lastActiveAt} > now() - (${ACTIVE_WINDOW_MINUTES} * interval '1 minute')
       )::int`,
     })
     .from(conversationMembers)
