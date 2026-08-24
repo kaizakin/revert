@@ -11,6 +11,7 @@ import {
   spaces,
   users,
 } from "@/server/db/schema";
+import { inviteRequired } from "@/server/invites/policy";
 import { redeemInvite } from "@/server/invites/redeem";
 import { defaultLevelForRoom } from "@/server/notifications/defaults";
 
@@ -91,11 +92,21 @@ export async function completeOnboarding(input: OnboardInput): Promise<OnboardRe
         })
         .returning();
 
-      const redeemed = await redeemInvite(tx, input.inviteCode, user.id);
-      if (!redeemed.ok) {
-        // Throwing rolls the whole thing back, so the user row and the invite
-        // use count both revert together.
-        throw new OnboardError("invite", redeemed.error);
+      // A code is still honoured when supplied, even with the gate off, so
+      // wave tracking and labelled codes keep working.
+      const codeGiven = input.inviteCode.trim().length > 0;
+
+      if (inviteRequired() || codeGiven) {
+        const redeemed = await redeemInvite(tx, input.inviteCode, user.id);
+        if (!redeemed.ok) {
+          // Only block signup when a code is actually required. Otherwise a
+          // typo in an optional field must not cost someone their account.
+          if (inviteRequired()) {
+            // Throwing rolls the whole thing back, so the user row and the
+            // invite use count both revert together.
+            throw new OnboardError("invite", redeemed.error);
+          }
+        }
       }
 
       await tx.insert(spaceMembers).values({
