@@ -1,135 +1,136 @@
 # Revert
 
-**Chat and community for job seekers — where you are a username, not a phone number.**
+### The professional network for people who don't have one.
 
-*by [minianon](https://github.com/minianon)*
+Revert is a chat-first community for job seekers — verified profiles, private contact details, real referrals, and paid guidance from people who have already done it.
+
+*Built by [minianon](https://github.com/minianon)*
 
 ---
 
 ## The problem
 
-I run a job alerts community with 2,000+ members. Four things kept breaking:
+Job hunting in India runs on WhatsApp and Telegram groups. It works badly for everyone in them.
 
-- **Your phone number is exposed to 2,000 strangers.** That is where the spam, the scam DMs and the harassment come from.
-- **Job posts disappear.** A good opening scrolls out of sight in twenty minutes and can never be found again.
-- **QnA sessions spam everyone.** People message me saying the notifications are unbearable.
-- **Nobody reverts.** You apply, you hear nothing, and you have no idea whether the problem is your resume or the market.
+- **Joining a group hands your phone number to thousands of strangers.** Spam, fake recruiters and harassment follow.
+- **Job posts vanish in minutes.** No search, no filters, no archive. The best opening of the week scrolls away before most people wake up.
+- **One QnA session notifies everybody.** So people mute the group, and then miss the openings too.
+- **Applications disappear into a void.** Nobody tells you whether the problem is your resume, your college, or the market.
+- **And if you didn't go to a top college, you have no network to ask.** Referrals decide who gets interviewed, and most people have no one to ask for one.
+
+Every part of this is fixable. None of it is fixable inside a WhatsApp group.
 
 ## What Revert is
 
-A private place for job seekers to talk, ask questions, and find work — without handing out their phone number. You get a username and a profile. Job openings stay searchable instead of vanishing. You choose which rooms are allowed to notify you. And when you want real help with your resume or an interview, you can book it instead of hoping someone replies to your DM.
+A place where you are a **username, not a phone number**.
 
-The name is the point: *"koi revert nahi aaya."* It means a reply in chat, and it means a reply from a recruiter.
+You get a real profile — with GitHub, LeetCode and LinkedIn actually verified, not just pasted. Job openings stay searchable instead of scrolling away. You decide which rooms are allowed to notify you. You can find the people who work where you want to work. And when you need serious help with a resume or an interview, you book it instead of hoping a stranger replies to your DM.
 
-## Why people would leave WhatsApp for this
+The name is the point. *"Koi revert nahi aaya."* It means a reply in a chat, and it means a reply from a recruiter.
 
-These five things a WhatsApp group simply cannot do:
+## Who it's for
 
-1. Your phone number is never shared with anyone.
-2. Job posts stay searchable and filterable instead of scrolling away.
-3. Mute per room — a QnA session stops spamming everybody.
-4. Verified GitHub and LeetCode profiles, so you know who you are talking to.
-5. Find people by company or city — useful when you need a referral.
+- Students and early-career professionals without a network to lean on
+- Career switchers who need honest information, not motivational content
+- Employees who are happy to refer good people, but not to be cold-DMed by two hundred of them
+- Recruiters who want verified candidates instead of a resume dump
+
+## What WhatsApp structurally cannot do
+
+1. Keep your phone number private
+2. Make job posts searchable and filterable
+3. Let you mute one room without leaving the community
+4. Show verified GitHub and LeetCode profiles next to a name
+5. Let you find people by company, city or skill
+
+That list is the product.
+
+## Traction
+
+Revert is being built out of an active job alerts community of **2,000+ members** — a group with a daily habit and a real, repeated need. It launches to users, not to a waitlist.
 
 ## Roadmap
 
-Built in phases. Each one has to work before the next one starts.
+Built in phases. Each one has to earn the next.
 
 ### Phase 1 — Group chat
 
 - Separate rooms instead of one giant group, so a busy room never drowns the rest
-- Sign up with a username. No phone number, ever
-- Profile: photo, username, headline, about, company or college
-- Links to X, GitHub, LinkedIn, LeetCode and Codeforces — GitHub and LinkedIn get a verified tick by logging in, LeetCode and Codeforces by pasting a one-time code in your bio
-- A dedicated job alerts room, searchable and filterable by role, location and experience
-- Notifications per room: everything, mentions only, or muted. Big rooms default to mentions only
+- Username signup. No phone number, ever
+- Profiles: photo, username, headline, about, company or college
+- GitHub and LinkedIn verified by logging in; LeetCode and Codeforces by a one-time code in your bio
+- A dedicated job alerts room — searchable and filterable by role, location and experience
+- Notifications per room: everything, mentions only, or muted. Large rooms default to mentions only
 - **QnA mode** — during a session, only the host and direct mentions notify you. Everything else stays readable and silent
 - One daily digest instead of a hundred pings
-- Reply, react, edit, delete, pin, and search old messages
-- Invite-code signup only, to keep the first wave clean
-- Report button, ban and mute tools, and limits on link posting for new accounts
+- Reply, react, edit, delete, pin, and search the full history
+- Invite-code signup, and moderation tools from day one
 
 ### Phase 2 — Direct messages
 
-- 1:1 and group DMs
-- Text, images, files
-- Seen status and last active — **reciprocal**: hide yours and you cannot see anyone else's
-- Block, archive, mute
-- Status updates that disappear after 24 hours
-- People you do not know send a **request** first, not a message. Keeps recruiter spam and creeps out
-- **Member directory** — find people by company, city or skill. This is the one WhatsApp can never do
+- 1:1 and group DMs, with text, images and files
+- Seen status and last active, **reciprocal** — hide yours and you cannot see anyone else's
+- Block, archive, mute, and 24-hour status updates
+- Strangers send a **request**, not a message
+- **Member directory** — find people by company, city or skill
 - Android app on the Play Store
 
 ### Phase 3 — Community feed
 
-- Posts with text, images or video
-- Follow people, like, comment
-- **Anon mode** — share your salary or a full interview experience without revealing who you are: company, role, rounds, questions asked, outcome
-- **Karma** — the people who actually help others become visible instead of invisible
-- Mark a job post as saved or applied, then tell us whether you got a revert. Over time that gives everyone honest reply-rate numbers per company
-- Project showcase with a weekly leaderboard, plus a board for project ideas anyone can pick up and build
+- Posts with text, images or video, with follows, likes and comments
+- **Anon mode** — share a salary or a full interview experience without revealing who you are: company, role, rounds, questions, outcome
+- **Karma** — the people who genuinely help become visible instead of invisible
+- Mark jobs as saved or applied, then report whether you got a revert. That builds honest reply-rate data per company that exists nowhere else
+- Project showcase with a weekly leaderboard, and an ideas board anyone can build from
 
-### Phase 4 — Paid services (mine only, to start)
+### Phase 4 — Paid guidance
 
-- Resume reviews, mock interviews, 1:1 guidance
-- **Priority DM** — a small fee to reach my inbox, automatically refunded if I do not reply within 48 hours
-- Booking slots, payments, receipts
-- Voice and video calls land here, where there is finally a reason to call
-- Ratings and reviews after every session
-- A written refund policy, live from the first rupee
+- Resume reviews, mock interviews, 1:1 sessions
+- **Priority DM** — a small fee to reach the inbox, refunded automatically if there is no reply in 48 hours
+- Booking, payments, receipts, ratings, and a written refund policy
+- Voice and video calls, where there is finally a reason to call
 
-### Phase 5 — Anyone can sell
+### Phase 5 — Open marketplace
 
 - Any member can open a storefront and sell their own guidance
-- Revert keeps 15–20%. They get the audience, we get the cut
-- Automatic split payouts, so sellers are paid without me in the middle
-- **Referral circles** — employees verify their work email, open up a few referral slots, and candidates request one
-- Tips on profiles and on genuinely useful answers
-- Question bounties — attach money to a question, the best answer collects it
+- Revert keeps 15–20%. They get the audience, Revert gets the cut
+- Automatic split payouts
+- **Referral circles** — employees verify a work email, open a few referral slots, and candidates request them
+- Tips on profiles and on useful answers, plus bounties on hard questions
 
-### Phase 6 — Memberships, badges and advertising
+### Phase 6 — Memberships and the employer side
 
-- **Membership** — job posts a few hours early, keyword alerts, unlimited saved jobs, discounts on services, a boost in the directory
-- **Verification badges** — verified recruiter, verified employee, verified creator. Free, because the point is trust, not status
+- **Membership** — early access to job posts, keyword alerts, unlimited saved jobs, service discounts, directory boost
+- **Verification badges** — verified recruiter, verified employee, verified creator. Free, because the point is trust
 - Sponsored and featured job posts
-- **Recruiter seats** — companies pay to search verified profiles and contact candidates. Only members who opt in are visible
-- Sponsored AMAs and hiring drives
-- Sponsorship slots in the daily digest email
-- Ordinary display advertising waits until there are 25,000+ active users. Before that it is not worth selling
+- **Recruiter seats** — companies pay to search verified profiles and reach candidates who opted in
+- Sponsored AMAs and hiring drives, and sponsorship in the daily digest
 
-### Phase 7 — Native mobile app
+### Phase 7 — Native apps
 
-- A proper Android and iOS app
-- Notifications and calls that behave the way people expect
-- Paid services stay on the web, so app store fees do not eat 15–30% of every sale
+- Android and iOS, with notifications and calls that behave properly
+- Paid services stay on the web, so app store fees never take a cut of a creator's income
 
-## How it makes money
+## Business model
 
-Grouped by who is actually paying.
+Three sides pay, in this order.
 
-**Members pay for**
-- Resume reviews, mock interviews, 1:1 guidance
-- Priority DM — a small fee to reach my inbox, refunded if I do not reply in 48 hours
-- Paid referral groups
-- Membership — early access to job posts, keyword alerts, saved jobs
+**Companies** — sponsored job posts, recruiter seats to search verified profiles, sponsored AMAs and hiring drives. Hiring budgets are real budgets, and verified GitHub and LeetCode profiles are better hiring signal than a self-reported LinkedIn.
 
-**Other creators pay us**
-- Anyone with something worth teaching can sell it here. Revert keeps 15–20%. They get the audience; we get the cut.
+**Members** — resume reviews, mock interviews, 1:1 guidance, priority DM, referral circles, and a membership that pays for itself with early access to job posts.
 
-**Companies pay for**
-- Sponsored and featured job posts
-- Recruiter access to search verified profiles
-- Sponsored AMAs and hiring drives
+**Creators** — anyone with something worth teaching sells it here, and Revert keeps 15–20%. They bring the expertise, Revert brings the audience.
 
-**Being honest about the order:** early money comes from my own services and from companies. Members are job seekers, which means most of them have no income — building the business on their wallets would be both unkind and unrealistic. Display advertising only makes sense somewhere past 25,000 active users, so it is a late phase, not an early one.
+Revenue starts with guidance and company money. Display advertising only makes sense past roughly 25,000 active users, so it comes late — by design, not by accident.
 
-## Notes
+## Principles
 
-- Messages are **private**, not end-to-end encrypted. We can read messages when we need to act on a report, because a job community without moderation fills up with fake recruiters very fast. Saying otherwise would be a lie.
-- Paid referral groups buy you **access and a conversation**. Never a guaranteed job, a guaranteed interview, or a guaranteed referral. Anyone promising that is selling something else.
+- **Private, not anonymous.** Your phone number is never shared. Your GitHub is verified. Both of those matter.
+- **Messages are private, not end-to-end encrypted.** Reports get read and acted on, because a job community without moderation fills with fake recruiters fast.
+- **No fake promises.** Referral circles buy access and a conversation. Never a guaranteed job, interview or referral. Anyone promising that is selling something else.
 
 ## Status
 
-Phase 1 in progress. Not live yet.
+Phase 1 in progress.
 
-Feedback welcome — open an issue or just message me.
+Feedback and ideas welcome — open an issue.
