@@ -48,7 +48,9 @@ const ROOMS = [
     name: "ama",
     topic: "Live sessions. Only the host and mentions of you will notify.",
     type: "ama" as const,
-    isDefault: false,
+    // Joined by default so sessions are discoverable, but the notification
+    // default for an ama room is mentions-only, so joining is silent.
+    isDefault: true,
   },
 ];
 

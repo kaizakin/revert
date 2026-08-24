@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -8,6 +9,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -74,7 +76,16 @@ export const users = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("users_last_active_idx").on(t.lastActiveAt)],
+  (t) => [
+    index("users_last_active_idx").on(t.lastActiveAt),
+    /**
+     * The column is already unique, but Postgres uniqueness is case-sensitive,
+     * so "Tushar" and "tushar" would both be allowed. On a platform where the
+     * username IS the identity, that is an impersonation vector. Usernames are
+     * stored lowercase; this index is the guarantee.
+     */
+    uniqueIndex("users_username_lower_uq").on(sql`lower(${t.username})`),
+  ],
 );
 
 /**
