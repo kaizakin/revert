@@ -17,41 +17,46 @@
  * for the signed-in Clerk user.
  */
 
-export type RealtimeEvent =
-  | { type: "message.new"; conversationId: string; messageId: string }
-  | { type: "message.edited"; conversationId: string; messageId: string }
-  | { type: "message.deleted"; conversationId: string; messageId: string }
-  | { type: "reaction.changed"; conversationId: string; messageId: string };
+import { createSupabaseTransport } from "./supabase";
+import { channelFor, type RealtimeEvent, type RealtimeTransport } from "./types";
 
-export interface RealtimeTransport {
-  /** Fan out an event to everyone subscribed to a conversation. Server-side only. */
-  publish(event: RealtimeEvent): Promise<void>;
-  /** Channel name for a conversation, shared by publisher and subscriber. */
-  channelFor(conversationId: string): string;
-}
+export { channelFor };
+export type { RealtimeEvent, RealtimeTransport };
 
-export const channelFor = (conversationId: string) => `conversation:${conversationId}`;
+const noop: RealtimeTransport = {
+  channelFor,
+  async publish(event) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[realtime] no transport configured, dropping", event.type);
+    }
+  },
+};
 
-function resolveTransport(): RealtimeTransport {
+let resolved: RealtimeTransport | null = null;
+
+/**
+ * Resolved on first use rather than at module load.
+ *
+ * This previously used require() inside an ES module to avoid pulling the
+ * service-role key into a client bundle. That works in dev and is fragile in a
+ * bundled serverless build, where `require` may not exist at all — and because
+ * it ran at module scope, a failure took down every route that imports this
+ * file, surfacing as an opaque 500 rather than an error anyone could read.
+ *
+ * A static import is safe here: this module is server-only, and the key is read
+ * at call time, not import time.
+ */
+function getTransport(): RealtimeTransport {
+  if (resolved) return resolved;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (url && key) {
-    // Imported lazily so the browser bundle never pulls in a module that
-    // references the service role key.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createSupabaseTransport } = require("./supabase") as typeof import("./supabase");
-    return createSupabaseTransport(url, key);
-  }
-
-  return {
-    channelFor,
-    async publish(event) {
-      if (process.env.NODE_ENV !== "production") {
-        console.debug("[realtime] no transport configured, dropping", event.type);
-      }
-    },
-  };
+  resolved = url && key ? createSupabaseTransport(url, key) : noop;
+  return resolved;
 }
 
-export const transport: RealtimeTransport = resolveTransport();
+export const transport: RealtimeTransport = {
+  channelFor,
+  publish: (event) => getTransport().publish(event),
+};

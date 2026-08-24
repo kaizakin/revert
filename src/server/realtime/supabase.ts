@@ -1,5 +1,4 @@
-import type { RealtimeEvent, RealtimeTransport } from "./index";
-import { channelFor } from "./index";
+import { channelFor, type RealtimeEvent, type RealtimeTransport } from "./types";
 
 /**
  * Publishes over Realtime's HTTP broadcast endpoint rather than opening a

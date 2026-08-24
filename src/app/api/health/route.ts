@@ -59,6 +59,32 @@ export async function GET() {
     };
   }
 
+  /**
+   * Import each module in the /chat render path on its own, so a module that
+   * throws at load time is named instead of collapsing the whole page into an
+   * opaque 500.
+   */
+  const modules: Record<string, string> = {};
+  const probes: [string, () => Promise<unknown>][] = [
+    ["server/realtime", () => import("@/server/realtime")],
+    ["server/realtime/supabase", () => import("@/server/realtime/supabase")],
+    ["server/messaging/queries", () => import("@/server/messaging/queries")],
+    ["server/messaging/send", () => import("@/server/messaging/send")],
+    ["server/users/sync", () => import("@/server/users/sync")],
+    ["server/users/profile", () => import("@/server/users/profile")],
+    ["server/users/avatar-presets", () => import("@/server/users/avatar-presets")],
+  ];
+
+  for (const [name, load] of probes) {
+    try {
+      await load();
+      modules[name] = "ok";
+    } catch (err) {
+      modules[name] = (err as Error)?.message?.slice(0, 160) ?? String(err);
+    }
+  }
+  result.modules = modules;
+
   return Response.json(result, {
     headers: { "cache-control": "no-store" },
   });
