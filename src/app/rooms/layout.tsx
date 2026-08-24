@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 
+import { avatarColour, initials } from "@/lib/avatar";
 import { listRoomsForUser } from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
 
@@ -93,12 +94,37 @@ export default async function RoomsLayout({ children }: LayoutProps<"/rooms">) {
       <aside className="hidden w-84 shrink-0 flex-col border-r border-line bg-surface sm:flex">
         <ChatList rooms={rooms} />
 
-        <div className="border-t border-line px-4 py-2.5">
-          <p className="truncate text-[13px] font-medium text-ink">@{me.username}</p>
-          <p className="truncate text-[11px] text-faint">
-            {me.company ?? me.college ?? "Add your profile"}
-          </p>
-        </div>
+        <Link
+          href="/me"
+          className="flex items-center gap-3 border-t border-line px-4 py-2.5 transition-colors hover:bg-raised"
+        >
+          {me.avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={me.avatarUrl}
+              alt=""
+              width={34}
+              height={34}
+              className="h-8.5 w-8.5 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+              style={{ backgroundColor: avatarColour(me.username) }}
+              aria-hidden
+            >
+              {initials(me.username)}
+            </span>
+          )}
+          <span className="min-w-0">
+            <span className="block truncate text-[13px] font-medium text-ink">
+              @{me.username}
+            </span>
+            <span className="block truncate text-[11px] text-faint">
+              {me.headline ?? me.company ?? me.college ?? "Add your profile"}
+            </span>
+          </span>
+        </Link>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>

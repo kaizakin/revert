@@ -12,6 +12,7 @@ type Props = {
   isPending: boolean;
   startsRun: boolean;
   onReact: (messageId: string, emoji: string) => void;
+  onOpenProfile: (username: string) => void;
 };
 
 /** Stable per-username colour for sender names, the way group chats do it. */
@@ -65,7 +66,14 @@ function Avatar({ username, url }: { username: string | null; url: string | null
   );
 }
 
-export function MessageBubble({ message, isMine, isPending, startsRun, onReact }: Props) {
+export function MessageBubble({
+  message,
+  isMine,
+  isPending,
+  startsRun,
+  onReact,
+  onOpenProfile,
+}: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const tail = startsRun ? (isMine ? "tail-out" : "tail-in") : "";
 
@@ -78,7 +86,16 @@ export function MessageBubble({ message, isMine, isPending, startsRun, onReact }
       */}
       {!isMine &&
         (startsRun ? (
-          <Avatar username={message.authorUsername} url={message.authorAvatarUrl} />
+          <button
+            type="button"
+            onClick={() =>
+              message.authorUsername && onOpenProfile(message.authorUsername)
+            }
+            aria-label={`Open profile of ${message.authorUsername ?? "user"}`}
+            className="shrink-0 rounded-full transition-opacity hover:opacity-80"
+          >
+            <Avatar username={message.authorUsername} url={message.authorAvatarUrl} />
+          </button>
         ) : (
           <span className="w-7 shrink-0" aria-hidden />
         ))}
@@ -91,12 +108,16 @@ export function MessageBubble({ message, isMine, isPending, startsRun, onReact }
           style={{ borderRadius: 8 }}
         >
           {!isMine && startsRun && (
-            <p
-              className="mb-px text-[12.5px] font-semibold"
+            <button
+              type="button"
+              onClick={() =>
+                message.authorUsername && onOpenProfile(message.authorUsername)
+              }
+              className="mb-px block text-[12.5px] font-semibold hover:underline"
               style={{ color: nameColour(message.authorUsername) }}
             >
               @{message.authorUsername ?? "deleted"}
-            </p>
+            </button>
           )}
 
           <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">

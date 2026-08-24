@@ -10,6 +10,11 @@ import {
 } from "@/server/messaging/queries";
 import { toggleReaction } from "@/server/messaging/reactions";
 import { loadAuthor, sendMessage } from "@/server/messaging/send";
+import {
+  applyReciprocity,
+  getPublicProfile,
+  type PublicProfile,
+} from "@/server/users/profile";
 import { getDbUser } from "@/server/users/sync";
 
 export type SendState = { error?: string };
@@ -91,4 +96,18 @@ export async function markRoomRead(slug: string, messageId?: string) {
   if (!room) return;
 
   await markRead(me.id, room.id, messageId);
+}
+
+/**
+ * A member profile for the side panel. Reciprocity is applied here rather than
+ * in the panel, so a hidden last-seen never reaches the browser at all.
+ */
+export async function fetchProfile(username: string): Promise<PublicProfile | null> {
+  const me = await getDbUser();
+  if (!me) return null;
+
+  const profile = await getPublicProfile(username);
+  if (!profile) return null;
+
+  return applyReciprocity(profile, { showLastActive: me.showLastActive });
 }
