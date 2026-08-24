@@ -26,7 +26,7 @@ export const clerkAppearance: Appearance = {
   elements: {
     rootBox: "w-full",
     cardBox: "shadow-none rounded-2xl border border-line overflow-hidden",
-    card: "shadow-none border-0 px-8 py-8",
+    card: "shadow-none border-0 px-8 pt-8 pb-5",
 
     header: "gap-1",
     headerTitle: "text-[22px] font-semibold tracking-tight",
@@ -35,7 +35,10 @@ export const clerkAppearance: Appearance = {
     socialButtonsBlockButton: "rounded-lg border border-line transition-colors",
     socialButtonsBlockButtonText: "font-medium",
 
-    dividerText: "text-[11px] uppercase tracking-widest",
+    dividerRow: "my-1",
+    // Clerk's default divider is 7% alpha, which vanishes on a dark card.
+    dividerLine: "bg-line h-px",
+    dividerText: "text-[11px] uppercase tracking-widest px-3",
 
     formFieldLabel: "text-[13px] font-medium",
     formFieldInput: "rounded-lg py-2.5",
@@ -55,7 +58,7 @@ export const clerkAppearance: Appearance = {
      * the bottom spacing — without it the last line sat flush against the card
      * edge.
      */
-    footer: "border-t border-line px-8 py-5",
+    footer: "border-t border-line px-8 py-4",
     footerAction: "py-0",
     /**
      * Hides the "Secured by Clerk" badge, and with it the "Development mode"
