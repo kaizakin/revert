@@ -26,6 +26,15 @@ export type OnboardInput = {
   inviteCode: string;
   avatarUrl?: string | null;
   displayName?: string | null;
+  /** Optional profile answered during onboarding, applied in the same insert. */
+  profile?: {
+    headline?: string | null;
+    about?: string | null;
+    workStatus?: "working" | "student" | "looking" | null;
+    company?: string | null;
+    college?: string | null;
+    location?: string | null;
+  };
 };
 
 export type OnboardResult =
@@ -89,6 +98,12 @@ export async function completeOnboarding(input: OnboardInput): Promise<OnboardRe
           email: input.email,
           avatarUrl: input.avatarUrl ?? null,
           displayName: input.displayName ?? null,
+          headline: input.profile?.headline ?? null,
+          about: input.profile?.about ?? null,
+          workStatus: input.profile?.workStatus ?? null,
+          company: input.profile?.company ?? null,
+          college: input.profile?.college ?? null,
+          location: input.profile?.location ?? null,
         })
         .returning();
 

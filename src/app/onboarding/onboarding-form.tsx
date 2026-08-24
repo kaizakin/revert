@@ -2,90 +2,172 @@
 
 import { useActionState } from "react";
 
-import { USERNAME_MAX, USERNAME_MIN } from "@/lib/username";
+import { AvatarField } from "@/components/avatar-field";
+import { UsernameField } from "@/components/username-field";
+import type { AvatarPreset } from "@/server/users/avatar-presets";
 
-import { onboardAction, type OnboardState } from "./actions";
+import { checkOnboardingUsername, onboardAction, type OnboardState } from "./actions";
+
+const WORK_OPTIONS = [
+  { value: "", label: "Prefer not to say" },
+  { value: "working", label: "Working" },
+  { value: "student", label: "Student" },
+  { value: "looking", label: "Looking for a job" },
+];
+
+const inputClass =
+  "rounded-lg border border-line bg-surface px-3 py-2.5 text-[14px] text-ink outline-none transition-colors placeholder:text-faint focus:border-accent focus:ring-2 focus:ring-accent/20";
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[13px] font-medium text-ink">{label}</span>
+      {children}
+      {hint && <span className="text-[11px] text-faint">{hint}</span>}
+    </label>
+  );
+}
 
 type Props = {
   suggestedUsername: string;
   inviteRequired: boolean;
+  presets: AvatarPreset[];
 };
 
-export function OnboardingForm({ suggestedUsername, inviteRequired }: Props) {
+export function OnboardingForm({ suggestedUsername, inviteRequired, presets }: Props) {
   const [state, action, pending] = useActionState<OnboardState, FormData>(onboardAction, {});
 
   const errorFor = (field: OnboardState["field"]) =>
     state.field === field ? state.error : undefined;
 
   return (
-    <form action={action} className="flex w-full flex-col gap-5">
-      <div className="flex flex-col gap-2">
-        <label htmlFor="username" className="text-sm font-medium text-ink">
-          Choose your username
-        </label>
+    <form action={action} className="flex w-full flex-col gap-7">
+      <UsernameField
+        current=""
+        check={checkOnboardingUsername}
+        label="Choose your username"
+        hint="Lowercase letters, numbers and underscores. This is how people find you — your phone number is never shown to anyone."
+        autoFocus
+      />
+      {errorFor("username") && (
+        <p className="-mt-5 text-[11px] text-danger">{errorFor("username")}</p>
+      )}
 
-        <div className="flex items-center rounded-lg border border-line bg-surface transition-colors focus-within:border-accent">
-          <span className="select-none pl-3 text-sm text-faint">@</span>
+      {/* Only rendered when a code is actually required, so the field is not
+          asked for when signup is open. */}
+      {inviteRequired && (
+        <Field label="Invite code">
           <input
-            id="username"
-            name="username"
-            defaultValue={suggestedUsername}
+            name="inviteCode"
             required
-            autoFocus
             autoComplete="off"
-            autoCapitalize="none"
+            autoCapitalize="characters"
             spellCheck={false}
-            minLength={USERNAME_MIN}
-            maxLength={USERNAME_MAX}
-            className="w-full bg-transparent px-1.5 py-3 text-sm text-ink outline-none placeholder:text-faint"
-            placeholder="yourname"
-            aria-describedby="username-hint"
-            aria-invalid={Boolean(errorFor("username"))}
+            placeholder="REVERT-XXXX-XXXX"
+            className={inputClass}
           />
+          {errorFor("invite") && (
+            <span className="text-[11px] text-danger">{errorFor("invite")}</span>
+          )}
+        </Field>
+      )}
+
+      <div className="flex flex-col gap-5 border-t border-line pt-7">
+        <div>
+          <h2 className="text-[13px] font-semibold text-ink">Your profile</h2>
+          <p className="mt-0.5 text-[12px] text-muted">
+            All optional — you can skip and finish this later.
+          </p>
         </div>
 
-        <p id="username-hint" className="text-xs leading-relaxed text-muted">
-          Lowercase letters, numbers and underscores. This is how people find you — your
-          phone number is never shown to anyone.
+        <AvatarField seed={suggestedUsername} currentUrl={null} presets={presets} compact />
+
+        <Field label="Display name" hint="Optional.">
+          <input
+            name="displayName"
+            maxLength={60}
+            className={inputClass}
+            placeholder="How you want to be shown"
+          />
+        </Field>
+
+        <Field label="Headline" hint="One line. Shows under your name.">
+          <input
+            name="headline"
+            maxLength={120}
+            className={inputClass}
+            placeholder="Backend developer, 2 years, looking to switch"
+          />
+        </Field>
+
+        <Field label="About">
+          <textarea
+            name="about"
+            maxLength={600}
+            rows={3}
+            className={`${inputClass} resize-y`}
+            placeholder="What you work on, what you are looking for, what you can help with."
+          />
+        </Field>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Status">
+            <select name="workStatus" defaultValue="" className={inputClass}>
+              {WORK_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Location">
+            <input
+              name="location"
+              maxLength={80}
+              className={inputClass}
+              placeholder="Bangalore"
+            />
+          </Field>
+
+          <Field label="Company">
+            <input
+              name="company"
+              maxLength={80}
+              className={inputClass}
+              placeholder="Where you work"
+            />
+          </Field>
+
+          <Field label="College">
+            <input
+              name="college"
+              maxLength={80}
+              className={inputClass}
+              placeholder="Where you studied"
+            />
+          </Field>
+        </div>
+
+        <p className="text-[11px] text-faint">
+          Links to GitHub, LinkedIn and the rest can be added on your profile.
         </p>
-        {errorFor("username") && (
-          <p className="text-xs text-danger">{errorFor("username")}</p>
-        )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label
-          htmlFor="inviteCode"
-          className="flex items-baseline gap-2 text-sm font-medium text-ink"
-        >
-          Invite code
-          {!inviteRequired && <span className="text-xs font-normal text-faint">optional</span>}
-        </label>
-
-        <input
-          id="inviteCode"
-          name="inviteCode"
-          required={inviteRequired}
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          placeholder="REVERT-XXXX-XXXX"
-          className="rounded-lg border border-line bg-surface px-3 py-3 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-accent"
-          aria-invalid={Boolean(errorFor("invite"))}
-        />
-
-        {!inviteRequired && (
-          <p className="text-xs text-muted">Leave it blank if you do not have one.</p>
-        )}
-        {errorFor("invite") && <p className="text-xs text-danger">{errorFor("invite")}</p>}
-      </div>
-
-      {errorFor("form") && <p className="text-xs text-danger">{errorFor("form")}</p>}
+      {errorFor("form") && <p className="text-[11px] text-danger">{errorFor("form")}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="mt-1 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="rounded-lg bg-accent px-4 py-3 text-[14px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {pending ? "Setting up…" : "Enter Revert"}
       </button>

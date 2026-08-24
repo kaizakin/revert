@@ -174,6 +174,19 @@ body {
 }
 
 /**
+ * Form controls opt out of the global outline.
+ *
+ * Inputs already show focus through their own border and ring, so the outline
+ * stacked on top of that produced two concentric green rings with a gap — which
+ * is what made a focused field look broken rather than focused.
+ */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+/**
  * Chat wallpaper. A tiled SVG doodle at very low opacity — the flat panel is
  * most of what made the room read as a dashboard rather than a chat.
  */

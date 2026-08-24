@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { checkUsername } from "@/lib/username";
 import { inviteRequired } from "@/server/invites/policy";
+import { AVATAR_PRESETS } from "@/server/users/avatar-presets";
 import { getDbUser } from "@/server/users/sync";
 
 import { OnboardingForm } from "./onboarding-form";
@@ -22,7 +23,7 @@ export default async function OnboardingPage() {
 
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-12">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col gap-2">
           <span className="text-sm font-semibold tracking-tight text-ink">Revert</span>
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Almost in</h1>
@@ -35,6 +36,7 @@ export default async function OnboardingPage() {
         <OnboardingForm
           suggestedUsername={suggestion?.ok ? suggestion.username : ""}
           inviteRequired={gated}
+          presets={AVATAR_PRESETS}
         />
       </div>
     </main>
