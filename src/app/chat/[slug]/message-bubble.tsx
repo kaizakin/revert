@@ -102,7 +102,9 @@ export function MessageBubble({
 
       <div className="relative flex max-w-[80%] flex-col sm:max-w-[65%]">
         <div
-          className={`relative px-2 py-[5px] shadow-sm ${tail} ${
+          className={`relative px-2 pt-[5px] shadow-sm ${
+            message.reactions.length > 0 ? "pb-3.5" : "pb-[5px]"
+          } ${tail} ${
             isMine ? "bg-bubble-out text-bubble-out-ink" : "bg-bubble-in text-bubble-in-ink"
           } ${isPending ? "opacity-60" : ""}`}
           style={{ borderRadius: 8 }}
@@ -129,25 +131,34 @@ export function MessageBubble({
           <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] text-bubble-meta">
             {message.editedAt && <span>edited</span>}
             {timeOf(message.createdAt)}
-            {isMine && <span aria-hidden>{isPending ? "🕘" : "✓"}</span>}
+            {isMine && (
+              <span aria-hidden className="text-[12px] leading-none">
+                {isPending ? "🕘" : "✓✓"}
+              </span>
+            )}
           </span>
         </div>
 
         {message.reactions.length > 0 && (
-          <div className={`-mt-1.5 flex flex-wrap gap-1 ${isMine ? "justify-end pr-1" : "pl-1"}`}>
+          <div
+            className={`relative z-10 -mt-2.5 flex flex-wrap gap-1 ${
+              isMine ? "justify-end pr-2" : "justify-start pl-2"
+            }`}
+          >
             {message.reactions.map((reaction) => (
               <button
                 key={reaction.emoji}
                 type="button"
                 onClick={() => onReact(message.id, reaction.emoji)}
                 aria-pressed={reaction.mine}
-                className={`flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11px] shadow-sm transition-colors ${
+                title={reaction.mine ? "Remove your reaction" : "React"}
+                className={`flex items-center gap-0.5 rounded-full px-1.5 py-px text-[11px] leading-[1.5] shadow-sm ring-1 transition-colors ${
                   reaction.mine
-                    ? "border-accent bg-accent-soft text-accent"
-                    : "border-line bg-surface text-muted hover:border-line-strong"
+                    ? "bg-accent-soft text-accent ring-accent/40"
+                    : "bg-raised text-muted ring-line hover:text-ink"
                 }`}
               >
-                <span>{reaction.emoji}</span>
+                <span className="text-[12px] leading-none">{reaction.emoji}</span>
                 {reaction.count > 1 && <span className="font-medium">{reaction.count}</span>}
               </button>
             ))}

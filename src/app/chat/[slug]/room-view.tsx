@@ -269,7 +269,7 @@ export function RoomView({
         </button>
       </div>
       <div className="chat-pattern flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-3xl flex-col gap-[3px] px-3 py-4 sm:px-8">
+        <div className="mx-auto flex max-w-3xl flex-col px-3 py-4 sm:px-8">
           {rendered.length === 0 && (
             <p className="py-16 text-center text-sm text-bubble-meta">
               No messages yet. Say something.
@@ -281,7 +281,7 @@ export function RoomView({
             const isPending = message.id.startsWith("pending-");
 
             return (
-              <div key={message.id}>
+              <div key={message.id} className={startsRun ? "mt-2" : "mt-0.5"}>
                 {showDay && (
                   <div className="flex justify-center py-4">
                     <span className="rounded-lg bg-bubble-in px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-bubble-meta shadow-sm">
