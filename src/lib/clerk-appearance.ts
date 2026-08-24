@@ -6,75 +6,57 @@ type Appearance = NonNullable<ComponentProps<typeof ClerkProvider>["appearance"]
 /**
  * Themes Clerk's built-in components to match the app.
  *
- * Note on tokens: our CSS variables are namespaced `--rv-*`. Clerk defines its
- * own `--accent` inside the component subtree, which shadowed ours and left the
- * primary button grey while `.bg-accent` looked correct in devtools. The
- * namespace makes that collision impossible.
+ * Colour lives in globals.css, which maps Clerk's own `--clerk-color-*` custom
+ * properties to our tokens. That reaches internal elements whose class names
+ * are generated (`cl-internal-…`) and so cannot be targeted from here — which
+ * is exactly what left the footer as a white band while every class in this
+ * file looked correct in devtools.
  *
- * Deliberately done with `elements` classNames rather than `variables` colours.
- * The variables API takes concrete colour strings that Clerk then shades
- * programmatically for hover and active states, so a CSS `var()` cannot be
- * passed — meaning a palette set that way has to be hardcoded light or dark.
- * Tailwind classes pointing at our tokens inherit prefers-color-scheme for
- * free, so the sign-in card follows the rest of the app with no theme
- * detection and no hydration mismatch.
+ * globals.css also declares `color-scheme`. Clerk's CSS is built on
+ * light-dark(), which resolves against that property rather than the OS
+ * preference, so without it the light value wins even in dark mode.
  *
- * Unknown element keys are ignored by Clerk, so this stays safe across
- * versions even if an internal name changes.
+ * What remains here is shape: radius, weight, spacing, and the few places we
+ * deliberately diverge. `cssLayerName` still matters so these classNames
+ * outrank Clerk's own rules; the layer order is set in globals.css.
  */
 export const clerkAppearance: Appearance = {
-  /**
-   * Puts Clerk's CSS in a named layer. globals.css orders that layer before
-   * `utilities`, so the classNames below actually take effect.
-   */
   cssLayerName: "clerk",
 
   elements: {
     rootBox: "w-full",
-    cardBox: "shadow-none border border-line rounded-xl",
-    card: "bg-surface text-ink shadow-none border-0",
+    cardBox: "shadow-none rounded-2xl border border-line overflow-hidden",
+    card: "shadow-none border-0 px-8 py-8",
 
     header: "gap-1",
-    headerTitle: "text-ink text-xl font-semibold tracking-tight",
-    headerSubtitle: "text-muted text-[13px]",
+    headerTitle: "text-[22px] font-semibold tracking-tight",
+    headerSubtitle: "text-[13px]",
 
-    socialButtonsBlockButton:
-      "bg-canvas border border-line text-ink hover:bg-raised transition-colors",
-    socialButtonsBlockButtonText: "text-ink font-medium",
+    socialButtonsBlockButton: "rounded-lg transition-colors",
+    socialButtonsBlockButtonText: "font-medium",
 
-    dividerLine: "bg-line",
-    dividerText: "text-faint text-[12px]",
+    dividerText: "text-[11px] uppercase tracking-widest",
 
-    formFieldLabel: "text-ink text-[13px] font-medium",
-    formFieldInput:
-      "bg-canvas border border-line text-ink placeholder:text-faint focus:border-accent",
-    formFieldInputShowPasswordButton: "text-muted hover:text-ink",
-    formFieldHintText: "text-faint text-[11px]",
-    formFieldErrorText: "text-danger text-[11px]",
-    formFieldSuccessText: "text-accent text-[11px]",
-    formFieldAction: "text-accent hover:underline text-[12px]",
+    formFieldLabel: "text-[13px] font-medium",
+    formFieldInput: "rounded-lg py-2.5",
+    formFieldHintText: "text-[11px]",
+    formFieldErrorText: "text-[11px]",
+    formFieldSuccessText: "text-[11px]",
+    formFieldAction: "text-[12px] hover:underline",
 
+    // Slight vertical gradient, so the primary action reads as raised.
     formButtonPrimary:
-      "bg-accent text-accent-ink hover:opacity-90 transition-opacity normal-case font-semibold shadow-none after:hidden",
-    formButtonReset: "text-muted hover:text-ink",
+      "rounded-lg py-2.5 font-semibold normal-case shadow-none after:hidden bg-linear-to-b from-accent to-[color-mix(in_srgb,var(--rv-accent)_86%,black)]",
 
-    otpCodeFieldInput: "bg-canvas border border-line text-ink",
+    otpCodeFieldInput: "rounded-lg",
 
-    identityPreview: "bg-raised border border-line",
-    identityPreviewText: "text-ink",
-    identityPreviewEditButton: "text-accent",
+    footer: "border-t border-line",
+    footerAction: "py-1",
+    footerActionText: "text-[13px]",
+    footerActionLink: "font-medium hover:underline",
 
-    // Clerk's footer keeps its own dark-on-dark text colour, so these need to
-    // be set explicitly rather than inherited.
-    footer: "bg-transparent text-muted",
-    footerItem: "bg-transparent text-muted",
-    footerAction: "bg-transparent text-muted",
-    footerActionText: "text-muted text-[13px]",
-    footerActionLink: "text-accent hover:underline font-medium",
-
-    // Clerk's own badge. Left visible, just toned down to match.
+    // Header logo only. Clerk's "Secured by Clerk" badge stays: removing it
+    // needs a paid plan, and hiding it on the free tier breaks their terms.
     logoBox: "hidden",
-    badge: "text-faint",
-    footerPages: "text-faint",
   },
 };

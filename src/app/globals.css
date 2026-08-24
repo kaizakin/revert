@@ -88,6 +88,48 @@
 }
 
 /**
+ * color-scheme has to be declared, not just implied.
+ *
+ * Clerk's CSS is built on light-dark(#ffffff, #212126), and light-dark()
+ * resolves against this property — NOT against prefers-color-scheme. Left at
+ * the default `normal` it picks the light value, which is why the sign-in
+ * footer rendered as a white band on a dark card even in dark mode. It also
+ * gives native controls, scrollbars and autofill the right appearance.
+ */
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/**
+ * Clerk reads its own custom properties for every colour, including internal
+ * elements whose class names are generated and cannot be targeted. Mapping them
+ * to our tokens themes the whole widget at once, instead of chasing individual
+ * elements through the appearance API.
+ */
+:root {
+  --clerk-color-background: var(--rv-surface);
+  --clerk-color-foreground: var(--rv-ink);
+  --clerk-color-muted: var(--rv-surface);
+  --clerk-color-muted-foreground: var(--rv-muted);
+  --clerk-color-neutral: var(--rv-ink);
+  --clerk-color-border: var(--rv-line);
+  --clerk-color-input: var(--rv-canvas);
+  --clerk-color-input-foreground: var(--rv-ink);
+  --clerk-color-primary: var(--rv-accent);
+  --clerk-color-primary-foreground: var(--rv-accent-ink);
+  --clerk-color-ring: var(--rv-accent);
+  --clerk-color-danger: var(--rv-danger);
+  --clerk-color-success: var(--rv-accent);
+  --clerk-color-shadow: transparent;
+}
+
+/**
  * create-next-app ships `font-family: Arial` here, which silently overrides the
  * Geist font the root layout loads. That one line is most of why a fresh app
  * looks cheap.
