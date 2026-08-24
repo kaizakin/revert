@@ -1,24 +1,18 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 /**
- * Goes back if there is somewhere to go back to, otherwise home.
+ * Always goes to the landing page.
  *
- * router.back() on a directly-opened tab either does nothing or leaves the site
- * entirely, so the history length is checked first. A plain link home would be
- * predictable but loses the person's place when they came from inside the app.
+ * Deliberately a link rather than router.back(): history-based back is
+ * unpredictable here — on a directly-opened tab it does nothing, and when
+ * someone arrives from Google it walks them off the site. A fixed destination
+ * also means it can be a plain anchor, so it works before hydration and
+ * middle-click opens it in a new tab.
  */
-export function BackButton({ fallback = "/" }: { fallback?: string }) {
-  const router = useRouter();
-
+export function BackButton() {
   return (
-    <button
-      type="button"
-      onClick={() => {
-        if (window.history.length > 1) router.back();
-        else router.push(fallback);
-      }}
+    <Link
+      href="/"
       className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2 text-[13px] font-medium text-ink transition-colors hover:border-line-strong hover:bg-raised"
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
@@ -31,6 +25,6 @@ export function BackButton({ fallback = "/" }: { fallback?: string }) {
         />
       </svg>
       Back
-    </button>
+    </Link>
   );
 }
