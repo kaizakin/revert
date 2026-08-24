@@ -50,8 +50,13 @@ export const clerkAppearance: Appearance = {
 
     otpCodeFieldInput: "rounded-lg",
 
-    footer: "border-t border-line",
-    footerAction: "py-1",
+    /**
+     * Explicit padding, because the hidden footerItem below was what provided
+     * the bottom spacing — without it the last line sat flush against the card
+     * edge.
+     */
+    footer: "border-t border-line px-8 py-5",
+    footerAction: "py-0",
     /**
      * Hides the "Secured by Clerk" badge, and with it the "Development mode"
      * chip that shares this container. Note that removing Clerk branding is a
