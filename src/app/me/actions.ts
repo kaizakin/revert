@@ -3,11 +3,20 @@
 import { revalidatePath } from "next/cache";
 
 import { profileSchema } from "@/lib/profile";
-import { setAvatarPreset, saveProfile, uploadAvatar } from "@/server/users/profile";
+import { AVATAR_PRESETS } from "@/server/users/avatar-presets";
+import { saveProfile, setAvatarPreset, uploadAvatar } from "@/server/users/profile";
+import { checkAvailability, renameUser, type AvailabilityResult } from "@/server/users/rename";
 import { getDbUser } from "@/server/users/sync";
 
-export type ProfileState = { error?: string; saved?: boolean };
+export type ProfileState = { error?: string; saved?: boolean; username?: string };
 
+/**
+ * One action for the whole form, so nothing is written until Save is pressed.
+ *
+ * Picking an avatar used to save on click, which meant the picture changed even
+ * if you then abandoned the form. Avatar choice and upload are now part of this
+ * submit like every other field.
+ */
 export async function saveProfileAction(
   _prev: ProfileState,
   formData: FormData,
@@ -31,49 +40,53 @@ export async function saveProfileAction(
     x: formData.get("x") ?? "",
     leetcode: formData.get("leetcode") ?? "",
     codeforces: formData.get("codeforces") ?? "",
+    website: formData.get("website") ?? "",
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form." };
   }
 
+  // Username first. If it fails, nothing else is written, so the form still
+  // reflects what is stored.
+  let username = me.username;
+  const requested = String(formData.get("username") ?? "").trim();
+
+  if (requested && requested.toLowerCase() !== me.username) {
+    const renamed = await renameUser(me.id, me.clerkId, requested);
+    if (!renamed.ok) return { error: renamed.error };
+    username = renamed.username;
+  }
+
+  const presetUrl = String(formData.get("avatarPreset") ?? "");
+  const file = formData.get("avatar");
+
+  // An uploaded file wins over a preset, since choosing a file is the more
+  // deliberate action.
+  if (file instanceof File && file.size > 0) {
+    const uploaded = await uploadAvatar(me.id, file);
+    if (!uploaded.ok) return { error: uploaded.error };
+  } else if (presetUrl && presetUrl !== me.avatarUrl) {
+    const ok = await setAvatarPreset(me.id, presetUrl);
+    if (!ok) return { error: "That avatar is not available." };
+  }
+
   await saveProfile(me.id, parsed.data);
 
   revalidatePath("/me");
   revalidatePath("/rooms", "layout");
-  return { saved: true };
+  return { saved: true, username };
 }
 
-export type AvatarState = { error?: string; url?: string };
-
-export async function chooseAvatarAction(url: string): Promise<AvatarState> {
+/** Live availability check for the username field. */
+export async function checkUsernameAction(raw: string): Promise<AvailabilityResult> {
   const me = await getDbUser();
-  if (!me) return { error: "You are signed out." };
+  if (!me) return { status: "invalid", reason: "You are signed out." };
 
-  const ok = await setAvatarPreset(me.id, url);
-  if (!ok) return { error: "That avatar is not available." };
-
-  revalidatePath("/me");
-  revalidatePath("/rooms", "layout");
-  return { url };
+  return checkAvailability(raw, me.username);
 }
 
-export async function uploadAvatarAction(
-  _prev: AvatarState,
-  formData: FormData,
-): Promise<AvatarState> {
-  const me = await getDbUser();
-  if (!me) return { error: "You are signed out." };
-
-  const file = formData.get("avatar");
-  if (!(file instanceof File) || file.size === 0) {
-    return { error: "Choose an image first." };
-  }
-
-  const result = await uploadAvatar(me.id, file);
-  if (!result.ok) return { error: result.error };
-
-  revalidatePath("/me");
-  revalidatePath("/rooms", "layout");
-  return { url: result.url };
+/** Exposed so the client can render the picker without importing server code. */
+export async function listAvatarPresets() {
+  return AVATAR_PRESETS;
 }

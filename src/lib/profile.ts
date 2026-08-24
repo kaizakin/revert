@@ -11,11 +11,19 @@ export const SOCIAL_PROVIDERS = [
   { key: "x", label: "X", placeholder: "handle" },
   { key: "leetcode", label: "LeetCode", placeholder: "handle" },
   { key: "codeforces", label: "Codeforces", placeholder: "handle" },
+  /**
+   * The custom link stores a whole URL rather than a handle, because there is
+   * no base to prepend. Everything below branches on this one difference.
+   */
+  { key: "website", label: "Custom link", placeholder: "https://yoursite.com" },
 ] as const;
 
 export type SocialKey = (typeof SOCIAL_PROVIDERS)[number]["key"];
 
-export const PROFILE_URL_BASE: Record<SocialKey, string> = {
+/** The one provider whose stored value is a full URL, not a handle. */
+export const URL_PROVIDERS = new Set<SocialKey>(["website"]);
+
+export const PROFILE_URL_BASE: Record<Exclude<SocialKey, "website">, string> = {
   github: "https://github.com/",
   linkedin: "https://www.linkedin.com/in/",
   x: "https://x.com/",
@@ -44,10 +52,46 @@ export function normalizeHandle(value: string): string {
   return candidate.replace(/^@/, "");
 }
 
-const handleSchema = z.string().transform(normalizeHandle)
+/**
+ * Normalise a custom link into an absolute http(s) URL.
+ *
+ * A bare "mysite.com" is stored as "https://mysite.com", because a relative
+ * href would resolve against our own domain and silently produce a dead
+ * internal link. Anything that is not http or https is rejected — `javascript:`
+ * in an href is a script injection, and these links are rendered for others.
+ */
+export function normalizeUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(withScheme);
+  } catch {
+    return null;
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+  if (!parsed.hostname.includes(".")) return null;
+  if (parsed.href.length > 300) return null;
+
+  return parsed.href;
+}
+
+const handleSchema = z
+  .string()
+  .transform(normalizeHandle)
   .refine((value) => value === "" || /^[A-Za-z0-9._-]{1,60}$/.test(value), {
     message: "Letters, numbers, dots, dashes and underscores only.",
   });
+
+const urlSchema = z
+  .string()
+  .transform((value) => normalizeUrl(value))
+  .refine((value) => value !== null, { message: "That does not look like a valid link." })
+  .transform((value) => value ?? "");
 
 export const WORK_STATUS = ["working", "student", "looking"] as const;
 
@@ -66,12 +110,20 @@ export const profileSchema = z.object({
   x: handleSchema.optional(),
   leetcode: handleSchema.optional(),
   codeforces: handleSchema.optional(),
+  website: urlSchema.optional(),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 
 export function profileUrl(provider: SocialKey, handle: string) {
-  return `${PROFILE_URL_BASE[provider]}${handle}`;
+  if (URL_PROVIDERS.has(provider)) return handle;
+  return `${PROFILE_URL_BASE[provider as Exclude<SocialKey, "website">]}${handle}`;
+}
+
+/** What to show as the link text. A full URL reads better without its scheme. */
+export function profileLinkLabel(provider: SocialKey, handle: string) {
+  if (!URL_PROVIDERS.has(provider)) return handle;
+  return handle.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;

@@ -23,6 +23,8 @@ export const socialProvider = pgEnum("social_provider", [
   "x",
   "leetcode",
   "codeforces",
+  /** Stores a full URL rather than a handle. */
+  "website",
 ]);
 export const conversationKind = pgEnum("conversation_kind", ["room", "dm", "group_dm"]);
 export const conversationType = pgEnum("conversation_type", ["chat", "announce", "ama"]);

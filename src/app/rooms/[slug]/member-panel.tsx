@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 
 import { avatarColour, initials } from "@/lib/avatar";
-import { profileUrl, SOCIAL_PROVIDERS, type SocialKey } from "@/lib/profile";
+import { SocialIcon } from "@/components/social-icon";
+import {
+  profileLinkLabel,
+  profileUrl,
+  SOCIAL_PROVIDERS,
+  type SocialKey,
+} from "@/lib/profile";
 import type { PublicProfile } from "@/server/users/profile";
 
 import { fetchProfile } from "../actions";
@@ -192,9 +198,16 @@ export function MemberPanel({
                           href={profileUrl(social.provider as SocialKey, social.handle)}
                           target="_blank"
                           rel="noopener noreferrer nofollow"
-                          className="truncate text-[13px] text-accent hover:underline"
+                          className="flex items-center gap-2 text-[13px] text-ink transition-colors hover:text-accent"
                         >
-                          {meta?.label ?? social.provider} · {social.handle}
+                          <SocialIcon
+                            provider={social.provider as SocialKey}
+                            className="h-4 w-4 shrink-0 text-muted"
+                          />
+                          <span className="truncate">
+                            {profileLinkLabel(social.provider as SocialKey, social.handle)}
+                          </span>
+                          <span className="sr-only">{meta?.label ?? social.provider}</span>
                         </a>
                       </li>
                     );

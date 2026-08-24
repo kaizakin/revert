@@ -1,0 +1,1 @@
+ALTER TYPE "public"."social_provider" ADD VALUE 'website';

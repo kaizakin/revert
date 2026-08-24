@@ -22,6 +22,13 @@
       "when": 1787575419440,
       "tag": "0002_drop_link_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787575901320,
+      "tag": "0003_social_website",
+      "breakpoints": true
     }
   ]
 }
