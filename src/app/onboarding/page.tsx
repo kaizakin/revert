@@ -15,7 +15,7 @@ export default async function OnboardingPage() {
 
   // Already onboarded — nothing to do here.
   const existing = await getDbUser();
-  if (existing) redirect("/rooms/general");
+  if (existing) redirect("/chat/hub");
 
   const suggestion = clerkUser.username ? checkUsername(clerkUser.username) : null;
   const gated = inviteRequired();

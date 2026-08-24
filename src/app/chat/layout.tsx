@@ -14,7 +14,7 @@ import { ChatList } from "./chat-list";
  * without pretending the features exist.
  */
 const RAIL = [
-  { key: "chats", label: "Chats", href: "/rooms", live: true },
+  { key: "chats", label: "Chats", href: "/chat", live: true },
   { key: "dms", label: "Direct messages — Phase 2", href: null, live: false },
   { key: "status", label: "Status — Phase 3", href: null, live: false },
   { key: "people", label: "Member directory — Phase 2", href: null, live: false },
@@ -54,7 +54,7 @@ function RailIcon({ name }: { name: string }) {
   );
 }
 
-export default async function RoomsLayout({ children }: LayoutProps<"/rooms">) {
+export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
   // Signed in but not onboarded means there are no rooms to show yet.
   const me = await ensureDbUser();
   if (!me) redirect("/onboarding");

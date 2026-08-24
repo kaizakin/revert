@@ -22,7 +22,7 @@ export default async function RoomsIndexPage() {
           <>
             Pick a chat on the left to start reading.
             <br />
-            <a href={`/rooms/${first.slug}`} className="text-accent underline">
+            <a href={`/chat/${first.slug}`} className="text-accent underline">
               Open {first.name}
             </a>
           </>

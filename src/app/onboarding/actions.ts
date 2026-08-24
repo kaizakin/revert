@@ -22,7 +22,7 @@ export async function onboardAction(
   // Never trust the client for this — an already-onboarded user resubmitting
   // must not be able to burn a second invite code.
   const existing = await getDbUser();
-  if (existing) redirect("/rooms/general");
+  if (existing) redirect("/chat/hub");
 
   const username = String(formData.get("username") ?? "");
   const inviteCode = String(formData.get("inviteCode") ?? "");
@@ -52,5 +52,5 @@ export async function onboardAction(
 
   if (!result.ok) return { error: result.error, field: result.field };
 
-  redirect("/rooms/general");
+  redirect("/chat/hub");
 }

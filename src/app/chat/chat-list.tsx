@@ -98,7 +98,7 @@ export function ChatList({ rooms }: { rooms: RoomSummary[] }) {
         )}
 
         {visible.map((room) => {
-          const active = pathname === `/rooms/${room.slug}`;
+          const active = pathname === `/chat/${room.slug}`;
           const preview = room.lastBody
             ? `${room.lastAuthor ? `${room.lastAuthor}: ` : ""}${room.lastBody}`
             : (TYPE_HINT[room.type] ?? room.topic ?? "No messages yet");
@@ -106,7 +106,7 @@ export function ChatList({ rooms }: { rooms: RoomSummary[] }) {
           return (
             <Link
               key={room.id}
-              href={`/rooms/${room.slug}`}
+              href={`/chat/${room.slug}`}
               aria-current={active ? "page" : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${
                 active ? "bg-raised" : "hover:bg-raised/60"

@@ -26,7 +26,7 @@ export default async function MyProfilePage() {
           </p>
         </div>
         <Link
-          href="/rooms/general"
+          href="/chat/hub"
           className="shrink-0 rounded-lg border border-line bg-surface px-4 py-2 text-[13px] font-medium text-ink transition-colors hover:border-line-strong"
         >
           Back to chat

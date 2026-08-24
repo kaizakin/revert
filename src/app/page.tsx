@@ -42,7 +42,7 @@ export default async function LandingPage() {
           <nav className="flex items-center gap-1 text-sm">
             {signedIn ? (
               <Link
-                href="/rooms/general"
+                href="/chat/hub"
                 className="rounded-lg bg-accent px-4 py-2 font-semibold text-accent-ink transition-opacity hover:opacity-90"
               >
                 Open Revert
@@ -85,7 +85,7 @@ export default async function LandingPage() {
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {signedIn ? (
               <Link
-                href="/rooms/general"
+                href="/chat/hub"
                 className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
               >
                 Open Revert

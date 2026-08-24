@@ -40,7 +40,7 @@ export async function sendMessageAction(
   const result = await sendMessage(author, slug, body);
   if (!result.ok) return { error: result.error };
 
-  revalidatePath(`/rooms/${slug}`);
+  revalidatePath(`/chat/${slug}`);
   return {};
 }
 
@@ -89,7 +89,7 @@ export async function toggleReactionAction(
   const result = await toggleReaction(me.id, messageId, emoji);
   if (!result.ok) return { error: result.error };
 
-  revalidatePath(`/rooms/${slug}`);
+  revalidatePath(`/chat/${slug}`);
   return {};
 }
 

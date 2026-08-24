@@ -28,9 +28,12 @@ const SPACE = {
  */
 const ROOMS = [
   {
-    // The slug stays "general" so existing links keep working; only the
-    // display name changes.
-    slug: "general",
+    /**
+     * The slug is the URL and is deliberately short and stable. It is not
+     * derived from the display name, so renaming the group never breaks a
+     * link someone already shared.
+     */
+    slug: "hub",
     name: "Mini Anon Hub",
     topic: "Jobs, questions and everything else. No phone numbers, ever.",
     type: "chat" as const,

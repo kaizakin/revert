@@ -74,7 +74,7 @@ export async function saveProfileAction(
   await saveProfile(me.id, parsed.data);
 
   revalidatePath("/me");
-  revalidatePath("/rooms", "layout");
+  revalidatePath("/chat", "layout");
   return { saved: true, username };
 }
 
