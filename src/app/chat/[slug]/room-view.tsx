@@ -386,7 +386,7 @@ export function RoomView({
         <Link
           href="/chat"
           aria-label="Back to chats"
-          className="-ml-1 rounded-full p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink sm:hidden"
+          className="-ml-1 rounded-full p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink md:hidden"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
             <path
@@ -472,7 +472,7 @@ export function RoomView({
       )}
 
       <div className="chat-pattern flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-3xl flex-col px-3 py-4 sm:px-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-col px-3 py-4 sm:px-6">
           {rendered.length === 0 && (
             <p className="py-16 text-center text-sm text-bubble-meta">
               No messages yet. Say something.

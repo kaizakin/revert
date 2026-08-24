@@ -62,7 +62,7 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-canvas">
-      <nav className="hidden w-14 shrink-0 flex-col items-center justify-between border-r border-line bg-surface py-3 sm:flex">
+      <nav className="hidden w-14 shrink-0 flex-col items-center justify-between border-r border-line bg-surface py-3 md:flex">
         <div className="flex flex-col items-center gap-1">
           {RAIL.map((item) =>
             item.live && item.href ? (
@@ -118,40 +118,8 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
         </Link>
       </nav>
 
-      <aside className="hidden w-84 shrink-0 flex-col border-r border-line bg-surface sm:flex">
+      <aside className="hidden shrink-0 flex-col border-r border-line bg-surface md:flex md:w-64 lg:w-72 xl:w-80">
         <ChatList rooms={rooms} />
-
-        <Link
-          href="/me"
-          className="flex items-center gap-3 border-t border-line px-4 py-2.5 transition-colors hover:bg-raised"
-        >
-          {me.avatarUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={me.avatarUrl}
-              alt=""
-              width={34}
-              height={34}
-              className="h-8.5 w-8.5 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-              style={{ backgroundColor: avatarColour(me.username) }}
-              aria-hidden
-            >
-              {initials(me.username)}
-            </span>
-          )}
-          <span className="min-w-0">
-            <span className="block truncate text-[13px] font-medium text-ink">
-              @{me.username}
-            </span>
-            <span className="block truncate text-[11px] text-faint">
-              {me.headline ?? me.company ?? me.college ?? "Add your profile"}
-            </span>
-          </span>
-        </Link>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>

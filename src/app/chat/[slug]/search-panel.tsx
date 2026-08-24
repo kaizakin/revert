@@ -132,12 +132,7 @@ export function SearchPanel({
           </button>
         ))}
 
-        {hits.length > 0 && (
-          <p className="px-2 pt-2 text-[11px] leading-relaxed text-faint">
-            Older results may not be loaded in the conversation yet, so jumping to them does
-            nothing until history paging exists.
-          </p>
-        )}
+
       </div>
     </aside>
   );

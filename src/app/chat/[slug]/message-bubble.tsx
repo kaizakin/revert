@@ -97,7 +97,11 @@ function renderBody(body: string | null, onOpenProfile: (username: string) => vo
 
     out.push(
       isAll ? (
-        <span key={start} className="font-semibold underline decoration-dotted">
+        <span
+          key={start}
+          className="rounded px-0.5 font-semibold"
+          style={{ color: "var(--rv-mention)", backgroundColor: "var(--rv-mention-soft)" }}
+        >
           @all
         </span>
       ) : (
@@ -105,7 +109,9 @@ function renderBody(body: string | null, onOpenProfile: (username: string) => vo
           key={start}
           type="button"
           onClick={() => onOpenProfile(handle.toLowerCase())}
-          className="font-semibold underline decoration-dotted underline-offset-2 hover:opacity-80"
+          title={`Open @${handle}'s profile`}
+          className="rounded px-0.5 font-semibold transition-opacity hover:opacity-80"
+          style={{ color: "var(--rv-mention)", backgroundColor: "var(--rv-mention-soft)" }}
         >
           @{handle}
         </button>
@@ -156,7 +162,7 @@ export function MessageBubble({
           <span className="w-7 shrink-0" aria-hidden />
         ))}
 
-      <div className="relative flex max-w-[80%] flex-col sm:max-w-[65%]">
+      <div className="relative flex max-w-[85%] flex-col sm:max-w-[72%] lg:max-w-[65%]">
         <div
           className={`relative px-2 pt-[5px] shadow-sm ${
             message.reactions.length > 0 ? "pb-3.5" : "pb-[5px]"

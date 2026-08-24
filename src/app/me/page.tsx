@@ -26,6 +26,7 @@ export default async function MyProfilePage() {
             Nothing is saved until you press Save.
           </p>
         </div>
+        <div className="flex shrink-0 items-center gap-2">
         <SignOutButton>
           <button
             type="button"
@@ -41,6 +42,7 @@ export default async function MyProfilePage() {
         >
           Back to chat
         </Link>
+        </div>
       </header>
 
       <ProfileForm
