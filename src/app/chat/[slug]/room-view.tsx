@@ -25,6 +25,7 @@ import {
 } from "../actions";
 import { GroupPanel } from "./group-panel";
 import { MemberPanel } from "./member-panel";
+import { MentionMenu, activeMentionQuery } from "./mention-menu";
 import { MessageBubble } from "./message-bubble";
 
 type Props = {
@@ -84,6 +85,34 @@ export function RoomView({
   const [draft, setDraft] = useState("");
   const [reactError, setReactError] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
+  const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /**
+   * Replace the @token the caret sits in, then put the caret after the inserted
+   * handle. Without moving it the caret would jump to the end of the message,
+   * which is wrong when mentioning someone mid-sentence.
+   */
+  const insertMention = useCallback(
+    (username: string) => {
+      const el = textareaRef.current;
+      if (!el || !mention) return;
+
+      const before = draft.slice(0, mention.start);
+      const after = draft.slice(el.selectionStart ?? draft.length);
+      const inserted = `@${username} `;
+
+      setDraft(before + inserted + after);
+      setMention(null);
+
+      requestAnimationFrame(() => {
+        const caret = before.length + inserted.length;
+        el.focus();
+        el.setSelectionRange(caret, caret);
+      });
+    },
+    [draft, mention],
+  );
 
   /**
    * Scroll a quoted message into view and flash it, so tapping a quote lands
@@ -124,6 +153,7 @@ export function RoomView({
       authorId: meId,
       authorUsername: meUsername,
       authorAvatarUrl: null,
+      readByAll: false,
       replyToId: replyingTo?.id ?? null,
       replyTo: replyingTo
         ? { id: replyingTo.id, authorUsername: replyingTo.authorUsername, body: replyingTo.body }
@@ -377,6 +407,7 @@ export function RoomView({
                 addOptimistic(body);
                 setDraft("");
                 setReplyingTo(null);
+                setMention(null);
                 return action(formData);
               }}
             >
@@ -417,7 +448,16 @@ export function RoomView({
                 </div>
               )}
 
-              <div className="flex items-end gap-2">
+              <div className="relative flex items-end gap-2">
+                {mention && (
+                  <MentionMenu
+                    slug={slug}
+                    query={mention.query}
+                    onPick={insertMention}
+                    onClose={() => setMention(null)}
+                  />
+                )}
+
                 {/* Attachments and emoji land with media support in Phase 2, so
                     they are shown disabled rather than faked. */}
                 <span
@@ -437,15 +477,30 @@ export function RoomView({
                 </span>
 
                 <textarea
+                  ref={textareaRef}
                   name="body"
                   rows={1}
                   required
                   maxLength={4000}
                   value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
+                  onChange={(event) => {
+                    setDraft(event.target.value);
+                    setMention(
+                      activeMentionQuery(event.target.value, event.target.selectionStart ?? 0),
+                    );
+                  }}
+                  onSelect={(event) => {
+                    const el = event.currentTarget;
+                    setMention(activeMentionQuery(el.value, el.selectionStart ?? 0));
+                  }}
+                  onBlur={() => setMention(null)}
                   placeholder="Type a message"
                   className="max-h-32 flex-1 resize-none rounded-lg bg-raised px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint"
                   onKeyDown={(event) => {
+                    // The mention menu claims Enter while it is open, so a pick
+                    // does not also send the message.
+                    if (mention) return;
+
                     if (event.key === "Enter" && !event.shiftKey) {
                       event.preventDefault();
                       event.currentTarget.form?.requestSubmit();

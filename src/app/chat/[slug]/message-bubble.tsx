@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { BubbleTail, Tick } from "@/components/bubble-marks";
 import { avatarColour, initials } from "@/lib/avatar";
 import type { MessageRow } from "@/server/messaging/queries";
 import { REACTION_EMOJI } from "@/lib/reactions";
@@ -79,7 +80,6 @@ export function MessageBubble({
   onJumpTo,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const tail = startsRun ? (isMine ? "tail-out" : "tail-in") : "";
 
   return (
     <div className={`group flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
@@ -108,11 +108,20 @@ export function MessageBubble({
         <div
           className={`relative px-2 pt-[5px] shadow-sm ${
             message.reactions.length > 0 ? "pb-3.5" : "pb-[5px]"
-          } ${tail} ${
+          } ${
             isMine ? "bg-bubble-out text-bubble-out-ink" : "bg-bubble-in text-bubble-in-ink"
           } ${isPending ? "opacity-60" : ""}`}
           style={{ borderRadius: 8 }}
         >
+          {/* The tail inherits the bubble colour through currentColor. */}
+          {startsRun && (
+            <span
+              aria-hidden
+              className={isMine ? "text-bubble-out" : "text-bubble-in"}
+            >
+              <BubbleTail side={isMine ? "right" : "left"} />
+            </span>
+          )}
           {!isMine && startsRun && (
             <button
               type="button"
@@ -155,16 +164,14 @@ export function MessageBubble({
           <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">
             {message.body}
             {/* Reserves space on the last line so the timestamp never overlaps. */}
-            <span className="inline-block w-16 select-none" aria-hidden />
+            <span className={`inline-block select-none ${isMine ? "w-[74px]" : "w-12"}`} aria-hidden />
           </p>
 
-          <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] text-bubble-meta">
+          <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] leading-none text-bubble-meta">
             {message.editedAt && <span>edited</span>}
-            {timeOf(message.createdAt)}
+            <span>{timeOf(message.createdAt)}</span>
             {isMine && (
-              <span aria-hidden className="text-[12px] leading-none">
-                {isPending ? "🕘" : "✓✓"}
-              </span>
+              <Tick state={isPending ? "pending" : message.readByAll ? "read" : "sent"} />
             )}
           </span>
         </div>

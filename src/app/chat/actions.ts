@@ -142,3 +142,44 @@ export async function fetchProfile(username: string): Promise<PublicProfile | nu
 
   return applyReciprocity(profile, { showLastActive: me.showLastActive });
 }
+
+export type MentionCandidate = {
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+/**
+ * Members of this room matching a partial handle, for the @ menu.
+ *
+ * Scoped to the room and gated on the caller's membership, so the composer
+ * cannot be used to enumerate everyone on the platform.
+ */
+export async function searchRoomMembers(
+  slug: string,
+  query: string,
+): Promise<MentionCandidate[]> {
+  const me = await getDbUser();
+  if (!me) return [];
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return [];
+
+  const needle = query.trim().toLowerCase();
+  const members = await listRoomMembers(room.id);
+
+  return members
+    .filter((m) => m.id !== me.id)
+    .filter(
+      (m) =>
+        !needle ||
+        m.username.toLowerCase().startsWith(needle) ||
+        (m.displayName ?? "").toLowerCase().includes(needle),
+    )
+    .slice(0, 8)
+    .map((m) => ({
+      username: m.username,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl,
+    }));
+}

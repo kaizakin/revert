@@ -203,28 +203,6 @@ select:focus-visible {
   }
 }
 
-/* Bubble tails, drawn with a border trick so no extra element is needed. */
-.tail-out::after,
-.tail-in::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 8px;
-  height: 13px;
-}
-
-.tail-out::after {
-  right: -7px;
-  border-left: 8px solid var(--rv-bubble-out);
-  border-bottom: 13px solid transparent;
-}
-
-.tail-in::after {
-  left: -7px;
-  border-right: 8px solid var(--rv-bubble-in);
-  border-bottom: 13px solid transparent;
-}
-
 /**
  * Card flip between sign-in and sign-up.
  *

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, ne, sql } from "drizzle-orm";
 
 import type { ReactionSummary } from "@/lib/reactions";
 import { db } from "@/server/db";
@@ -182,6 +182,8 @@ export type MessageRow = {
   authorUsername: string | null;
   authorAvatarUrl: string | null;
   replyToId: string | null;
+  /** True once every other member of the room has read it. Own messages only. */
+  readByAll: boolean;
   /** The quoted message, when this is a reply. Null if it was deleted. */
   replyTo: { id: string; authorUsername: string | null; body: string | null } | null;
   reactions: ReactionSummary[];
@@ -238,6 +240,63 @@ export async function listMessages(
   );
 
   /**
+   * Read state for the viewer's own messages.
+   *
+   * A message counts as read by everyone only when every other member has a
+   * read marker at or after it. Members with no marker at all have not read
+   * anything, so the count check has to come first — taking the minimum over
+   * whoever happens to have a row would turn blue the moment one person read
+   * it.
+   *
+   * Reciprocity applies: someone who has turned read receipts off does not get
+   * to see anyone else's, which is what the setting promises.
+   */
+  const [viewer] = await db
+    .select({ showReadReceipts: users.showReadReceipts })
+    .from(users)
+    .where(eq(users.id, viewerId))
+    .limit(1);
+
+  let readCutoff: Date | null = null;
+
+  if (viewer?.showReadReceipts) {
+    const [{ others }] = await db
+      .select({ others: count() })
+      .from(conversationMembers)
+      .innerJoin(users, eq(users.id, conversationMembers.userId))
+      .where(
+        and(
+          eq(conversationMembers.conversationId, conversationId),
+          ne(conversationMembers.userId, viewerId),
+          isNull(users.deletedAt),
+        ),
+      );
+
+    const otherCount = Number(others);
+
+    if (otherCount > 0) {
+      const markers = await db
+        .select({ at: messageReads.lastReadAt })
+        .from(messageReads)
+        .innerJoin(users, eq(users.id, messageReads.userId))
+        .where(
+          and(
+            eq(messageReads.conversationId, conversationId),
+            ne(messageReads.userId, viewerId),
+            isNull(users.deletedAt),
+          ),
+        );
+
+      if (markers.length >= otherCount) {
+        readCutoff = markers.reduce<Date | null>(
+          (min, m) => (min === null || m.at < min ? m.at : min),
+          null,
+        );
+      }
+    }
+  }
+
+  /**
    * Quoted messages are fetched by id rather than joined, because the message
    * being replied to is often older than this page and a join would only find
    * the ones that happen to be on screen.
@@ -265,6 +324,10 @@ export async function listMessages(
 
   return rows.map((row) => ({
     ...row,
+    readByAll:
+      row.authorId === viewerId &&
+      readCutoff !== null &&
+      row.createdAt.getTime() <= readCutoff.getTime(),
     replyTo: row.replyToId ? (parentById.get(row.replyToId) ?? null) : null,
     reactions: byMessage.get(row.id) ?? [],
   }));
