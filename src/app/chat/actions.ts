@@ -36,8 +36,9 @@ export async function sendMessageAction(
 
   const slug = String(formData.get("slug") ?? "");
   const body = String(formData.get("body") ?? "");
+  const replyToId = String(formData.get("replyToId") ?? "") || null;
 
-  const result = await sendMessage(author, slug, body);
+  const result = await sendMessage(author, slug, body, replyToId);
   if (!result.ok) return { error: result.error };
 
   revalidatePath(`/chat/${slug}`);

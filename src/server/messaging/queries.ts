@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 
 import type { ReactionSummary } from "@/lib/reactions";
 import { db } from "@/server/db";
@@ -182,6 +182,8 @@ export type MessageRow = {
   authorUsername: string | null;
   authorAvatarUrl: string | null;
   replyToId: string | null;
+  /** The quoted message, when this is a reply. Null if it was deleted. */
+  replyTo: { id: string; authorUsername: string | null; body: string | null } | null;
   reactions: ReactionSummary[];
 };
 
@@ -235,7 +237,37 @@ export async function listMessages(
     viewerId,
   );
 
-  return rows.map((row) => ({ ...row, reactions: byMessage.get(row.id) ?? [] }));
+  /**
+   * Quoted messages are fetched by id rather than joined, because the message
+   * being replied to is often older than this page and a join would only find
+   * the ones that happen to be on screen.
+   */
+  const parentIds = [...new Set(rows.map((r) => r.replyToId).filter((v): v is string => !!v))];
+
+  const parents = parentIds.length
+    ? await db
+        .select({
+          id: messages.id,
+          body: messages.body,
+          deletedAt: messages.deletedAt,
+          authorUsername: users.username,
+        })
+        .from(messages)
+        .leftJoin(users, eq(users.id, messages.authorId))
+        .where(inArray(messages.id, parentIds))
+    : [];
+
+  const parentById = new Map(
+    parents
+      .filter((p) => !p.deletedAt)
+      .map((p) => [p.id, { id: p.id, authorUsername: p.authorUsername, body: p.body }]),
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    replyTo: row.replyToId ? (parentById.get(row.replyToId) ?? null) : null,
+    reactions: byMessage.get(row.id) ?? [],
+  }));
 }
 
 /** Record how far the user has read. Safe to call often. */

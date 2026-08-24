@@ -13,6 +13,8 @@ type Props = {
   startsRun: boolean;
   onReact: (messageId: string, emoji: string) => void;
   onOpenProfile: (username: string) => void;
+  onReply: (message: MessageRow) => void;
+  onJumpTo: (messageId: string) => void;
 };
 
 /** Stable per-username colour for sender names, the way group chats do it. */
@@ -73,6 +75,8 @@ export function MessageBubble({
   startsRun,
   onReact,
   onOpenProfile,
+  onReply,
+  onJumpTo,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const tail = startsRun ? (isMine ? "tail-out" : "tail-in") : "";
@@ -119,6 +123,32 @@ export function MessageBubble({
               style={{ color: nameColour(message.authorUsername) }}
             >
               @{message.authorUsername ?? "deleted"}
+            </button>
+          )}
+
+          {message.replyTo && (
+            <button
+              type="button"
+              onClick={() => onJumpTo(message.replyTo!.id)}
+              className="mb-1 flex w-full items-stretch gap-2 overflow-hidden rounded bg-black/15 text-left transition-opacity hover:opacity-85 dark:bg-black/25"
+            >
+              <span
+                aria-hidden
+                className="w-1 shrink-0 rounded-full"
+                style={{ backgroundColor: nameColour(message.replyTo.authorUsername) }}
+              />
+              <span className="min-w-0 flex-1 py-1 pr-2">
+                <span
+                  className="block text-[12px] font-semibold"
+                  style={{ color: nameColour(message.replyTo.authorUsername) }}
+                >
+                  @{message.replyTo.authorUsername ?? "deleted"}
+                </span>
+                {/* One line only: a quote should hint at the original, not repeat it. */}
+                <span className="block truncate text-[12.5px] opacity-70">
+                  {message.replyTo.body}
+                </span>
+              </span>
             </button>
           )}
 
@@ -169,6 +199,23 @@ export function MessageBubble({
       {/* Hidden until hover on a pointer device, and always reachable by keyboard. */}
       {!isPending && (
         <div className="relative flex items-center self-center">
+          <button
+            type="button"
+            onClick={() => onReply(message)}
+            aria-label="Reply to message"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-faint opacity-0 transition-opacity hover:bg-raised hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+              <path
+                d="M10 9V5l-7 7 7 7v-4.1c5 0 8 1.6 10 5.1-1-5-4-10-10-11z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
           <button
             type="button"
             onClick={() => setPickerOpen((open) => !open)}

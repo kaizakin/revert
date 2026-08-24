@@ -45,6 +45,7 @@ export async function sendMessage(
   author: Author,
   roomSlug: string,
   rawBody: string,
+  replyToId?: string | null,
 ): Promise<SendResult> {
   const body = rawBody.trim();
 
@@ -83,6 +84,30 @@ export async function sendMessage(
     return { ok: false, error: "You are sending messages too quickly. Wait a minute." };
   }
 
+  /**
+   * A reply target is only accepted when it lives in this same room and is not
+   * deleted. The id comes from the client, so without this check anyone could
+   * quote a message out of a conversation they cannot read — the quote text is
+   * rendered to everyone in the room.
+   */
+  let replyTo: string | null = null;
+  if (replyToId) {
+    const [parent] = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.id, replyToId),
+          eq(messages.conversationId, room.id),
+          isNull(messages.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!parent) return { ok: false, error: "That message is no longer available." };
+    replyTo = parent.id;
+  }
+
   const handles = extractMentions(body);
 
   const messageId = await db.transaction(async (tx) => {
@@ -93,6 +118,7 @@ export async function sendMessage(
         authorId: author.id,
         kind: "text",
         body,
+        replyToId: replyTo,
       })
       .returning({ id: messages.id });
 

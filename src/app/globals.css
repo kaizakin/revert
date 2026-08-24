@@ -263,3 +263,25 @@ select:focus-visible {
     animation: none;
   }
 }
+
+/* Brief highlight when a quoted message is jumped to. */
+@keyframes msg-flash {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: color-mix(in srgb, var(--rv-accent) 18%, transparent);
+  }
+}
+
+.msg-flash {
+  animation: msg-flash 1.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-flash {
+    animation: none;
+    background-color: color-mix(in srgb, var(--rv-accent) 14%, transparent);
+  }
+}

@@ -83,6 +83,20 @@ export function RoomView({
   const [live, setLive] = useState<MessageRow[]>([]);
   const [draft, setDraft] = useState("");
   const [reactError, setReactError] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
+
+  /**
+   * Scroll a quoted message into view and flash it, so tapping a quote lands
+   * somewhere obvious rather than just moving the scroll position.
+   */
+  const jumpTo = useCallback((messageId: string) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("msg-flash");
+    window.setTimeout(() => el.classList.remove("msg-flash"), 1200);
+  }, []);
   /**
    * One slot for the right-hand panel. Group info and a member profile are
    * mutually exclusive, so a single value avoids the state where both are set.
@@ -110,7 +124,10 @@ export function RoomView({
       authorId: meId,
       authorUsername: meUsername,
       authorAvatarUrl: null,
-      replyToId: null,
+      replyToId: replyingTo?.id ?? null,
+      replyTo: replyingTo
+        ? { id: replyingTo.id, authorUsername: replyingTo.authorUsername, body: replyingTo.body }
+        : null,
       reactions: [],
     },
   ]);
@@ -281,7 +298,11 @@ export function RoomView({
             const isPending = message.id.startsWith("pending-");
 
             return (
-              <div key={message.id} className={startsRun ? "mt-2" : "mt-0.5"}>
+              <div
+                key={message.id}
+                id={`msg-${message.id}`}
+                className={`rounded-lg ${startsRun ? "mt-2" : "mt-0.5"}`}
+              >
                 {showDay && (
                   <div className="flex justify-center py-4">
                     <span className="rounded-lg bg-bubble-in px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-bubble-meta shadow-sm">
@@ -297,6 +318,8 @@ export function RoomView({
                   startsRun={startsRun}
                   onReact={handleReact}
                   onOpenProfile={(username) => setPanel({ kind: "member", username })}
+                  onReply={setReplyingTo}
+                  onJumpTo={jumpTo}
                 />
               </div>
             );
@@ -315,10 +338,46 @@ export function RoomView({
                 if (!body) return;
                 addOptimistic(body);
                 setDraft("");
+                setReplyingTo(null);
                 return action(formData);
               }}
             >
               <input type="hidden" name="slug" value={slug} />
+              <input type="hidden" name="replyToId" value={replyingTo?.id ?? ""} />
+
+              {replyingTo && (
+                <div className="mb-2 flex items-stretch gap-2 overflow-hidden rounded-lg bg-raised">
+                  <span
+                    aria-hidden
+                    className="w-1 shrink-0"
+                    style={{ backgroundColor: "var(--rv-accent)" }}
+                  />
+                  <span className="min-w-0 flex-1 py-1.5">
+                    <span className="block text-[12px] font-semibold text-accent">
+                      Replying to @{replyingTo.authorUsername ?? "deleted"}
+                    </span>
+                    <span className="block truncate text-[12.5px] text-muted">
+                      {replyingTo.body}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    aria-label="Cancel reply"
+                    className="px-3 text-muted transition-colors hover:text-ink"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                      <path
+                        d="M6 6l12 12M18 6L6 18"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
 
               <div className="flex items-end gap-2">
                 {/* Attachments and emoji land with media support in Phase 2, so
