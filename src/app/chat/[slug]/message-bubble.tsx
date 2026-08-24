@@ -16,6 +16,9 @@ type Props = {
   onOpenProfile: (username: string) => void;
   onReply: (message: MessageRow) => void;
   onJumpTo: (messageId: string) => void;
+  /** Undefined for anyone without permission, so the button simply is not shown. */
+  onTogglePin?: (messageId: string) => void;
+  isPinned?: boolean;
 };
 
 /** Stable per-username colour for sender names, the way group chats do it. */
@@ -69,6 +72,53 @@ function Avatar({ username, url }: { username: string | null; url: string | null
   );
 }
 
+/**
+ * Render the body with @handles as links into the profile panel.
+ *
+ * Split rather than dangerouslySetInnerHTML: message text is user input, and
+ * building HTML from it to get one link would be an injection hole for the sake
+ * of a convenience.
+ */
+function renderBody(body: string | null, onOpenProfile: (username: string) => void) {
+  if (!body) return null;
+
+  const pattern = /(^|[^a-zA-Z0-9_@])@([a-zA-Z][a-zA-Z0-9_]{2,19})/g;
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(body)) !== null) {
+    const [full, lead, handle] = match;
+    const start = match.index + lead.length;
+
+    if (start > last) out.push(body.slice(last, start));
+
+    const isAll = handle.toLowerCase() === "all";
+
+    out.push(
+      isAll ? (
+        <span key={start} className="font-semibold underline decoration-dotted">
+          @all
+        </span>
+      ) : (
+        <button
+          key={start}
+          type="button"
+          onClick={() => onOpenProfile(handle.toLowerCase())}
+          className="font-semibold underline decoration-dotted underline-offset-2 hover:opacity-80"
+        >
+          @{handle}
+        </button>
+      ),
+    );
+
+    last = match.index + full.length;
+  }
+
+  if (last < body.length) out.push(body.slice(last));
+  return out;
+}
+
 export function MessageBubble({
   message,
   isMine,
@@ -78,11 +128,13 @@ export function MessageBubble({
   onOpenProfile,
   onReply,
   onJumpTo,
+  onTogglePin,
+  isPinned,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
-    <div className={`group flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
+    <div className={`group flex items-start gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
       {/*
         Avatar sits beside incoming messages only, and only on the first of a
         run — repeating it on every line is what makes a group chat read as a
@@ -111,7 +163,13 @@ export function MessageBubble({
           } ${
             isMine ? "bg-bubble-out text-bubble-out-ink" : "bg-bubble-in text-bubble-in-ink"
           } ${isPending ? "opacity-60" : ""}`}
-          style={{ borderRadius: 8 }}
+          style={{
+            borderRadius: startsRun
+              ? isMine
+                ? "8px 0 8px 8px"
+                : "0 8px 8px 8px"
+              : 8,
+          }}
         >
           {/* The tail inherits the bubble colour through currentColor. */}
           {startsRun && (
@@ -162,7 +220,7 @@ export function MessageBubble({
           )}
 
           <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">
-            {message.body}
+            {renderBody(message.body, onOpenProfile)}
             {/* Reserves space on the last line so the timestamp never overlaps. */}
             <span className={`inline-block select-none ${isMine ? "w-[74px]" : "w-12"}`} aria-hidden />
           </p>
@@ -206,6 +264,31 @@ export function MessageBubble({
       {/* Hidden until hover on a pointer device, and always reachable by keyboard. */}
       {!isPending && (
         <div className="relative flex items-center self-center">
+          {onTogglePin && (
+            <button
+              type="button"
+              onClick={() => onTogglePin(message.id)}
+              aria-label={isPinned ? "Unpin message" : "Pin message"}
+              title={isPinned ? "Unpin" : "Pin"}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition-opacity hover:bg-raised ${
+                isPinned
+                  ? "text-accent opacity-100"
+                  : "text-faint opacity-0 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                <path
+                  d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => onReply(message)}

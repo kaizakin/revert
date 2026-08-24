@@ -16,6 +16,8 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import type { MessageRow } from "@/server/messaging/queries";
 
 import {
+  fetchPinned,
+  setPinnedAction,
   fetchNewMessages,
   markRoomRead,
   refetchMessages,
@@ -26,6 +28,7 @@ import {
 import { GroupPanel } from "./group-panel";
 import { MemberPanel } from "./member-panel";
 import { MentionMenu, activeMentionQuery } from "./mention-menu";
+import { SearchPanel } from "./search-panel";
 import { MessageBubble } from "./message-bubble";
 
 type Props = {
@@ -37,6 +40,8 @@ type Props = {
   meId: string;
   meUsername: string;
   canPost: boolean;
+  /** Pinning is a moderation action, so only mods get the affordance. */
+  canPin: boolean;
   postDeniedReason?: string;
   initialMessages: MessageRow[];
 };
@@ -70,6 +75,7 @@ export function RoomView({
   meId,
   meUsername,
   canPost,
+  canPin,
   postDeniedReason,
   initialMessages,
 }: Props) {
@@ -84,8 +90,35 @@ export function RoomView({
   const [live, setLive] = useState<MessageRow[]>([]);
   const [draft, setDraft] = useState("");
   const [reactError, setReactError] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<{
+    id: string;
+    body: string | null;
+    authorUsername: string | null;
+  } | null>(null);
   const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
+
+  const refreshPinned = useCallback(() => {
+    void fetchPinned(slug).then(setPinned);
+  }, [slug]);
+
+  useEffect(() => {
+    refreshPinned();
+  }, [refreshPinned]);
+
+  const togglePin = useCallback(
+    async (messageId: string) => {
+      const next = pinned?.id === messageId ? null : messageId;
+      const result = await setPinnedAction(slug, next);
+      if (result.error) {
+        setReactError(result.error);
+        return;
+      }
+      setReactError(null);
+      refreshPinned();
+    },
+    [slug, pinned, refreshPinned],
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   /**
@@ -131,7 +164,10 @@ export function RoomView({
    * mutually exclusive, so a single value avoids the state where both are set.
    */
   const [panel, setPanel] = useState<
-    { kind: "member"; username: string } | { kind: "group" } | null
+    | { kind: "member"; username: string }
+    | { kind: "group" }
+    | { kind: "search" }
+    | null
   >(null);
 
   const [state, action, pending] = useActionState<SendState, FormData>(sendMessageAction, {});
@@ -341,18 +377,55 @@ export function RoomView({
             </p>
           </div>
 
-          <span
-            aria-hidden
-            className="flex h-9 w-9 items-center justify-center rounded-full text-muted"
+          {/* Search replaces the menu: the menu had nothing behind it. */}
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setPanel({ kind: "search" });
+            }}
+            aria-label="Search messages"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-raised hover:text-ink"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-              <circle cx="12" cy="5" r="1.6" fill="currentColor" />
-              <circle cx="12" cy="12" r="1.6" fill="currentColor" />
-              <circle cx="12" cy="19" r="1.6" fill="currentColor" />
+              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path
+                d="M16.5 16.5L21 21"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
             </svg>
-          </span>
+          </button>
         </button>
       </div>
+      {pinned && (
+        <button
+          type="button"
+          onClick={() => jumpTo(pinned.id)}
+          className="flex w-full items-center gap-2 border-b border-line bg-surface px-4 py-2 text-left transition-colors hover:bg-raised"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-accent" aria-hidden>
+            <path
+              d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-accent">
+              Pinned
+            </span>
+            <span className="block truncate text-[12.5px] text-muted">
+              @{pinned.authorUsername ?? "deleted"}: {pinned.body}
+            </span>
+          </span>
+        </button>
+      )}
+
       <div className="chat-pattern flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-3xl flex-col px-3 py-4 sm:px-8">
           {rendered.length === 0 && (
@@ -388,6 +461,8 @@ export function RoomView({
                   onOpenProfile={(username) => setPanel({ kind: "member", username })}
                   onReply={setReplyingTo}
                   onJumpTo={jumpTo}
+                  onTogglePin={canPin ? togglePin : undefined}
+                  isPinned={pinned?.id === message.id}
                 />
               </div>
             );
@@ -537,6 +612,10 @@ export function RoomView({
           username={panel.username}
           onClose={() => setPanel(null)}
         />
+      )}
+
+      {panel?.kind === "search" && (
+        <SearchPanel slug={slug} onClose={() => setPanel(null)} onJumpTo={jumpTo} />
       )}
 
       {panel?.kind === "group" && (

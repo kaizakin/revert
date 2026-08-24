@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SignOutButton } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
 import { AVATAR_PRESETS } from "@/server/users/avatar-presets";
@@ -18,13 +19,22 @@ export default async function MyProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-8">
-      <header className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Your profile</h1>
           <p className="mt-1 text-[13px] text-muted">
             Nothing is saved until you press Save.
           </p>
         </div>
+        <SignOutButton>
+          <button
+            type="button"
+            className="shrink-0 rounded-lg border border-line bg-surface px-4 py-2 text-[13px] font-medium text-muted transition-colors hover:border-line-strong hover:text-ink"
+          >
+            Sign out
+          </button>
+        </SignOutButton>
+
         <Link
           href="/chat/hub"
           className="shrink-0 rounded-lg border border-line bg-surface px-4 py-2 text-[13px] font-medium text-ink transition-colors hover:border-line-strong"

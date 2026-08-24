@@ -1,7 +1,13 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 
 import { db } from "@/server/db";
-import { conversations, mentions, messages, users } from "@/server/db/schema";
+import {
+  conversationMembers,
+  conversations,
+  mentions,
+  messages,
+  users,
+} from "@/server/db/schema";
 import { transport } from "@/server/realtime";
 
 import { getRoomForUser } from "./queries";
@@ -13,6 +19,9 @@ import {
 } from "./rate-limit";
 
 export const MESSAGE_MAX_LENGTH = 4000;
+
+/** Mentions everyone in the room. Reserved, so no account can shadow it. */
+export const MENTION_ALL = "all";
 
 export type SendResult =
   | { ok: true; messageId: string }
@@ -123,10 +132,33 @@ export async function sendMessage(
       .returning({ id: messages.id });
 
     if (handles.length) {
-      const mentioned = await tx
-        .select({ id: users.id })
-        .from(users)
-        .where(and(inArray(users.username, handles), isNull(users.deletedAt)));
+      /**
+       * @all resolves to every other member of the room, so it is a membership
+       * lookup rather than a username lookup. The author is excluded — nobody
+       * needs a notification about their own message.
+       */
+      const mentionsAll = handles.includes(MENTION_ALL);
+
+      const named = handles.filter((h) => h !== MENTION_ALL);
+
+      const mentioned = mentionsAll
+        ? await tx
+            .select({ id: users.id })
+            .from(conversationMembers)
+            .innerJoin(users, eq(users.id, conversationMembers.userId))
+            .where(
+              and(
+                eq(conversationMembers.conversationId, room.id),
+                ne(conversationMembers.userId, author.id),
+                isNull(users.deletedAt),
+              ),
+            )
+        : named.length
+          ? await tx
+              .select({ id: users.id })
+              .from(users)
+              .where(and(inArray(users.username, named), isNull(users.deletedAt)))
+          : [];
 
       if (mentioned.length) {
         await tx

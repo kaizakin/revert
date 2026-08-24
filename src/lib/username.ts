@@ -32,6 +32,11 @@ export const RESERVED_USERNAMES = new Set([
   "payments",
   "noreply",
   "minianon",
+  // Mention keywords, so nobody can register a name that shadows @all.
+  "all",
+  "everyone",
+  "here",
+  "channel",
   // route names
   "api",
   "app",

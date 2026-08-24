@@ -442,3 +442,101 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
 export async function touchLastActive(userId: string): Promise<void> {
   await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, userId));
 }
+
+export type PinnedMessage = {
+  id: string;
+  body: string | null;
+  authorUsername: string | null;
+};
+
+/** The pinned message for a room, if there is one. */
+export async function getPinnedMessage(conversationId: string): Promise<PinnedMessage | null> {
+  const [row] = await db
+    .select({
+      id: messages.id,
+      body: messages.body,
+      authorUsername: users.username,
+    })
+    .from(messages)
+    .leftJoin(users, eq(users.id, messages.authorId))
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        isNull(messages.deletedAt),
+        sql`${messages.pinnedAt} is not null`,
+      ),
+    )
+    .orderBy(desc(messages.pinnedAt))
+    .limit(1);
+
+  return row ?? null;
+}
+
+/**
+ * Only one pinned message per room, so pinning clears any previous one in the
+ * same transaction. Two pinned messages would make the banner ambiguous.
+ */
+export async function setPinned(
+  conversationId: string,
+  messageId: string | null,
+  actorId: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx
+      .update(messages)
+      .set({ pinnedAt: null, pinnedBy: null })
+      .where(eq(messages.conversationId, conversationId));
+
+    if (messageId) {
+      await tx
+        .update(messages)
+        .set({ pinnedAt: new Date(), pinnedBy: actorId })
+        .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)));
+    }
+  });
+}
+
+export type SearchHit = {
+  id: string;
+  body: string | null;
+  createdAt: Date;
+  authorUsername: string | null;
+};
+
+/**
+ * Substring search within one room.
+ *
+ * ILIKE rather than full-text search: at this size the index would cost more
+ * than it saves, and ILIKE matches partial words, which is what people expect
+ * from a chat search box. Worth revisiting past a few hundred thousand rows.
+ */
+export async function searchMessages(
+  conversationId: string,
+  query: string,
+  limit = 30,
+): Promise<SearchHit[]> {
+  const needle = query.trim();
+  if (needle.length < 2) return [];
+
+  // Escape the LIKE wildcards so a literal % or _ does not match everything.
+  const escaped = needle.replace(/([%_\\])/g, "\\$1");
+
+  return db
+    .select({
+      id: messages.id,
+      body: messages.body,
+      createdAt: messages.createdAt,
+      authorUsername: users.username,
+    })
+    .from(messages)
+    .leftJoin(users, eq(users.id, messages.authorId))
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        isNull(messages.deletedAt),
+        sql`${messages.body} ilike ${"%" + escaped + "%"} escape '\\'`,
+      ),
+    )
+    .orderBy(desc(messages.createdAt))
+    .limit(limit);
+}

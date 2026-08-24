@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 
 import { avatarColour, initials } from "@/lib/avatar";
 import { listRoomsForUser } from "@/server/messaging/queries";
@@ -88,7 +87,35 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
           )}
         </div>
 
-        <UserButton appearance={{ elements: { avatarBox: { width: 32, height: 32 } } }} />
+        {/*
+          Our own avatar, linking to the profile page. Clerk's UserButton was a
+          second, differently-styled account control sitting next to ours; one
+          of them had to go, and this is the one that matches the app and leads
+          somewhere useful. Sign out lives on the profile page.
+        */}
+        <Link
+          href="/me"
+          aria-label="Your profile"
+          title={`@${me.username}`}
+          className="rounded-full transition-opacity hover:opacity-80"
+        >
+          {me.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={me.avatarUrl}
+              alt=""
+              className="h-8 w-8 rounded-full object-cover ring-1 ring-line"
+            />
+          ) : (
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+              style={{ backgroundColor: avatarColour(me.username) }}
+              aria-hidden
+            >
+              {initials(me.username)}
+            </span>
+          )}
+        </Link>
       </nav>
 
       <aside className="hidden w-84 shrink-0 flex-col border-r border-line bg-surface sm:flex">

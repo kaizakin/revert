@@ -61,10 +61,15 @@ export function Tick({ state }: { state: TickState }) {
  * never drift apart.
  */
 export function BubbleTail({ side }: { side: "left" | "right" }) {
+  /**
+   * Hangs off a squared-off corner, so the straight edge at x=0 meets the
+   * bubble flush. Curving it back inward is what gives the flick shape rather
+   * than the hard wedge a CSS border triangle produces.
+   */
   const path =
     side === "right"
-      ? "M0 0 L8 0 C8 5 4.6 9.6 0 12 Z"
-      : "M8 0 L0 0 C0 5 3.4 9.6 8 12 Z";
+      ? "M0 0 H8 C8 5.2 5 9.4 0 11.5 Z"
+      : "M8 0 H0 C0 5.2 3 9.4 8 11.5 Z";
 
   return (
     <svg
@@ -72,7 +77,7 @@ export function BubbleTail({ side }: { side: "left" | "right" }) {
       width={8}
       height={12}
       aria-hidden
-      className={`absolute top-0 ${side === "right" ? "-right-[7px]" : "-left-[7px]"}`}
+      className={`absolute top-0 ${side === "right" ? "-right-2" : "-left-2"}`}
     >
       <path d={path} fill="currentColor" />
     </svg>

@@ -3,9 +3,14 @@
 import {
   getRoomForUser,
   listMessages,
+  getPinnedMessage,
   listRoomMembers,
   markRead,
   roomStats,
+  searchMessages,
+  setPinned,
+  type PinnedMessage,
+  type SearchHit,
   touchLastActive,
   type MessageRow,
   type RoomMember,
@@ -182,4 +187,40 @@ export async function searchRoomMembers(
       displayName: m.displayName,
       avatarUrl: m.avatarUrl,
     }));
+}
+
+/** Pinning is a moderation action, so it is admin-only and re-checked here. */
+export async function setPinnedAction(
+  slug: string,
+  messageId: string | null,
+): Promise<{ error?: string }> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+  if (!me.isAdmin) return { error: "Only mods can pin messages." };
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return { error: "You are not in this room." };
+
+  await setPinned(room.id, messageId, me.id);
+  return {};
+}
+
+export async function fetchPinned(slug: string): Promise<PinnedMessage | null> {
+  const me = await getDbUser();
+  if (!me) return null;
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return null;
+
+  return getPinnedMessage(room.id);
+}
+
+export async function searchInRoom(slug: string, query: string): Promise<SearchHit[]> {
+  const me = await getDbUser();
+  if (!me) return [];
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return [];
+
+  return searchMessages(room.id, query);
 }

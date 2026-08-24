@@ -37,7 +37,13 @@ export function MentionMenu({ slug, query, onPick, onClose }: Props) {
 
     void searchRoomMembers(slug, query).then((result) => {
       if (cancelled) return;
-      setItems(result);
+
+      // @all first, and only while it still matches what has been typed.
+      const all: MentionCandidate[] = "all".startsWith(query.toLowerCase())
+        ? [{ username: "all", displayName: "Everyone in this group", avatarUrl: null }]
+        : [];
+
+      setItems([...all, ...result]);
       setActive(0);
     });
 
