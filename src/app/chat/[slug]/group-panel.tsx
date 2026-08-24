@@ -1,16 +1,250 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { avatarColour, initials } from "@/lib/avatar";
 
 import { fetchRoomInfo, updateRoomAction, type RoomInfo } from "../actions";
 
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+      <path
+        d="M4 20h4L19 9l-4-4L4 16v4zM14.5 5.5l4 4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Picture with a camera overlay for mods.
+ *
+ * The file input saves on choose rather than waiting for a separate button:
+ * picking a file from the system dialog is already the deliberate step, and
+ * there is no surrounding form to press Save in.
+ */
+function GroupPicture({
+  slug,
+  name,
+  avatarUrl,
+  canEdit,
+  onSaved,
+  onError,
+}: {
+  slug: string;
+  name: string;
+  avatarUrl: string | null;
+  canEdit: boolean;
+  onSaved: () => void;
+  onError: (message: string) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const picture = avatarUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={avatarUrl} alt="" className="h-24 w-24 rounded-full object-cover" />
+  ) : (
+    <span
+      className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-semibold text-white"
+      style={{ backgroundColor: avatarColour(slug) }}
+      aria-hidden
+    >
+      {initials(name)}
+    </span>
+  );
+
+  if (!canEdit) return picture;
+
+  return (
+    <div className="group relative h-24 w-24">
+      {picture}
+
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={pending}
+        aria-label="Change group picture"
+        className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-100"
+      >
+        {pending ? (
+          <span className="text-[11px] font-medium">Saving…</span>
+        ) : (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden>
+            <path
+              d="M4 8h3l1.5-2h7L17 8h3v11H4V8z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
+        )}
+      </button>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+
+          const form = new FormData();
+          form.set("slug", slug);
+          form.set("avatar", file);
+
+          startTransition(async () => {
+            const result = await updateRoomAction({}, form);
+            // Clear it either way, so choosing the same file again still fires.
+            event.target.value = "";
+
+            if (result.error) onError(result.error);
+            else onSaved();
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+/** A single field with a pencil, editable in place. */
+function EditableField({
+  slug,
+  field,
+  label,
+  value,
+  placeholder,
+  multiline,
+  canEdit,
+  onSaved,
+  render,
+}: {
+  slug: string;
+  field: "name" | "topic";
+  label: string;
+  value: string;
+  placeholder: string;
+  multiline?: boolean;
+  canEdit: boolean;
+  onSaved: () => void;
+  render: (value: string) => React.ReactNode;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const save = () => {
+    const form = new FormData();
+    form.set("slug", slug);
+    form.set(field, draft);
+
+    startTransition(async () => {
+      const result = await updateRoomAction({}, form);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      setError(null);
+      setEditing(false);
+      onSaved();
+    });
+  };
+
+  if (!editing) {
+    return (
+      <span className="flex items-start gap-1.5">
+        {render(value)}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(value);
+              setError(null);
+              setEditing(true);
+            }}
+            aria-label={`Edit ${label}`}
+            title={`Edit ${label}`}
+            className="mt-0.5 shrink-0 rounded p-1 text-faint transition-colors hover:bg-raised hover:text-ink"
+          >
+            <PencilIcon />
+          </button>
+        )}
+      </span>
+    );
+  }
+
+  const inputClass =
+    "w-full rounded-lg border border-line bg-canvas px-2.5 py-1.5 text-[13px] text-ink outline-none focus:border-accent";
+
+  return (
+    <span className="flex w-full flex-col gap-1.5">
+      {multiline ? (
+        <textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          maxLength={300}
+          rows={3}
+          autoFocus
+          placeholder={placeholder}
+          className={`${inputClass} resize-y`}
+        />
+      ) : (
+        <input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          maxLength={60}
+          autoFocus
+          placeholder={placeholder}
+          className={inputClass}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              save();
+            } else if (event.key === "Escape") {
+              setEditing(false);
+            }
+          }}
+        />
+      )}
+
+      {error && <span className="text-[11px] text-danger">{error}</span>}
+
+      <span className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={pending}
+          className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-accent-ink disabled:opacity-50"
+        >
+          {pending ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          className="rounded-lg px-2 py-1.5 text-[12px] text-muted hover:text-ink"
+        >
+          Cancel
+        </button>
+      </span>
+    </span>
+  );
+}
+
 export function GroupPanel({
   slug,
   onClose,
   onOpenMember,
-  /** Changes when membership does, so an open panel refetches instead of going stale. */
   refreshKey,
 }: {
   slug: string;
@@ -20,6 +254,7 @@ export function GroupPanel({
 }) {
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
+  const [error, setError] = useState<string | null>(null);
 
   const reload = () => {
     void fetchRoomInfo(slug).then((result) => {
@@ -89,25 +324,31 @@ export function GroupPanel({
         {state === "ready" && info && (
           <>
             <div className="flex flex-col items-center gap-3 px-6 py-7">
-              {info.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={info.avatarUrl}
-                  alt=""
-                  className="h-24 w-24 rounded-full object-cover"
-                />
-              ) : (
-                <span
-                  className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-semibold text-white"
-                  style={{ backgroundColor: avatarColour(slug) }}
-                  aria-hidden
-                >
-                  {initials(info.name)}
-                </span>
-              )}
+              <GroupPicture
+                slug={slug}
+                name={info.name}
+                avatarUrl={info.avatarUrl}
+                canEdit={info.canEdit}
+                onSaved={reload}
+                onError={setError}
+              />
 
-              <div className="flex flex-col items-center gap-0.5 text-center">
-                <p className="text-[17px] font-semibold text-ink">{info.name}</p>
+              {error && <p className="text-[11px] text-danger">{error}</p>}
+
+              <div className="flex w-full flex-col items-center gap-0.5 text-center">
+                <EditableField
+                  slug={slug}
+                  field="name"
+                  label="group name"
+                  value={info.name}
+                  placeholder="Group name"
+                  canEdit={info.canEdit}
+                  onSaved={reload}
+                  render={(value) => (
+                    <span className="text-[17px] font-semibold text-ink">{value}</span>
+                  )}
+                />
+
                 <p className="text-[12px] text-muted">
                   {info.stats.total} {info.stats.total === 1 ? "member" : "members"}
                   {info.stats.active > 0 && ` · ${info.stats.active} online`}
@@ -115,18 +356,28 @@ export function GroupPanel({
               </div>
             </div>
 
-            {info.canEdit ? (
-              <GroupEditor slug={slug} info={info} onSaved={reload} />
-            ) : (
-              info.topic && (
-                <div className="border-t border-line px-5 py-4">
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-faint">
-                    Description
-                  </p>
-                  <p className="text-[13px] leading-relaxed text-ink">{info.topic}</p>
-                </div>
-              )
-            )}
+            <div className="border-t border-line px-5 py-4">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-faint">
+                Description
+              </p>
+              <EditableField
+                slug={slug}
+                field="topic"
+                label="description"
+                value={info.topic ?? ""}
+                placeholder="What this group is for"
+                multiline
+                canEdit={info.canEdit}
+                onSaved={reload}
+                render={(value) =>
+                  value ? (
+                    <span className="text-[13px] leading-relaxed text-ink">{value}</span>
+                  ) : (
+                    <span className="text-[13px] text-faint">No description yet.</span>
+                  )
+                }
+              />
+            </div>
 
             <div className="border-t border-line px-5 py-4">
               <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-faint">
@@ -147,8 +398,6 @@ export function GroupPanel({
                           <img
                             src={member.avatarUrl}
                             alt=""
-                            width={36}
-                            height={36}
                             className="h-9 w-9 rounded-full object-cover"
                           />
                         ) : (
@@ -192,128 +441,5 @@ export function GroupPanel({
         )}
       </div>
     </aside>
-  );
-}
-
-/**
- * Group details, editable by mods.
- *
- * Collapsed by default: the panel is read most of the time, and an always-open
- * form would bury the member list under inputs nobody is using.
- */
-function GroupEditor({
-  slug,
-  info,
-  onSaved,
-}: {
-  slug: string;
-  info: RoomInfo;
-  onSaved: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  /**
-   * Completion is handled here rather than by watching the action result in an
-   * effect. Closing the form and refreshing the panel are consequences of the
-   * submit, so they belong in the submit path — reacting to them afterwards
-   * means a setState inside an effect and an extra render.
-   */
-  const submit = (formData: FormData) => {
-    startTransition(async () => {
-      const result = await updateRoomAction({}, formData);
-
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
-
-      setError(null);
-      setOpen(false);
-      onSaved();
-    });
-  };
-
-  if (!open) {
-    return (
-      <div className="border-t border-line px-5 py-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-faint">
-            Description
-          </p>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="text-[12px] font-medium text-accent hover:underline"
-          >
-            Edit
-          </button>
-        </div>
-        <p className="text-[13px] leading-relaxed text-ink">
-          {info.topic ?? <span className="text-faint">No description yet.</span>}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <form action={submit} className="flex flex-col gap-3 border-t border-line px-5 py-4">
-      <input type="hidden" name="slug" value={slug} />
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-medium text-ink">Group name</span>
-        <input
-          name="name"
-          defaultValue={info.name}
-          maxLength={60}
-          required
-          className="rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink outline-none focus:border-accent"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-medium text-ink">Description</span>
-        <textarea
-          name="topic"
-          defaultValue={info.topic ?? ""}
-          maxLength={300}
-          rows={3}
-          className="resize-y rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink outline-none focus:border-accent"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-medium text-ink">Group picture</span>
-        <input
-          name="avatar"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="text-[12px] text-muted file:mr-3 file:rounded-md file:border-0 file:bg-raised file:px-3 file:py-1.5 file:text-[12px] file:text-ink"
-        />
-        <span className="text-[11px] text-faint">
-          PNG, JPEG or WebP, up to 2 MB. Leave empty to keep the current one.
-        </span>
-      </label>
-
-      {error && <p className="text-[11px] text-danger">{error}</p>}
-
-      <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-accent px-3.5 py-2 text-[13px] font-semibold text-accent-ink disabled:opacity-50"
-        >
-          {pending ? "Saving…" : "Save"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-lg px-3 py-2 text-[13px] text-muted hover:text-ink"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
   );
 }

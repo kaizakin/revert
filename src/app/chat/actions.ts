@@ -277,23 +277,36 @@ export async function updateRoomAction(
   const room = await getRoomForUser(me.id, slug);
   if (!room) return { error: "You are not in this room." };
 
-  const name = String(formData.get("name") ?? "").trim();
-  const topic = String(formData.get("topic") ?? "").trim();
+  /**
+   * Only fields actually present are touched, so each pencil can submit its own
+   * field without the others needing to be round-tripped through the form.
+   * formData.has is the check rather than truthiness — an empty description is
+   * a real value that should clear the field.
+   */
+  const patch: { name?: string; topic?: string | null; avatarUrl?: string } = {};
 
-  if (name.length < 2) return { error: "Give the group a name of at least 2 characters." };
-  if (name.length > 60) return { error: "Keep the name under 60 characters." };
-  if (topic.length > 300) return { error: "Keep the description under 300 characters." };
+  if (formData.has("name")) {
+    const name = String(formData.get("name") ?? "").trim();
+    if (name.length < 2) return { error: "Give the group a name of at least 2 characters." };
+    if (name.length > 60) return { error: "Keep the name under 60 characters." };
+    patch.name = name;
+  }
 
-  let avatarUrl: string | undefined;
+  if (formData.has("topic")) {
+    const topic = String(formData.get("topic") ?? "").trim();
+    if (topic.length > 300) return { error: "Keep the description under 300 characters." };
+    patch.topic = topic || null;
+  }
+
   const file = formData.get("avatar");
 
   if (file instanceof File && file.size > 0) {
     const uploaded = await uploadRoomAvatar(room.id, file);
     if (!uploaded.ok) return { error: uploaded.error };
-    avatarUrl = uploaded.url;
+    patch.avatarUrl = uploaded.url;
   }
 
-  await updateRoom(room.id, { name, topic: topic || null, avatarUrl });
+  await updateRoom(room.id, patch);
 
   // The name and picture appear in the chat list and header too.
   revalidatePath("/chat", "layout");
