@@ -85,6 +85,53 @@ export async function GET() {
   }
   result.modules = modules;
 
+  /**
+   * Run each call the /chat/[slug] render performs, individually. Modules
+   * loading and the database connecting were both already green while the page
+   * still failed, so the failure is inside one of these calls rather than in
+   * configuration.
+   */
+  const steps: Record<string, string> = {};
+  const step = async (name: string, fn: () => Promise<unknown>) => {
+    try {
+      const value = await fn();
+      steps[name] =
+        value === null || value === undefined
+          ? "returned null"
+          : Array.isArray(value)
+            ? `ok (${value.length} rows)`
+            : "ok";
+      return value;
+    } catch (err) {
+      steps[name] = `THREW: ${(err as Error)?.message?.slice(0, 200) ?? String(err)}`;
+      return null;
+    }
+  };
+
+  try {
+    const { ensureDbUser } = await import("@/server/users/sync");
+    const q = await import("@/server/messaging/queries");
+
+    const me = (await step("ensureDbUser", () => ensureDbUser())) as { id: string } | null;
+
+    if (me) {
+      await step("listRoomsForUser", () => q.listRoomsForUser(me.id));
+      const room = (await step("getRoomForUser(hub)", () =>
+        q.getRoomForUser(me.id, "hub"),
+      )) as { id: string } | null;
+
+      if (room) {
+        await step("listMessages", () => q.listMessages(room.id, me.id));
+        await step("roomStats", () => q.roomStats(room.id));
+        await step("listRoomMembers", () => q.listRoomMembers(room.id));
+      }
+    }
+  } catch (err) {
+    steps.harness = `THREW: ${(err as Error)?.message?.slice(0, 200) ?? String(err)}`;
+  }
+
+  result.renderSteps = steps;
+
   return Response.json(result, {
     headers: { "cache-control": "no-store" },
   });
