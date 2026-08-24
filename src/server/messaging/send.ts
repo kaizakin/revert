@@ -11,12 +11,7 @@ import {
 import { transport } from "@/server/realtime";
 
 import { getRoomForUser } from "./queries";
-import {
-  containsLink,
-  consumeRateLimit,
-  LINK_GATE_HOURS,
-  MESSAGE_LIMIT,
-} from "./rate-limit";
+import { consumeRateLimit, MESSAGE_LIMIT } from "./rate-limit";
 
 export const MESSAGE_MAX_LENGTH = 4000;
 
@@ -41,7 +36,6 @@ function extractMentions(body: string): string[] {
 type Author = {
   id: string;
   isAdmin: boolean;
-  createdAt: Date;
   bannedUntil: Date | null;
 };
 
@@ -74,14 +68,6 @@ export async function sendMessage(
 
   if (room.type === "announce" && !author.isAdmin) {
     return { ok: false, error: "Only mods post in this room." };
-  }
-
-  const accountAgeHours = (Date.now() - author.createdAt.getTime()) / 3_600_000;
-  if (!author.isAdmin && accountAgeHours < LINK_GATE_HOURS && containsLink(body)) {
-    return {
-      ok: false,
-      error: `New accounts cannot post links for the first ${LINK_GATE_HOURS} hours.`,
-    };
   }
 
   const limit = await consumeRateLimit(
@@ -186,7 +172,6 @@ export async function loadAuthor(userId: string): Promise<Author | null> {
     .select({
       id: users.id,
       isAdmin: users.isAdmin,
-      createdAt: users.createdAt,
       bannedUntil: users.bannedUntil,
     })
     .from(users)

@@ -41,15 +41,3 @@ export async function consumeRateLimit(
 }
 
 export const MESSAGE_LIMIT = { max: 20, windowSeconds: 60 };
-
-/**
- * New accounts cannot post links. Job communities attract "pay me for a
- * referral" fraud, and a fresh account dropping a link is the shape of it.
- */
-export const LINK_GATE_HOURS = 48;
-
-const LINK_PATTERN = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|io|co|net|org|me|app|dev|xyz|link|gg)\b)/i;
-
-export function containsLink(body: string): boolean {
-  return LINK_PATTERN.test(body);
-}
