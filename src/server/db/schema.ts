@@ -179,6 +179,8 @@ export const conversations = pgTable(
     slug: text("slug"),
     name: text("name"),
     topic: text("topic"),
+    /** Group picture. Null falls back to initials on a generated colour. */
+    avatarUrl: text("avatar_url"),
     isDefault: boolean("is_default").notNull().default(false),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

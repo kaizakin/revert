@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { avatarColour, initials } from "@/lib/avatar";
 
-import { fetchRoomInfo, type RoomInfo } from "../actions";
+import { fetchRoomInfo, updateRoomAction, type RoomInfo } from "../actions";
 
 export function GroupPanel({
   slug,
@@ -20,6 +20,13 @@ export function GroupPanel({
 }) {
   const [info, setInfo] = useState<RoomInfo | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
+
+  const reload = () => {
+    void fetchRoomInfo(slug).then((result) => {
+      setInfo(result);
+      setState(result ? "ready" : "missing");
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -82,13 +89,22 @@ export function GroupPanel({
         {state === "ready" && info && (
           <>
             <div className="flex flex-col items-center gap-3 px-6 py-7">
-              <span
-                className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-semibold text-white"
-                style={{ backgroundColor: avatarColour(slug) }}
-                aria-hidden
-              >
-                {initials(info.name)}
-              </span>
+              {info.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={info.avatarUrl}
+                  alt=""
+                  className="h-24 w-24 rounded-full object-cover"
+                />
+              ) : (
+                <span
+                  className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-semibold text-white"
+                  style={{ backgroundColor: avatarColour(slug) }}
+                  aria-hidden
+                >
+                  {initials(info.name)}
+                </span>
+              )}
 
               <div className="flex flex-col items-center gap-0.5 text-center">
                 <p className="text-[17px] font-semibold text-ink">{info.name}</p>
@@ -99,13 +115,17 @@ export function GroupPanel({
               </div>
             </div>
 
-            {info.topic && (
-              <div className="border-t border-line px-5 py-4">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-faint">
-                  Description
-                </p>
-                <p className="text-[13px] leading-relaxed text-ink">{info.topic}</p>
-              </div>
+            {info.canEdit ? (
+              <GroupEditor slug={slug} info={info} onSaved={reload} />
+            ) : (
+              info.topic && (
+                <div className="border-t border-line px-5 py-4">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-faint">
+                    Description
+                  </p>
+                  <p className="text-[13px] leading-relaxed text-ink">{info.topic}</p>
+                </div>
+              )
             )}
 
             <div className="border-t border-line px-5 py-4">
@@ -149,8 +169,15 @@ export function GroupPanel({
                       </span>
 
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-[14px] text-ink">
-                          {member.displayName ?? `@${member.username}`}
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate text-[14px] text-ink">
+                            {member.displayName ?? `@${member.username}`}
+                          </span>
+                          {member.isAdmin && (
+                            <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-accent">
+                              admin
+                            </span>
+                          )}
                         </span>
                         <span className="truncate text-[12px] text-muted">
                           {member.headline ?? `@${member.username}`}
@@ -165,5 +192,128 @@ export function GroupPanel({
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Group details, editable by mods.
+ *
+ * Collapsed by default: the panel is read most of the time, and an always-open
+ * form would bury the member list under inputs nobody is using.
+ */
+function GroupEditor({
+  slug,
+  info,
+  onSaved,
+}: {
+  slug: string;
+  info: RoomInfo;
+  onSaved: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  /**
+   * Completion is handled here rather than by watching the action result in an
+   * effect. Closing the form and refreshing the panel are consequences of the
+   * submit, so they belong in the submit path — reacting to them afterwards
+   * means a setState inside an effect and an extra render.
+   */
+  const submit = (formData: FormData) => {
+    startTransition(async () => {
+      const result = await updateRoomAction({}, formData);
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      setError(null);
+      setOpen(false);
+      onSaved();
+    });
+  };
+
+  if (!open) {
+    return (
+      <div className="border-t border-line px-5 py-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-faint">
+            Description
+          </p>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="text-[12px] font-medium text-accent hover:underline"
+          >
+            Edit
+          </button>
+        </div>
+        <p className="text-[13px] leading-relaxed text-ink">
+          {info.topic ?? <span className="text-faint">No description yet.</span>}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form action={submit} className="flex flex-col gap-3 border-t border-line px-5 py-4">
+      <input type="hidden" name="slug" value={slug} />
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[12px] font-medium text-ink">Group name</span>
+        <input
+          name="name"
+          defaultValue={info.name}
+          maxLength={60}
+          required
+          className="rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink outline-none focus:border-accent"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[12px] font-medium text-ink">Description</span>
+        <textarea
+          name="topic"
+          defaultValue={info.topic ?? ""}
+          maxLength={300}
+          rows={3}
+          className="resize-y rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink outline-none focus:border-accent"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[12px] font-medium text-ink">Group picture</span>
+        <input
+          name="avatar"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="text-[12px] text-muted file:mr-3 file:rounded-md file:border-0 file:bg-raised file:px-3 file:py-1.5 file:text-[12px] file:text-ink"
+        />
+        <span className="text-[11px] text-faint">
+          PNG, JPEG or WebP, up to 2 MB. Leave empty to keep the current one.
+        </span>
+      </label>
+
+      {error && <p className="text-[11px] text-danger">{error}</p>}
+
+      <div className="flex items-center gap-2">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-lg bg-accent px-3.5 py-2 text-[13px] font-semibold text-accent-ink disabled:opacity-50"
+        >
+          {pending ? "Saving…" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="rounded-lg px-3 py-2 text-[13px] text-muted hover:text-ink"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

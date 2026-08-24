@@ -151,6 +151,7 @@ export async function getRoomForUser(userId: string, slug: string) {
       name: conversations.name,
       topic: conversations.topic,
       type: conversations.type,
+      avatarUrl: conversations.avatarUrl,
     })
     .from(conversations)
     .innerJoin(spaces, eq(spaces.id, conversations.spaceId))
@@ -396,6 +397,7 @@ export type RoomMember = {
   displayName: string | null;
   avatarUrl: string | null;
   headline: string | null;
+  isAdmin: boolean;
   isOnline: boolean;
   joinedAt: Date;
 };
@@ -409,6 +411,7 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
       displayName: users.displayName,
       avatarUrl: users.avatarUrl,
       headline: users.headline,
+      isAdmin: users.isAdmin,
       showLastActive: users.showLastActive,
       lastActiveAt: users.lastActiveAt,
       joinedAt: conversationMembers.joinedAt,
@@ -416,7 +419,7 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
     .from(conversationMembers)
     .innerJoin(users, eq(users.id, conversationMembers.userId))
     .where(and(eq(conversationMembers.conversationId, conversationId), isNull(users.deletedAt)))
-    .orderBy(asc(users.username));
+    .orderBy(desc(users.isAdmin), asc(users.username));
 
   const cutoff = Date.now() - ACTIVE_WINDOW_MINUTES * 60_000;
 
@@ -426,6 +429,7 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
     displayName: row.displayName,
     avatarUrl: row.avatarUrl,
     headline: row.headline,
+    isAdmin: row.isAdmin,
     isOnline:
       row.showLastActive && row.lastActiveAt ? row.lastActiveAt.getTime() > cutoff : false,
     joinedAt: row.joinedAt,
@@ -539,4 +543,23 @@ export async function searchMessages(
     )
     .orderBy(desc(messages.createdAt))
     .limit(limit);
+}
+
+export type RoomEdit = {
+  name?: string;
+  topic?: string | null;
+  avatarUrl?: string | null;
+};
+
+/** Rename a room, change its description, or set its picture. */
+export async function updateRoom(conversationId: string, patch: RoomEdit): Promise<void> {
+  const set: Record<string, unknown> = {};
+
+  if (patch.name !== undefined) set.name = patch.name;
+  if (patch.topic !== undefined) set.topic = patch.topic;
+  if (patch.avatarUrl !== undefined) set.avatarUrl = patch.avatarUrl;
+
+  if (Object.keys(set).length === 0) return;
+
+  await db.update(conversations).set(set).where(eq(conversations.id, conversationId));
 }

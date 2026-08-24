@@ -29,6 +29,13 @@
       "when": 1787575901320,
       "tag": "0003_social_website",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787602430674,
+      "tag": "0004_room_avatar",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import {
   getRoomForUser,
   listMessages,
@@ -9,6 +10,7 @@ import {
   roomStats,
   searchMessages,
   setPinned,
+  updateRoom,
   type PinnedMessage,
   type SearchHit,
   touchLastActive,
@@ -23,6 +25,7 @@ import {
   getPublicProfile,
   type PublicProfile,
 } from "@/server/users/profile";
+import { uploadRoomAvatar } from "@/server/users/profile";
 import { getDbUser } from "@/server/users/sync";
 
 export type SendState = { error?: string };
@@ -117,6 +120,8 @@ export async function markRoomRead(slug: string, messageId?: string) {
 export type RoomInfo = {
   name: string;
   topic: string | null;
+  avatarUrl: string | null;
+  canEdit: boolean;
   stats: RoomStats;
   members: RoomMember[];
 };
@@ -131,7 +136,14 @@ export async function fetchRoomInfo(slug: string): Promise<RoomInfo | null> {
 
   const [stats, members] = await Promise.all([roomStats(room.id), listRoomMembers(room.id)]);
 
-  return { name: room.name ?? slug, topic: room.topic, stats, members };
+  return {
+    name: room.name ?? slug,
+    topic: room.topic,
+    avatarUrl: room.avatarUrl,
+    canEdit: me.isAdmin,
+    stats,
+    members,
+  };
 }
 
 /**
@@ -243,4 +255,47 @@ export async function syncPresence(slug: string): Promise<RoomStats | null> {
 
   await touchLastActive(me.id);
   return roomStats(room.id);
+}
+
+export type RoomEditState = { error?: string; saved?: boolean };
+
+/**
+ * Rename a room, change its description, or set its picture.
+ *
+ * Admin-only, re-checked here rather than trusted from whether the form was
+ * rendered — a server action is a public endpoint.
+ */
+export async function updateRoomAction(
+  _prev: RoomEditState,
+  formData: FormData,
+): Promise<RoomEditState> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+  if (!me.isAdmin) return { error: "Only mods can edit the group." };
+
+  const slug = String(formData.get("slug") ?? "");
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return { error: "You are not in this room." };
+
+  const name = String(formData.get("name") ?? "").trim();
+  const topic = String(formData.get("topic") ?? "").trim();
+
+  if (name.length < 2) return { error: "Give the group a name of at least 2 characters." };
+  if (name.length > 60) return { error: "Keep the name under 60 characters." };
+  if (topic.length > 300) return { error: "Keep the description under 300 characters." };
+
+  let avatarUrl: string | undefined;
+  const file = formData.get("avatar");
+
+  if (file instanceof File && file.size > 0) {
+    const uploaded = await uploadRoomAvatar(room.id, file);
+    if (!uploaded.ok) return { error: uploaded.error };
+    avatarUrl = uploaded.url;
+  }
+
+  await updateRoom(room.id, { name, topic: topic || null, avatarUrl });
+
+  // The name and picture appear in the chat list and header too.
+  revalidatePath("/chat", "layout");
+  return { saved: true };
 }

@@ -218,3 +218,48 @@ export async function getMembersByIds(ids: string[]) {
     .from(users)
     .where(and(inArray(users.id, ids), isNull(users.deletedAt)));
 }
+
+/**
+ * Upload a group picture.
+ *
+ * Same bucket as member avatars under a rooms/ prefix, keyed by conversation
+ * id, so one room can never overwrite another's file. Service role only — the
+ * browser never gets storage write access.
+ */
+export async function uploadRoomAvatar(
+  conversationId: string,
+  file: File,
+): Promise<UploadResult> {
+  if (!AVATAR_MIME.includes(file.type)) {
+    return { ok: false, error: "Use a PNG, JPEG or WebP image." };
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    return { ok: false, error: "Keep the image under 2 MB." };
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return { ok: false, error: "Uploads are not configured." };
+
+  const extension =
+    file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const path = `rooms/${conversationId}/avatar-${Date.now()}.${extension}`;
+
+  const response = await fetch(`${url}/storage/v1/object/avatars/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": file.type,
+      "x-upsert": "true",
+    },
+    body: new Uint8Array(await file.arrayBuffer()),
+  });
+
+  if (!response.ok) {
+    console.error("[room avatar] upload failed", response.status, await response.text());
+    return { ok: false, error: "Upload failed. Try again." };
+  }
+
+  return { ok: true, url: `${url}/storage/v1/object/public/avatars/${path}` };
+}

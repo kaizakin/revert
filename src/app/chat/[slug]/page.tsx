@@ -44,6 +44,7 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
       meUsername={me.username}
       canPost={canPost}
       canPin={me.isAdmin}
+      avatarUrl={room.avatarUrl}
       postDeniedReason="Only mods post in this room."
       initialMessages={messages}
     />
