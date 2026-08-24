@@ -3,12 +3,17 @@ import { redirect } from "next/navigation";
 import { listRoomsForUser } from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
 
+import { ChatList } from "./chat-list";
+
 /**
- * The chat list itself lives in the layout, so on a phone this route renders
- * as just the list. On a wider screen there is no reason to sit on an empty
- * panel, so it opens the most recent room.
+ * On a narrow screen the layout hides its sidebar, so this route has to render
+ * the chat list itself — otherwise going back from a room landed on an empty
+ * panel meant for wide screens, with no way to reach another chat.
+ *
+ * Above md the sidebar is present, so the list would be duplicated; there this
+ * shows a placeholder instead.
  */
-export default async function RoomsIndexPage() {
+export default async function ChatIndexPage() {
   const me = await ensureDbUser();
   if (!me) redirect("/onboarding");
 
@@ -16,20 +21,26 @@ export default async function RoomsIndexPage() {
   const first = rooms[0];
 
   return (
-    <div className="hidden flex-1 items-center justify-center bg-chat-bg px-6 sm:flex">
-      <p className="max-w-xs text-center text-sm leading-relaxed text-muted">
-        {first ? (
-          <>
-            Pick a chat on the left to start reading.
-            <br />
-            <a href={`/chat/${first.slug}`} className="text-accent underline">
-              Open {first.name}
-            </a>
-          </>
-        ) : (
-          "You are not in any rooms yet."
-        )}
-      </p>
-    </div>
+    <>
+      <div className="flex flex-1 flex-col bg-surface md:hidden">
+        <ChatList rooms={rooms} />
+      </div>
+
+      <div className="hidden flex-1 items-center justify-center bg-chat-bg px-6 md:flex">
+        <p className="max-w-xs text-center text-sm leading-relaxed text-muted">
+          {first ? (
+            <>
+              Pick a chat on the left to start reading.
+              <br />
+              <a href={`/chat/${first.slug}`} className="text-accent underline">
+                Open {first.name}
+              </a>
+            </>
+          ) : (
+            "You are not in any rooms yet."
+          )}
+        </p>
+      </div>
+    </>
   );
 }

@@ -83,6 +83,7 @@
   --color-accent-ink: var(--rv-accent-ink);
   --color-accent-soft: var(--rv-accent-soft);
   --color-danger: var(--rv-danger);
+  --color-mention: var(--rv-mention);
   --color-bubble-out: var(--rv-bubble-out);
   --color-bubble-out-ink: var(--rv-bubble-out-ink);
   --color-bubble-in: var(--rv-bubble-in);

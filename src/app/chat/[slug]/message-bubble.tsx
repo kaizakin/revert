@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { BubbleTail, Tick } from "@/components/bubble-marks";
+import { renderRichText } from "@/lib/rich-text";
 import { avatarColour, initials } from "@/lib/avatar";
 import type { MessageRow } from "@/server/messaging/queries";
 import { REACTION_EMOJI } from "@/lib/reactions";
@@ -70,59 +71,6 @@ function Avatar({ username, url }: { username: string | null; url: string | null
       {initials(username)}
     </span>
   );
-}
-
-/**
- * Render the body with @handles as links into the profile panel.
- *
- * Split rather than dangerouslySetInnerHTML: message text is user input, and
- * building HTML from it to get one link would be an injection hole for the sake
- * of a convenience.
- */
-function renderBody(body: string | null, onOpenProfile: (username: string) => void) {
-  if (!body) return null;
-
-  const pattern = /(^|[^a-zA-Z0-9_@])@([a-zA-Z][a-zA-Z0-9_]{2,19})/g;
-  const out: React.ReactNode[] = [];
-  let last = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(body)) !== null) {
-    const [full, lead, handle] = match;
-    const start = match.index + lead.length;
-
-    if (start > last) out.push(body.slice(last, start));
-
-    const isAll = handle.toLowerCase() === "all";
-
-    out.push(
-      isAll ? (
-        <span
-          key={start}
-          className="rounded px-0.5 font-semibold"
-          style={{ color: "var(--rv-mention)", backgroundColor: "var(--rv-mention-soft)" }}
-        >
-          @all
-        </span>
-      ) : (
-        <button
-          key={start}
-          type="button"
-          onClick={() => onOpenProfile(handle.toLowerCase())}
-          title={`Open @${handle}'s profile`}
-          className="rounded px-0.5 font-semibold transition-opacity hover:opacity-80"
-          style={{ color: "var(--rv-mention)", backgroundColor: "var(--rv-mention-soft)" }}
-        >
-          @{handle}
-        </button>
-      ),
-    );
-
-    last = match.index + full.length;
-  }
-
-  if (last < body.length) out.push(body.slice(last));
-  return out;
 }
 
 export function MessageBubble({
@@ -226,7 +174,7 @@ export function MessageBubble({
           )}
 
           <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">
-            {renderBody(message.body, onOpenProfile)}
+            {renderRichText(message.body, onOpenProfile)}
             {/* Reserves space on the last line so the timestamp never overlaps. */}
             <span className={`inline-block select-none ${isMine ? "w-[74px]" : "w-12"}`} aria-hidden />
           </p>

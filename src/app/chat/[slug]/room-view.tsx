@@ -517,7 +517,7 @@ export function RoomView({
       </div>
 
       <div className="border-t border-line bg-surface">
-        <div className="mx-auto w-full max-w-3xl px-3 py-3 sm:px-6">
+        <div className="mx-auto w-full max-w-5xl px-3 py-3 sm:px-6">
           {canPost ? (
             <form
               ref={formRef}
