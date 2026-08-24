@@ -28,7 +28,7 @@ const NAME_COLOURS = [
 ];
 
 function nameColour(username: string | null) {
-  if (!username) return "var(--bubble-meta)";
+  if (!username) return "var(--rv-bubble-meta)";
   let hash = 0;
   for (let i = 0; i < username.length; i++) hash = (hash * 31 + username.charCodeAt(i)) | 0;
   return NAME_COLOURS[Math.abs(hash) % NAME_COLOURS.length];

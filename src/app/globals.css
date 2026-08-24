@@ -17,71 +17,71 @@
  * variant on every element.
  */
 :root {
-  --canvas: #fbfbfa;
-  --surface: #ffffff;
-  --raised: #f4f4f2;
-  --line: #e5e4e1;
-  --line-strong: #d3d2ce;
-  --ink: #1a1a19;
-  --muted: #6f6e6a;
-  --faint: #9c9b96;
-  --accent: #12805c;
-  --accent-ink: #ffffff;
-  --accent-soft: #e6f4ee;
-  --danger: #b42318;
+  --rv-canvas: #fbfbfa;
+  --rv-surface: #ffffff;
+  --rv-raised: #f4f4f2;
+  --rv-line: #e5e4e1;
+  --rv-line-strong: #d3d2ce;
+  --rv-ink: #1a1a19;
+  --rv-muted: #6f6e6a;
+  --rv-faint: #9c9b96;
+  --rv-accent: #12805c;
+  --rv-accent-ink: #ffffff;
+  --rv-accent-soft: #e6f4ee;
+  --rv-danger: #b42318;
 
   /* Chat surfaces: outgoing bubble, incoming bubble, conversation background. */
-  --bubble-out: #d9fdd3;
-  --bubble-out-ink: #111b21;
-  --bubble-in: #ffffff;
-  --bubble-in-ink: #111b21;
-  --chat-bg: #efeae2;
-  --bubble-meta: #667781;
+  --rv-bubble-out: #d9fdd3;
+  --rv-bubble-out-ink: #111b21;
+  --rv-bubble-in: #ffffff;
+  --rv-bubble-in-ink: #111b21;
+  --rv-chat-bg: #efeae2;
+  --rv-bubble-meta: #667781;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: #0c0c0d;
-    --surface: #141416;
-    --raised: #1c1c1f;
-    --line: #27272b;
-    --line-strong: #3a3a40;
-    --ink: #f2f2f3;
-    --muted: #9c9ca3;
-    --faint: #6c6c73;
-    --accent: #34d399;
-    --accent-ink: #06251b;
-    --accent-soft: #16241f;
-    --danger: #fda29b;
+    --rv-canvas: #0c0c0d;
+    --rv-surface: #141416;
+    --rv-raised: #1c1c1f;
+    --rv-line: #27272b;
+    --rv-line-strong: #3a3a40;
+    --rv-ink: #f2f2f3;
+    --rv-muted: #9c9ca3;
+    --rv-faint: #6c6c73;
+    --rv-accent: #34d399;
+    --rv-accent-ink: #06251b;
+    --rv-accent-soft: #16241f;
+    --rv-danger: #fda29b;
 
-    --bubble-out: #005c4b;
-    --bubble-out-ink: #e9edef;
-    --bubble-in: #202c33;
-    --bubble-in-ink: #e9edef;
-    --chat-bg: #0b141a;
-    --bubble-meta: #8696a0;
+    --rv-bubble-out: #005c4b;
+    --rv-bubble-out-ink: #e9edef;
+    --rv-bubble-in: #202c33;
+    --rv-bubble-in-ink: #e9edef;
+    --rv-chat-bg: #0b141a;
+    --rv-bubble-meta: #8696a0;
   }
 }
 
 @theme inline {
-  --color-canvas: var(--canvas);
-  --color-surface: var(--surface);
-  --color-raised: var(--raised);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
-  --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-faint: var(--faint);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-accent-soft: var(--accent-soft);
-  --color-danger: var(--danger);
-  --color-bubble-out: var(--bubble-out);
-  --color-bubble-out-ink: var(--bubble-out-ink);
-  --color-bubble-in: var(--bubble-in);
-  --color-bubble-in-ink: var(--bubble-in-ink);
-  --color-chat-bg: var(--chat-bg);
-  --color-bubble-meta: var(--bubble-meta);
+  --color-canvas: var(--rv-canvas);
+  --color-surface: var(--rv-surface);
+  --color-raised: var(--rv-raised);
+  --color-line: var(--rv-line);
+  --color-line-strong: var(--rv-line-strong);
+  --color-ink: var(--rv-ink);
+  --color-muted: var(--rv-muted);
+  --color-faint: var(--rv-faint);
+  --color-accent: var(--rv-accent);
+  --color-accent-ink: var(--rv-accent-ink);
+  --color-accent-soft: var(--rv-accent-soft);
+  --color-danger: var(--rv-danger);
+  --color-bubble-out: var(--rv-bubble-out);
+  --color-bubble-out-ink: var(--rv-bubble-out-ink);
+  --color-bubble-in: var(--rv-bubble-in);
+  --color-bubble-in-ink: var(--rv-bubble-in-ink);
+  --color-chat-bg: var(--rv-chat-bg);
+  --color-bubble-meta: var(--rv-bubble-meta);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -93,22 +93,22 @@
  * looks cheap.
  */
 body {
-  background: var(--canvas);
-  color: var(--ink);
+  background: var(--rv-canvas);
+  color: var(--rv-ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--rv-accent);
+  color: var(--rv-accent-ink);
 }
 
 /* Slim scrollbars, so the sidebar and message list do not sprout grey slabs. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-color: var(--rv-line-strong) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -117,7 +117,7 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--line-strong);
+  background: var(--rv-line-strong);
   border-radius: 999px;
 }
 
@@ -127,7 +127,7 @@ body {
 
 /* Visible focus for keyboard users without a ring on every mouse click. */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--rv-accent);
   outline-offset: 2px;
 }
 
@@ -136,7 +136,7 @@ body {
  * most of what made the room read as a dashboard rather than a chat.
  */
 .chat-pattern {
-  background-color: var(--chat-bg);
+  background-color: var(--rv-chat-bg);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%23808080' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M18 22h14M25 15v14'/%3E%3Ccircle cx='104' cy='26' r='7'/%3E%3Cpath d='M60 44c4-6 12-6 16 0'/%3E%3Cpath d='M14 74c6-8 14-8 20 0'/%3E%3Crect x='92' y='62' width='16' height='16' rx='3'/%3E%3Cpath d='M46 100l8 8 8-8'/%3E%3Cpath d='M116 104c0 5-4 9-9 9'/%3E%3Cpath d='M74 120h16'/%3E%3Ccircle cx='34' cy='124' r='5'/%3E%3Cpath d='M126 44l6 6'/%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
 }
@@ -160,13 +160,13 @@ body {
 
 .tail-out::after {
   right: -7px;
-  border-left: 8px solid var(--bubble-out);
+  border-left: 8px solid var(--rv-bubble-out);
   border-bottom: 13px solid transparent;
 }
 
 .tail-in::after {
   left: -7px;
-  border-right: 8px solid var(--bubble-in);
+  border-right: 8px solid var(--rv-bubble-in);
   border-bottom: 13px solid transparent;
 }
 

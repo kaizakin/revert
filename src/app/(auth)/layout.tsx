@@ -52,7 +52,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <div
           aria-hidden
           className="pointer-events-none absolute -left-24 top-1/3 h-96 w-96 rounded-full opacity-[0.07] blur-3xl"
-          style={{ background: "var(--accent)" }}
+          style={{ background: "var(--rv-accent)" }}
         />
 
         <Link href="/" className="relative flex items-center gap-2.5">

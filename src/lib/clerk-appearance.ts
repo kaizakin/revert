@@ -6,6 +6,11 @@ type Appearance = NonNullable<ComponentProps<typeof ClerkProvider>["appearance"]
 /**
  * Themes Clerk's built-in components to match the app.
  *
+ * Note on tokens: our CSS variables are namespaced `--rv-*`. Clerk defines its
+ * own `--accent` inside the component subtree, which shadowed ours and left the
+ * primary button grey while `.bg-accent` looked correct in devtools. The
+ * namespace makes that collision impossible.
+ *
  * Deliberately done with `elements` classNames rather than `variables` colours.
  * The variables API takes concrete colour strings that Clerk then shades
  * programmatically for hover and active states, so a CSS `var()` cannot be
@@ -27,7 +32,7 @@ export const clerkAppearance: Appearance = {
   elements: {
     rootBox: "w-full",
     cardBox: "shadow-none border border-line rounded-xl",
-    card: "bg-surface shadow-none border-0",
+    card: "bg-surface text-ink shadow-none border-0",
 
     header: "gap-1",
     headerTitle: "text-ink text-xl font-semibold tracking-tight",
@@ -59,8 +64,11 @@ export const clerkAppearance: Appearance = {
     identityPreviewText: "text-ink",
     identityPreviewEditButton: "text-accent",
 
-    footer: "bg-transparent",
-    footerAction: "bg-transparent",
+    // Clerk's footer keeps its own dark-on-dark text colour, so these need to
+    // be set explicitly rather than inherited.
+    footer: "bg-transparent text-muted",
+    footerItem: "bg-transparent text-muted",
+    footerAction: "bg-transparent text-muted",
     footerActionText: "text-muted text-[13px]",
     footerActionLink: "text-accent hover:underline font-medium",
 

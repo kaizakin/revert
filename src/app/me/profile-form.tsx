@@ -370,7 +370,7 @@ export function ProfileForm({
             type="checkbox"
             name="showLastActive"
             defaultChecked={profile.showLastActive}
-            className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+            className="mt-0.5 h-4 w-4 accent-[var(--rv-accent)]"
           />
           <span className="flex flex-col">
             <span className="text-[13px] text-ink">Show when I was last active</span>
@@ -385,7 +385,7 @@ export function ProfileForm({
             type="checkbox"
             name="showReadReceipts"
             defaultChecked={showReadReceipts}
-            className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+            className="mt-0.5 h-4 w-4 accent-[var(--rv-accent)]"
           />
           <span className="flex flex-col">
             <span className="text-[13px] text-ink">Send read receipts</span>
