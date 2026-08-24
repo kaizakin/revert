@@ -92,6 +92,7 @@ export function RoomView({
    * revalidation and leaves two sources of truth one race apart.
    */
   const [live, setLive] = useState<MessageRow[]>([]);
+  const [draft, setDraft] = useState("");
 
   const [state, action, pending] = useActionState<SendState, FormData>(sendMessageAction, {});
   const formRef = useRef<HTMLFormElement>(null);
@@ -172,7 +173,6 @@ export function RoomView({
     () =>
       optimistic.map((message, index) => {
         const previous = index > 0 ? optimistic[index - 1] : null;
-        const next = index < optimistic.length - 1 ? optimistic[index + 1] : null;
 
         const showDay = !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
 
@@ -186,40 +186,29 @@ export function RoomView({
           previous.authorId !== message.authorId ||
           !withinWindow(previous, message);
 
-        const endsRun =
-          !next ||
-          next.authorId !== message.authorId ||
-          !withinWindow(message, next) ||
-          dayOf(next.createdAt) !== dayOf(message.createdAt);
 
-        return { message, showDay, startsRun, endsRun };
+        return { message, showDay, startsRun };
       }),
     [optimistic],
   );
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto bg-chat-bg">
-        <div className="mx-auto flex max-w-3xl flex-col gap-0.5 px-3 py-4 sm:px-6">
+      <div className="chat-pattern flex-1 overflow-y-auto">
+        <div className="mx-auto flex max-w-3xl flex-col gap-[3px] px-3 py-4 sm:px-8">
           {rendered.length === 0 && (
             <p className="py-16 text-center text-sm text-bubble-meta">
               No messages yet. Say something.
             </p>
           )}
 
-          {rendered.map(({ message, showDay, startsRun, endsRun }) => {
+          {rendered.map(({ message, showDay, startsRun }) => {
             const isMine = message.authorId === meId;
             const isPending = message.id.startsWith("pending-");
 
-            // Square off the corner on the side the run continues from, so a
-            // run of bubbles reads as one block instead of separate cards.
-            const tail = isMine
-              ? endsRun
-                ? "rounded-br-sm"
-                : ""
-              : endsRun
-                ? "rounded-bl-sm"
-                : "";
+            // The tail hangs off the first bubble of a run only, so a run reads
+            // as one block rather than a column of separate cards.
+            const tail = startsRun ? (isMine ? "tail-out" : "tail-in") : "";
 
             return (
               <div key={message.id}>
@@ -233,29 +222,30 @@ export function RoomView({
 
                 <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[78%] rounded-xl px-2.5 py-1.5 shadow-sm sm:max-w-[70%] ${tail} ${
+                    className={`relative max-w-[80%] px-2 py-[5px] shadow-sm sm:max-w-[65%] ${tail} ${
                       isMine
                         ? "bg-bubble-out text-bubble-out-ink"
                         : "bg-bubble-in text-bubble-in-ink"
                     } ${isPending ? "opacity-60" : ""}`}
+                    style={{ borderRadius: 8 }}
                   >
                     {!isMine && startsRun && (
                       <p
-                        className="mb-0.5 text-[13px] font-semibold"
+                        className="mb-px text-[12.5px] font-semibold"
                         style={{ color: nameColour(message.authorUsername) }}
                       >
                         @{message.authorUsername ?? "deleted"}
                       </p>
                     )}
 
-                    <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.35]">
+                    <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">
                       {message.body}
                       {/* Reserves room on the last line so the timestamp never
                           overlaps the text. */}
-                      <span className="inline-block w-14 select-none" aria-hidden />
+                      <span className="inline-block w-16 select-none" aria-hidden />
                     </p>
 
-                    <span className="-mt-3.5 flex items-center justify-end gap-1 text-[11px] text-bubble-meta">
+                    <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] text-bubble-meta">
                       {message.editedAt && <span>edited</span>}
                       {timeOf(message.createdAt)}
                       {isMine && <span aria-hidden>{isPending ? "🕘" : "✓"}</span>}
@@ -278,20 +268,40 @@ export function RoomView({
                 const body = String(formData.get("body") ?? "").trim();
                 if (!body) return;
                 addOptimistic(body);
-                formRef.current?.reset();
+                setDraft("");
                 return action(formData);
               }}
             >
               <input type="hidden" name="slug" value={slug} />
 
               <div className="flex items-end gap-2">
+                {/* Attachments and emoji land with media support in Phase 2, so
+                    they are shown disabled rather than faked. */}
+                <span
+                  title="Attach — coming in Phase 2"
+                  aria-hidden
+                  className="mb-1 flex h-9 w-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-faint/60"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5.5 w-5.5" aria-hidden>
+                    <path
+                      d="M12 5v14M5 12h14"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+
                 <textarea
                   name="body"
                   rows={1}
                   required
                   maxLength={4000}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
                   placeholder="Type a message"
-                  className="max-h-32 flex-1 resize-none rounded-3xl border border-line bg-canvas px-4 py-2.5 text-[15px] text-ink outline-none transition-colors placeholder:text-faint focus:border-line-strong"
+                  className="max-h-32 flex-1 resize-none rounded-lg bg-raised px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint"
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
                       event.preventDefault();
@@ -299,11 +309,12 @@ export function RoomView({
                     }
                   }}
                 />
+
                 <button
                   type="submit"
-                  disabled={pending}
+                  disabled={pending || draft.trim().length === 0}
                   aria-label="Send"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-all hover:opacity-90 disabled:opacity-30"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
                     <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z" fill="currentColor" />

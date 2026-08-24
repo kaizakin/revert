@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { avatarColour, initials } from "@/lib/avatar";
 import { getRoomForUser, listMessages, roomMemberCount } from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
 
@@ -53,8 +54,12 @@ export default async function RoomPage({ params }: PageProps<"/rooms/[slug]">) {
           </svg>
         </Link>
 
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-raised text-sm font-semibold text-muted">
-          #
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+          style={{ backgroundColor: avatarColour(room.slug) }}
+          aria-hidden
+        >
+          {initials(room.name)}
         </span>
 
         <div className="min-w-0 flex-1">
@@ -64,6 +69,30 @@ export default async function RoomPage({ params }: PageProps<"/rooms/[slug]">) {
             {note ? ` · ${note}` : ""}
           </p>
         </div>
+
+        {/* Search inside a room and room settings arrive with message search
+            and profiles, so they are shown disabled rather than faked. */}
+        <span
+          title="Search in room — not built yet"
+          aria-hidden
+          className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full text-faint/60"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </span>
+        <span
+          title="Room settings — not built yet"
+          aria-hidden
+          className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full text-faint/60"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+            <circle cx="12" cy="5" r="1.6" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+            <circle cx="12" cy="19" r="1.6" fill="currentColor" />
+          </svg>
+        </span>
       </header>
 
       <RoomView

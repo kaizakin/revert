@@ -119,3 +119,42 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/**
+ * Chat wallpaper. A tiled SVG doodle at very low opacity — the flat panel is
+ * most of what made the room read as a dashboard rather than a chat.
+ */
+.chat-pattern {
+  background-color: var(--chat-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%23808080' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M18 22h14M25 15v14'/%3E%3Ccircle cx='104' cy='26' r='7'/%3E%3Cpath d='M60 44c4-6 12-6 16 0'/%3E%3Cpath d='M14 74c6-8 14-8 20 0'/%3E%3Crect x='92' y='62' width='16' height='16' rx='3'/%3E%3Cpath d='M46 100l8 8 8-8'/%3E%3Cpath d='M116 104c0 5-4 9-9 9'/%3E%3Cpath d='M74 120h16'/%3E%3Ccircle cx='34' cy='124' r='5'/%3E%3Cpath d='M126 44l6 6'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chat-pattern {
+    background-blend-mode: soft-light;
+    opacity: 1;
+  }
+}
+
+/* Bubble tails, drawn with a border trick so no extra element is needed. */
+.tail-out::after,
+.tail-in::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+}
+
+.tail-out::after {
+  right: -7px;
+  border-left: 8px solid var(--bubble-out);
+  border-bottom: 13px solid transparent;
+}
+
+.tail-in::after {
+  left: -7px;
+  border-right: 8px solid var(--bubble-in);
+  border-bottom: 13px solid transparent;
+}
