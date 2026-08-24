@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AuthCard } from "@/components/auth-card";
 import { BackButton } from "@/components/back-button";
 
 const FEATURES = [
@@ -38,10 +39,10 @@ const FEATURES = [
 /**
  * Shared shell for sign-in and sign-up.
  *
- * Both routes live in this layout, so moving between them no longer re-renders
+ * Both routes live in this layout, so moving between them does not re-render
  * the whole page — the branding column stays mounted and only the card swaps.
- * That is what removes the flip; an animation alone would just have decorated
- * the reload.
+ * The flip in AuthCard is then a deliberate transition between two cards
+ * rather than an animation papering over a full reload.
  */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
@@ -120,7 +121,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         </div>
 
         <div className="flex flex-1 items-center justify-center py-10">
-          <div className="auth-card-in w-full max-w-sm">{children}</div>
+          <AuthCard>{children}</AuthCard>
         </div>
       </main>
     </div>

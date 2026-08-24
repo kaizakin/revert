@@ -1,3 +1,14 @@
+/**
+ * Layer order, so Clerk's own styles lose to our utilities.
+ *
+ * Clerk ships real CSS for its components. Passing classNames through the
+ * appearance API is not enough on its own: both sets of rules land in the same
+ * cascade and Clerk's win, which is why the sign-in card stayed white while
+ * every class looked correct in the markup. Naming Clerk's layer (via
+ * appearance.cssLayerName) and putting it before `utilities` makes ours apply.
+ */
+@layer theme, base, clerk, components, utilities;
+
 @import "tailwindcss";
 
 /**
@@ -160,26 +171,40 @@ body {
 }
 
 /**
- * Entrance for the auth card. Sign-in and sign-up share a layout, so only the
- * card animates in — the branding column stays put instead of redrawing.
+ * Card flip between sign-in and sign-up.
+ *
+ * backface-visibility and a fixed perspective on the parent keep the rotation
+ * reading as one card turning over rather than a squashing rectangle. The ease
+ * is back-loaded so it decelerates into place instead of stopping dead.
  */
-@keyframes auth-card-in {
+.auth-perspective {
+  perspective: 1400px;
+}
+
+@keyframes auth-flip-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.99);
+    transform: rotateY(-88deg);
+  }
+  60% {
+    opacity: 1;
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: rotateY(0deg);
   }
 }
 
-.auth-card-in {
-  animation: auth-card-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+.auth-flip {
+  transform-origin: center;
+  backface-visibility: hidden;
+  animation: auth-flip-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
 }
 
+/* A rotating card is exactly the kind of motion this setting exists to stop. */
 @media (prefers-reduced-motion: reduce) {
-  .auth-card-in {
+  .auth-flip {
     animation: none;
   }
 }

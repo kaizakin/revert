@@ -18,6 +18,12 @@ type Appearance = NonNullable<ComponentProps<typeof ClerkProvider>["appearance"]
  * versions even if an internal name changes.
  */
 export const clerkAppearance: Appearance = {
+  /**
+   * Puts Clerk's CSS in a named layer. globals.css orders that layer before
+   * `utilities`, so the classNames below actually take effect.
+   */
+  cssLayerName: "clerk",
+
   elements: {
     rootBox: "w-full",
     cardBox: "shadow-none border border-line rounded-xl",
