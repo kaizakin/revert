@@ -132,6 +132,44 @@ export function RoomView({
     },
   ]);
 
+  /**
+   * Hide the optimistic copy once the real message lands.
+   *
+   * Two things add a sent message: useOptimistic shows it instantly, and the
+   * realtime broadcast fetches the saved row a moment later. Between those two
+   * the same message was on screen twice.
+   *
+   * Matching on author and body is deliberate — the optimistic row has a
+   * client-only id, so there is nothing to match on. Sending the identical text
+   * twice in quick succession collapses to one bubble for a fraction of a
+   * second, which is a far better failure than every message flickering double.
+   */
+  const visible = useMemo(() => {
+    const hasPending = optimistic.some((m) => m.id.startsWith("pending-"));
+    if (!hasPending) return optimistic;
+
+    const mine = messages.filter((m) => m.authorId === meId);
+
+    return optimistic.filter((m) => {
+      if (!m.id.startsWith("pending-")) return true;
+
+      const draftBody = (m.body ?? "").trim();
+      const draftAt = new Date(m.createdAt).getTime();
+
+      /**
+       * Compared against the draft's own timestamp rather than the clock, so
+       * this stays a pure function of its inputs — and so repeating something
+       * you also said an hour ago does not hide the new bubble until the round
+       * trip finishes.
+       */
+      return !mine.some(
+        (settled) =>
+          (settled.body ?? "").trim() === draftBody &&
+          Math.abs(new Date(settled.createdAt).getTime() - draftAt) < 60_000,
+      );
+    });
+  }, [optimistic, messages, meId]);
+
   // Read through a ref inside the subscription so a new message does not tear
   // down and rebuild the websocket.
   const latestAtRef = useRef<string | null>(null);
@@ -194,7 +232,7 @@ export function RoomView({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [optimistic.length]);
+  }, [visible.length]);
 
   const lastRealId = messages.at(-1)?.id;
   useEffect(() => {
@@ -208,8 +246,8 @@ export function RoomView({
    */
   const rendered = useMemo(
     () =>
-      optimistic.map((message, index) => {
-        const previous = index > 0 ? optimistic[index - 1] : null;
+      visible.map((message, index) => {
+        const previous = index > 0 ? visible[index - 1] : null;
 
         const showDay = !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
 
@@ -226,7 +264,7 @@ export function RoomView({
 
         return { message, showDay, startsRun };
       }),
-    [optimistic],
+    [visible],
   );
 
   return (

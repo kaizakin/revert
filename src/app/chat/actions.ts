@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import {
   getRoomForUser,
   listMessages,
@@ -41,7 +39,12 @@ export async function sendMessageAction(
   const result = await sendMessage(author, slug, body, replyToId);
   if (!result.ok) return { error: result.error };
 
-  revalidatePath(`/chat/${slug}`);
+  /**
+   * No revalidatePath here. The message is broadcast and the client fetches the
+   * new rows itself, so re-rendering the whole route server-side only adds
+   * latency — and it was the second source of the message, which is what made a
+   * sent message appear twice before settling.
+   */
   return {};
 }
 
@@ -90,7 +93,8 @@ export async function toggleReactionAction(
   const result = await toggleReaction(me.id, messageId, emoji);
   if (!result.ok) return { error: result.error };
 
-  revalidatePath(`/chat/${slug}`);
+  // Same as sending: the client reloads the page of messages itself, so a
+  // server re-render here would only add latency.
   return {};
 }
 
