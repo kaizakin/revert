@@ -50,9 +50,6 @@ export function ProfileForm({
   const handleFor = (key: string) =>
     profile.socials.find((social) => social.provider === key)?.handle ?? "";
 
-  const verifiedFor = (key: string) =>
-    profile.socials.find((social) => social.provider === key)?.verified ?? false;
-
   return (
     <form action={action} className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
@@ -146,17 +143,7 @@ export function ProfileForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           {SOCIAL_PROVIDERS.map((provider) => (
-            <Field
-              key={provider.key}
-              label={provider.label}
-              hint={
-                verifiedFor(provider.key)
-                  ? "Verified"
-                  : provider.verifiable
-                    ? "Verification coming soon"
-                    : undefined
-              }
-            >
+            <Field key={provider.key} label={provider.label}>
               <input
                 name={provider.key}
                 defaultValue={handleFor(provider.key)}

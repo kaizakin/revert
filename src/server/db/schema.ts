@@ -89,9 +89,8 @@ export const users = pgTable(
 );
 
 /**
- * GitHub and LinkedIn are verified through OAuth. LeetCode and Codeforces have
- * no OAuth, so those verify by the user pasting a one-time token into their
- * profile bio, which the server then reads back.
+ * Self-reported profile links. Nothing here is verified — the handle is stored
+ * as typed and the profile URL is built from it.
  */
 export const socialAccounts = pgTable(
   "social_accounts",
@@ -103,9 +102,6 @@ export const socialAccounts = pgTable(
     provider: socialProvider("provider").notNull(),
     handle: text("handle").notNull(),
     url: text("url"),
-    verified: boolean("verified").notNull().default(false),
-    verificationToken: text("verification_token"),
-    verifiedAt: timestamp("verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique("social_accounts_user_provider_uq").on(t.userId, t.provider)],

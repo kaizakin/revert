@@ -187,7 +187,7 @@ export function MemberPanel({
                     const meta = SOCIAL_PROVIDERS.find((p) => p.key === social.provider);
 
                     return (
-                      <li key={social.provider} className="flex items-center justify-between gap-2">
+                      <li key={social.provider}>
                         <a
                           href={profileUrl(social.provider as SocialKey, social.handle)}
                           target="_blank"
@@ -196,26 +196,10 @@ export function MemberPanel({
                         >
                           {meta?.label ?? social.provider} · {social.handle}
                         </a>
-                        {social.verified ? (
-                          <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent">
-                            verified
-                          </span>
-                        ) : (
-                          <span
-                            title="Self-reported, not verified yet"
-                            className="shrink-0 text-[10px] text-faint"
-                          >
-                            unverified
-                          </span>
-                        )}
                       </li>
                     );
                   })}
                 </ul>
-                <p className="mt-3 text-[11px] leading-relaxed text-faint">
-                  Unverified links are typed in by the person, so treat them as a claim rather
-                  than proof.
-                </p>
               </div>
             )}
           </>

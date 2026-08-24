@@ -27,7 +27,7 @@ export type PublicProfile = {
   lastActiveAt: Date | null;
   showLastActive: boolean;
   createdAt: Date;
-  socials: { provider: SocialKey; handle: string; verified: boolean }[];
+  socials: { provider: SocialKey; handle: string }[];
 };
 
 /**
@@ -49,7 +49,6 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
     .select({
       provider: socialAccounts.provider,
       handle: socialAccounts.handle,
-      verified: socialAccounts.verified,
     })
     .from(socialAccounts)
     .where(eq(socialAccounts.userId, row.id));
@@ -126,12 +125,7 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
         .values({ userId, provider: provider.key, handle })
         .onConflictDoUpdate({
           target: [socialAccounts.userId, socialAccounts.provider],
-          set: {
-            handle,
-            // Changing the handle invalidates any previous verification.
-            verified: false,
-            verifiedAt: null,
-          },
+          set: { handle },
         });
     }
   });

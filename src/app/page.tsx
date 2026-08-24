@@ -22,8 +22,8 @@ const REASONS = [
     body: "Mute any room. During a live session only the host and mentions of you can notify you.",
   },
   {
-    title: "Profiles you can trust",
-    body: "GitHub and LeetCode verified by login, not by pasting a link anyone could fake.",
+    title: "Profiles worth reading",
+    body: "GitHub, LeetCode and LinkedIn on every profile, so you know who you are talking to.",
   },
 ];
 

@@ -15,6 +15,13 @@
       "when": 1787569746418,
       "tag": "0001_username_lower_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787575419440,
+      "tag": "0002_drop_link_verification",
+      "breakpoints": true
     }
   ]
 }

@@ -6,11 +6,11 @@ import { z } from "zod";
  */
 
 export const SOCIAL_PROVIDERS = [
-  { key: "github", label: "GitHub", placeholder: "octocat", verifiable: true },
-  { key: "linkedin", label: "LinkedIn", placeholder: "your-handle", verifiable: true },
-  { key: "x", label: "X", placeholder: "handle", verifiable: false },
-  { key: "leetcode", label: "LeetCode", placeholder: "handle", verifiable: true },
-  { key: "codeforces", label: "Codeforces", placeholder: "handle", verifiable: true },
+  { key: "github", label: "GitHub", placeholder: "octocat" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "your-handle" },
+  { key: "x", label: "X", placeholder: "handle" },
+  { key: "leetcode", label: "LeetCode", placeholder: "handle" },
+  { key: "codeforces", label: "Codeforces", placeholder: "handle" },
 ] as const;
 
 export type SocialKey = (typeof SOCIAL_PROVIDERS)[number]["key"];
