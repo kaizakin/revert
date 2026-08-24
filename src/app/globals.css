@@ -158,3 +158,28 @@ body {
   border-right: 8px solid var(--bubble-in);
   border-bottom: 13px solid transparent;
 }
+
+/**
+ * Entrance for the auth card. Sign-in and sign-up share a layout, so only the
+ * card animates in — the branding column stays put instead of redrawing.
+ */
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.auth-card-in {
+  animation: auth-card-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card-in {
+    animation: none;
+  }
+}
