@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 
@@ -24,13 +25,13 @@ function primaryEmail(user: NonNullable<Awaited<ReturnType<typeof currentUser>>>
 }
 
 /** Look up the row for the signed-in Clerk user. Does not create anything. */
-export async function getDbUser(): Promise<DbUser | null> {
+export const getDbUser = cache(async (): Promise<DbUser | null> => {
   const { userId } = await auth();
   if (!userId) return null;
 
   const [row] = await db.select().from(users).where(eq(users.clerkId, userId)).limit(1);
   return row ?? null;
-}
+});
 
 /** Ensure a newly synced user is a member of the default space and its rooms. */
 export async function ensureDefaultSpaceMembership(userId: string): Promise<void> {
@@ -88,7 +89,7 @@ export async function ensureDefaultSpaceMembership(userId: string): Promise<void
  * send them to onboarding to claim one rather than inventing a placeholder,
  * because a placeholder would consume a real name in a unique index.
  */
-export async function ensureDbUser(): Promise<DbUser | null> {
+export const ensureDbUser = cache(async (): Promise<DbUser | null> => {
   const existing = await getDbUser();
   if (existing) return existing;
 
@@ -109,7 +110,7 @@ export async function ensureDbUser(): Promise<DbUser | null> {
     displayName:
       [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() || null,
   });
-}
+});
 
 export type ClerkSyncInput = {
   clerkId: string;

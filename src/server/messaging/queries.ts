@@ -216,7 +216,7 @@ export type MessageRow = {
 export async function listMessages(
   conversationId: string,
   viewerId: string,
-  opts: { limit?: number; after?: Date } = {},
+  opts: { limit?: number; after?: Date; showReadReceipts?: boolean } = {},
 ): Promise<MessageRow[]> {
   const limit = Math.min(opts.limit ?? MESSAGE_PAGE_SIZE, 200);
 
@@ -271,15 +271,19 @@ export async function listMessages(
    * Reciprocity applies: someone who has turned read receipts off does not get
    * to see anyone else's, which is what the setting promises.
    */
-  const [viewer] = await db
-    .select({ showReadReceipts: users.showReadReceipts })
-    .from(users)
-    .where(eq(users.id, viewerId))
-    .limit(1);
-
   let readCutoff: Date | null = null;
+  let showReadReceipts = opts.showReadReceipts;
 
-  if (viewer?.showReadReceipts) {
+  if (showReadReceipts === undefined) {
+    const [viewer] = await db
+      .select({ showReadReceipts: users.showReadReceipts })
+      .from(users)
+      .where(eq(users.id, viewerId))
+      .limit(1);
+    showReadReceipts = viewer?.showReadReceipts ?? false;
+  }
+
+  if (showReadReceipts) {
     const [{ others }] = await db
       .select({ others: count() })
       .from(conversationMembers)
