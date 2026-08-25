@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
@@ -16,6 +17,13 @@ import { HowItWorks } from "./how-it-works";
  * not argue that job hunting is hard — it answers what this is, whether it is
  * safe, and how to get in. The previous version spent its best screen space
  * explaining the problem back to the people who know it best.
+ *
+ * Laid out as full-bleed bands of alternating warm paper rather than one narrow
+ * column cut by hairlines. A rule between sections asks the reader to notice a
+ * divider; a change of ground lets them feel the section end without looking at
+ * it. Headings are set large and light in the display face — weight is not what
+ * makes a headline read as designed, size and tight tracking are, and bold at
+ * 52px just reads as a template.
  */
 
 const TOPMATE_URL = "https://link.minianon.in/tusharbhardwaj";
@@ -182,6 +190,78 @@ const POINTS = [
   },
 ];
 
+/**
+ * A band of the page. `alt` swaps to the warmer paper and rules its edges, so
+ * neighbouring sections separate on their own — nothing else in the page draws a
+ * horizontal line. `wide` is for grids; prose stays at max-w-3xl, because a
+ * measure much past that is genuinely harder to read.
+ */
+function Section({
+  alt = false,
+  wide = false,
+  children,
+}: {
+  alt?: boolean;
+  wide?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className={`px-6 py-20 ${alt ? "border-y border-line bg-canvas-alt" : ""}`}>
+      <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-3xl"}`}>{children}</div>
+    </section>
+  );
+}
+
+/** Accent label above a heading. Says what the section is before it argues it. */
+function Eyebrow({ children }: { children: ReactNode }) {
+  return (
+    <p className="mb-3.5 text-[13px] font-medium uppercase tracking-[0.07em] text-accent">
+      {children}
+    </p>
+  );
+}
+
+/** Section heading. Semibold and tightly tracked — smaller than the hero, same face. */
+function Heading({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="font-display text-[26px] font-semibold tracking-[-0.03em] text-ink sm:text-[28px]">
+      {children}
+    </h2>
+  );
+}
+
+/** Small line-art tile. One radius, one hairline, no shadow — same as the cards. */
+function IconTile({ children }: { children: ReactNode }) {
+  return (
+    <span
+      aria-hidden
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface text-accent"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="h-[18px] w-[18px]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {children}
+      </svg>
+    </span>
+  );
+}
+
+const PRIMARY_BUTTON =
+  "inline-flex h-11 items-center justify-center rounded-md bg-accent px-5 text-[14px] font-medium text-accent-ink transition-opacity hover:opacity-90";
+
+const SECONDARY_BUTTON =
+  "inline-flex h-11 items-center justify-center rounded-md border border-line bg-surface px-5 text-[14px] font-medium text-ink transition-colors hover:border-line-strong";
+
+/** Quiet underline for links inside running prose. */
+const PROSE_LINK =
+  "text-ink underline decoration-line-strong underline-offset-2 transition-colors hover:text-accent";
+
 export default async function LandingPage() {
   const { userId } = await auth();
   const signedIn = Boolean(userId);
@@ -203,11 +283,11 @@ export default async function LandingPage() {
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-3.5">
           <Logo size={28} />
 
-          <nav className="flex items-center gap-1 text-sm">
+          <nav className="flex items-center gap-1.5 text-sm">
             {signedIn ? (
               <Link
                 href="/chat/hub"
-                className="rounded-lg bg-accent px-4 py-2 font-semibold text-accent-ink transition-opacity hover:opacity-90"
+                className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-[14px] font-medium text-accent-ink transition-opacity hover:opacity-90"
               >
                 Open Revert
               </Link>
@@ -215,13 +295,13 @@ export default async function LandingPage() {
               <>
                 <Link
                   href="/sign-in"
-                  className="rounded-lg px-3 py-2 text-muted transition-colors hover:text-ink"
+                  className="inline-flex h-9 items-center rounded-md px-3 text-[14px] text-muted transition-colors hover:text-ink"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/sign-up"
-                  className="rounded-lg bg-accent px-4 py-2 font-semibold text-accent-ink transition-opacity hover:opacity-90"
+                  className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-[14px] font-medium text-accent-ink transition-opacity hover:opacity-90"
                 >
                   Join
                 </Link>
@@ -231,178 +311,149 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6">
-        <section className="grid items-center gap-10 py-14 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14 lg:py-20">
-          <div className="flex flex-col gap-5">
-            <span className="w-fit rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
-              by{" "}
-              <a
-                href={TOPMATE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-ink underline decoration-line underline-offset-2 transition-colors hover:decoration-ink"
-              >
-                minianon
-              </a>{" "}
-              · for the{" "}
-              <a
-                href={GROUP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-ink underline decoration-line underline-offset-2 transition-colors hover:decoration-ink"
-              >
-                job alerts group
-              </a>
-            </span>
+      <main className="flex-1">
+        <section className="px-6 pt-14 pb-16 lg:pt-20 lg:pb-20">
+          <div className="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14">
+            <div className="flex flex-col">
+              <Eyebrow>By minianon · for the job alerts group</Eyebrow>
 
-            <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
-              Our group,
-              <br />
-              <span className="text-accent">without your number.</span>
-            </h1>
+              {/*
+                Two lines of statement, one of promise, the promise in accent.
+                The break is hard rather than left to the browser: "Our group,"
+                landing alone is the whole point of the line.
+              */}
+              <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.04em] text-ink sm:text-[52px]">
+                Our group,
+                <br />
+                <span className="text-accent">without your number.</span>
+              </h1>
 
-            <p className="max-w-lg text-[17px] leading-relaxed text-muted">
-              Same job alerts, same people, same questions answered. Except you join as a
-              username, the openings stay searchable, and you decide what is allowed to
-              notify you.
-            </p>
+              <p className="mt-6 max-w-lg text-[17px] leading-[1.6] text-muted">
+                Same job alerts, same people, same questions answered. Except you join as a
+                username, the openings stay searchable, and you decide what is allowed to
+                notify you.
+              </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              {signedIn ? (
-                <Link
-                  href="/chat/hub"
-                  className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
-                >
-                  Open Revert
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/sign-up"
-                    className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
-                  >
-                    Join the group
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                {signedIn ? (
+                  <Link href="/chat/hub" className={PRIMARY_BUTTON}>
+                    Open Revert
                   </Link>
-                  <Link
-                    href="/sign-in"
-                    className="rounded-lg border border-line bg-surface px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-line-strong"
-                  >
-                    I already joined
-                  </Link>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Link href="/sign-up" className={PRIMARY_BUTTON}>
+                      Join the group
+                    </Link>
+                    <Link href="/sign-in" className={SECONDARY_BUTTON}>
+                      I already joined
+                    </Link>
+                  </>
+                )}
+              </div>
+
+              <p className="mt-4 text-[13px] text-faint">
+                Takes about twenty seconds. Google or email — no phone number, ever.
+              </p>
             </div>
 
-            <p className="text-xs text-faint">
-              Takes about twenty seconds. Google or email — no phone number, ever.
-            </p>
+            <ChatPreview />
           </div>
-
-          <ChatPreview />
         </section>
 
         {/*
           The WhatsApp figure is what carries the trust; the Revert figure is
-          queried rather than claimed, so it stays honest as it grows.
+          queried rather than claimed, so it stays honest as it grows. A thin
+          band rather than a card — it is evidence for the hero above it, not a
+          section of its own.
         */}
-        <section className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-line bg-surface px-6 py-5">
-          <p className="flex items-center gap-2.5 text-sm text-muted">
-            <WhatsAppIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
-            <span>
-              <span className="text-[17px] font-semibold text-ink">{GROUP_SIZE}</span> in the{" "}
-              <a
-                href={GROUP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-ink underline underline-offset-2 hover:text-accent"
-              >
-                WhatsApp group
-              </a>
-            </span>
-          </p>
-
-          {members > 0 && (
-            <p className="flex items-center gap-2.5 text-sm text-muted">
-              <LogoMark size={20} />
+        <section className="border-y border-line bg-canvas-alt px-6 py-5">
+          <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-8 gap-y-3">
+            <p className="flex items-center gap-2.5 text-[14px] text-muted">
+              <WhatsAppIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
               <span>
-                <span className="text-[17px] font-semibold text-ink">
-                  {members.toLocaleString("en-IN")}
-                </span>{" "}
-                {members === 1 ? "person is" : "people are"} already on Revert
+                <span className="text-[17px] font-semibold text-ink">{GROUP_SIZE}</span> in the{" "}
+                <a
+                  href={GROUP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={PROSE_LINK}
+                >
+                  WhatsApp group
+                </a>
               </span>
             </p>
-          )}
+
+            {members > 0 && (
+              <p className="flex items-center gap-2.5 text-[14px] text-muted">
+                <LogoMark size={20} />
+                <span>
+                  <span className="text-[17px] font-semibold text-ink">
+                    {members.toLocaleString("en-IN")}
+                  </span>{" "}
+                  {members === 1 ? "person is" : "people are"} already on Revert
+                </span>
+              </p>
+            )}
+          </div>
         </section>
 
-        <section className="border-t border-line py-14">
-          <ul className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+        <Section wide>
+          <Eyebrow>What changes</Eyebrow>
+          <Heading>The parts that kept breaking, fixed.</Heading>
+
+          <ul className="mt-10 grid gap-x-10 gap-y-9 sm:grid-cols-2">
             {POINTS.map((point) => (
-              <li key={point.title} className="flex items-start gap-3.5">
-                <span
-                  aria-hidden
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-accent"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-[18px] w-[18px]"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {point.icon}
-                  </svg>
-                </span>
-                <span className="flex flex-col gap-1">
-                  <span className="text-[15px] font-semibold text-ink">{point.title}</span>
-                  <span className="text-sm leading-relaxed text-muted">{point.body}</span>
+              <li key={point.title} className="flex items-start gap-4">
+                <IconTile>{point.icon}</IconTile>
+                <span className="flex flex-col gap-1.5">
+                  <span className="text-[16px] font-semibold text-ink">{point.title}</span>
+                  <span className="text-[15px] leading-[1.6] text-muted">{point.body}</span>
                 </span>
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
 
         {/*
           Someone whose only group chat has ever been WhatsApp does not know
           what happens after they tap Join. Not knowing is what stops a signup,
           so the three steps are spelled out plainly.
         */}
-        <section className="border-t border-line py-14">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">How it works</h2>
+        <Section alt wide>
+          <Eyebrow>Getting in</Eyebrow>
+          <Heading>How it works</Heading>
 
           <HowItWorks steps={STEPS} />
-        </section>
+        </Section>
 
         {/*
           People join a community because of a person, and minianon is the
           reason anyone is on this page at all. Worth a face rather than a
           footer credit.
         */}
-        <section className="border-t border-line py-14">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-7">
-            <Avatar src={PHOTO} name="minianon" size={88} className="ring-1 ring-line" />
+        <Section>
+          <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:gap-8">
+            <Avatar src={PHOTO} name="minianon" size={88} className="shrink-0 ring-1 ring-line" />
 
-            <div className="flex max-w-2xl flex-col gap-3">
-              <h2 className="text-lg font-semibold tracking-tight text-ink">
-                Built by minianon
-              </h2>
+            <div className="flex flex-col">
+              <Eyebrow>Who runs this</Eyebrow>
+              <Heading>Built by minianon</Heading>
 
-              <p className="text-sm leading-relaxed text-muted">
+              <p className="mt-5 text-[15px] leading-[1.7] text-muted">
                 I am Tushar. I have been running the job alerts group for a while now —
                 posting openings, answering the same questions at midnight, and watching
                 good roles scroll away before anyone saw them. Revert is that group with
                 the parts that kept breaking fixed.
               </p>
 
-              <p className="text-sm leading-relaxed text-muted">
+              <p className="mt-4 text-[15px] leading-[1.7] text-muted">
                 If you want to talk through a resume, a switch, or where to even start,
                 you can{" "}
                 <a
                   href={BOOKING_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-ink underline underline-offset-2 hover:text-accent"
+                  className={PROSE_LINK}
                 >
                   book time with me
                 </a>
@@ -410,130 +461,126 @@ export default async function LandingPage() {
               </p>
             </div>
           </div>
-        </section>
+        </Section>
 
-        <section className="border-t border-line py-14">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">What is coming</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+        <Section alt wide>
+          <Eyebrow>On the way</Eyebrow>
+          <Heading>What is coming</Heading>
+
+          <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
             One room today, on purpose — a quiet room full of people beats five empty
             ones. Next, in roughly this order:
           </p>
 
-          <ul className="mt-7 grid gap-8 sm:grid-cols-3 sm:gap-6">
+          <ul className="mt-10 grid gap-6 sm:grid-cols-3">
             {COMING.map((item) => (
               <li
                 key={item.title}
-                className="flex flex-col gap-2.5 rounded-xl border border-line bg-surface p-5"
+                className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5"
               >
-                <span
-                  aria-hidden
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface text-accent"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-[18px] w-[18px]"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {item.icon}
-                  </svg>
-                </span>
-                <span className="text-[15px] font-semibold text-ink">{item.title}</span>
-                <span className="text-sm leading-relaxed text-muted">{item.body}</span>
+                <IconTile>{item.icon}</IconTile>
+                <span className="text-[16px] font-semibold text-ink">{item.title}</span>
+                <span className="text-[15px] leading-[1.6] text-muted">{item.body}</span>
               </li>
             ))}
           </ul>
-        </section>
+        </Section>
 
         {TESTIMONIALS.length > 0 && (
-          <section className="border-t border-line py-14">
-            <h2 className="text-lg font-semibold tracking-tight text-ink">
-              From the group
-            </h2>
+          <Section wide>
+            <Eyebrow>In their words</Eyebrow>
+            <Heading>From the group</Heading>
 
-            <ul className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {TESTIMONIALS.map((item) => (
                 <li
                   key={item.quote}
-                  className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5"
+                  className="flex flex-col gap-5 rounded-md border border-line bg-surface p-5"
                 >
-                  <blockquote className="text-sm leading-relaxed text-ink">
+                  <blockquote className="text-[15px] leading-[1.6] text-ink">
                     &ldquo;{item.quote}&rdquo;
                   </blockquote>
                   <div className="flex flex-col">
-                    <span className="text-[13px] font-semibold text-ink">{item.name}</span>
-                    <span className="text-[12px] text-muted">{item.role}</span>
+                    <span className="text-[14px] font-semibold text-ink">{item.name}</span>
+                    <span className="text-[13px] text-faint">{item.role}</span>
                   </div>
                 </li>
               ))}
             </ul>
-          </section>
+          </Section>
         )}
 
-        <section className="border-t border-line py-14">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">
-            Questions people ask
-          </h2>
+        <Section wide>
+          <Eyebrow>Before you join</Eyebrow>
+          <Heading>Questions people ask</Heading>
 
-          <dl className="mt-7 grid gap-x-10 gap-y-7 sm:grid-cols-2">
+          <dl className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-2">
             {FAQ.map((item) => (
-              <div key={item.q} className="flex flex-col gap-1.5">
-                <dt className="text-[15px] font-semibold text-ink">{item.q}</dt>
-                <dd className="text-sm leading-relaxed text-muted">{item.a}</dd>
+              <div key={item.q} className="flex flex-col gap-2">
+                <dt className="text-[16px] font-semibold text-ink">{item.q}</dt>
+                <dd className="text-[15px] leading-[1.6] text-muted">{item.a}</dd>
               </div>
             ))}
           </dl>
-        </section>
+        </Section>
 
         {/*
           No ads and no paywall means someone has to cover the bills. Asked for
           plainly and once, with no guilt and nothing withheld from people who
           scroll past — this is a job community, and most of it is broke.
-        */}
-        <section className="border-t border-line py-14">
-          <div className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-            <div className="flex max-w-xl flex-col gap-2">
-              <h2 className="text-lg font-semibold tracking-tight text-ink">
-                Revert is free, and stays free.
-              </h2>
-              <p className="text-sm leading-relaxed text-muted">
-                No ads, no data sold, nobody paying to reach you. It is one person and a
-                server bill. If it has been useful and you are in a position to, you can
-                chip in — and if you are not, ignore this and use it anyway. That is what
-                it is for.
-              </p>
-            </div>
 
-            <a
-              href={SPONSOR_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-fit shrink-0 items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
-            >
-              <SocialIcon provider="github" className="h-[18px] w-[18px] shrink-0" />
-              Sponsor on GitHub
-            </a>
+          Set at hero scale rather than inside a card: it is the last thing on
+          the page, so it gets to be a statement instead of a box.
+        */}
+        <section className="border-t border-line bg-canvas-alt px-6 py-24">
+          <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
+            <h2 className="font-display text-[30px] font-normal leading-[1.15] tracking-[-0.03em] text-ink sm:text-[40px]">
+              Revert is free,
+              <br />
+              <span className="text-accent">and stays free.</span>
+            </h2>
+
+            <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-muted">
+              No ads, no data sold, nobody paying to reach you. It is one person and a
+              server bill. If it has been useful and you are in a position to, you can
+              chip in — and if you are not, ignore this and use it anyway. That is what
+              it is for.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              {!signedIn && (
+                <Link href="/sign-up" className={PRIMARY_BUTTON}>
+                  Join the group
+                </Link>
+              )}
+
+              <a
+                href={SPONSOR_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${signedIn ? PRIMARY_BUTTON : SECONDARY_BUTTON} gap-2`}
+              >
+                <SocialIcon provider="github" className="h-[18px] w-[18px] shrink-0" />
+                Sponsor on GitHub
+              </a>
+            </div>
           </div>
         </section>
-
       </main>
 
       <footer className="border-t border-line bg-surface">
-        <div className="mx-auto w-full max-w-5xl px-6 py-10">
-          <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
-            <div className="flex max-w-xs flex-col gap-2.5">
+        <div className="mx-auto w-full max-w-5xl px-6 py-14">
+          <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
+            <div className="flex max-w-xs flex-col gap-3">
               <Logo size={28} />
-              <p className="text-[13px] leading-relaxed text-muted">
+              <p className="text-[13px] leading-[1.7] text-muted">
                 Job alerts, questions and referrals — where you are a username, not a phone
                 number.
               </p>
             </div>
 
-            <nav className="flex flex-col gap-2.5">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-faint">
+            <nav className="flex flex-col gap-3">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-faint">
                 Elsewhere
               </span>
 
@@ -609,24 +656,24 @@ export default async function LandingPage() {
             </nav>
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6">
+          <div className="mt-10 flex flex-col gap-3 border-t border-line pt-7">
             {/*
               Kept in the footer rather than buried in a policy page: it is the
               one thing about Revert that could otherwise be assumed wrongly,
               and the promise is privacy.
             */}
-            <p className="max-w-2xl text-[11.5px] leading-relaxed text-faint">
+            <p className="max-w-2xl text-[12px] leading-[1.7] text-faint">
               Messages are private, not end-to-end encrypted. Reports get read and acted on,
               because a job community without moderation fills up with fake recruiters fast.
             </p>
 
-            <p className="text-[11.5px] text-faint">
+            <p className="text-[12px] text-faint">
               © 2026 Revert · built by{" "}
               <a
                 href={TOPMATE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline underline-offset-2 transition-colors hover:text-ink"
+                className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-ink"
               >
                 minianon
               </a>

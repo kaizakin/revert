@@ -45,7 +45,7 @@ export function HowItWorks({ steps }: { steps: Step[] }) {
   }, []);
 
   return (
-    <ol ref={ref} className="mt-8 grid gap-9 sm:grid-cols-3 sm:gap-7">
+    <ol ref={ref} className="mt-10 grid gap-9 sm:grid-cols-3 sm:gap-7">
       {steps.map((step, index) => (
         <li
           key={step.title}
@@ -80,8 +80,8 @@ export function HowItWorks({ steps }: { steps: Step[] }) {
             {index + 1}
           </span>
 
-          <span className="text-[15px] font-semibold text-ink">{step.title}</span>
-          <span className="text-sm leading-relaxed text-muted">{step.body}</span>
+          <span className="text-[16px] font-semibold text-ink">{step.title}</span>
+          <span className="text-[15px] leading-[1.6] text-muted">{step.body}</span>
         </li>
       ))}
     </ol>

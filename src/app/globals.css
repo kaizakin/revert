@@ -17,17 +17,32 @@
  * variant on every element.
  */
 :root {
-  --rv-canvas: #fbfbfa;
+  /*
+   * Warm neutrals, not grey ones. Every value carries a little red and yellow,
+   * so the page reads as paper rather than as a screen — a cool #fbfbfa canvas
+   * is what made the old landing page feel like a dashboard. The hue is
+   * consistent across the ramp; mixing a warm canvas with grey text is what
+   * makes warm palettes look muddy rather than intentional.
+   */
+  --rv-canvas: #fffcf9;
+  --rv-canvas-alt: #f7f3ee;
   --rv-surface: #ffffff;
-  --rv-raised: #f4f4f2;
-  --rv-line: #e5e4e1;
-  --rv-line-strong: #d3d2ce;
-  --rv-ink: #1a1a19;
-  --rv-muted: #6f6e6a;
-  --rv-faint: #9c9b96;
-  --rv-accent: #12805c;
+  --rv-raised: #f6f2ec;
+  --rv-line: #e9e2d8;
+  --rv-line-strong: #d6cbbb;
+  --rv-ink: #1a1612;
+  --rv-muted: #5c4f42;
+  /*
+   * Dark enough to pass AA at 12px, which is the size it actually gets used at
+   * (the footer's legal line, the note under the hero buttons). The obvious
+   * warm-grey pick one step lighter measured 4.0:1 — legible to me on a good
+   * screen and not to someone reading it outdoors.
+   */
+  --rv-faint: #7d6e5d;
+  /* Nudged off teal toward leaf, so it sits on cream instead of fighting it. */
+  --rv-accent: #17784f;
   --rv-accent-ink: #ffffff;
-  --rv-accent-soft: #e6f4ee;
+  --rv-accent-soft: #e7f0e6;
   --rv-danger: #b42318;
 
   /* Mentions read as links inside a bubble, on both bubble colours. */
@@ -45,17 +60,20 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --rv-canvas: #0c0c0d;
-    --rv-surface: #141416;
-    --rv-raised: #1c1c1f;
-    --rv-line: #27272b;
-    --rv-line-strong: #3a3a40;
-    --rv-ink: #f2f2f3;
-    --rv-muted: #9c9ca3;
-    --rv-faint: #6c6c73;
-    --rv-accent: #34d399;
-    --rv-accent-ink: #06251b;
-    --rv-accent-soft: #16241f;
+    /* Same warm bias, carried down: brown-black rather than blue-black. */
+    --rv-canvas: #0d0c0b;
+    --rv-canvas-alt: #14120f;
+    --rv-surface: #171512;
+    --rv-raised: #201d19;
+    --rv-line: #2c2823;
+    --rv-line-strong: #403a33;
+    --rv-ink: #f4f1ec;
+    --rv-muted: #a89e91;
+    /* Same AA-at-12px floor as the light ramp, measured against #0d0c0b. */
+    --rv-faint: #8a7f72;
+    --rv-accent: #35cf93;
+    --rv-accent-ink: #05241a;
+    --rv-accent-soft: #1a2419;
     --rv-danger: #fda29b;
 
     --rv-mention: #7cc4ff;
@@ -72,6 +90,7 @@
 
 @theme inline {
   --color-canvas: var(--rv-canvas);
+  --color-canvas-alt: var(--rv-canvas-alt);
   --color-surface: var(--rv-surface);
   --color-raised: var(--rv-raised);
   --color-line: var(--rv-line);
@@ -93,6 +112,9 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Headings only. `font-display` in markup; body text never opts in. */
+  --font-display: var(--font-sora);
 }
 
 /**
