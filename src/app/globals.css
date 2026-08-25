@@ -60,20 +60,26 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Same warm bias, carried down: brown-black rather than blue-black. */
-    --rv-canvas: #0d0c0b;
-    --rv-canvas-alt: #14120f;
-    --rv-surface: #171512;
-    --rv-raised: #201d19;
-    --rv-line: #2c2823;
-    --rv-line-strong: #403a33;
-    --rv-ink: #f4f1ec;
-    --rv-muted: #a89e91;
-    /* Same AA-at-12px floor as the light ramp, measured against #0d0c0b. */
-    --rv-faint: #8a7f72;
+    /*
+     * Black, and neutral with it. The warm bias that makes the light ramp read
+     * as paper does not survive down here: a tinted near-black does not look
+     * warm, it looks like a grey someone left dirty. Hue needs some lightness
+     * to carry it, so the ink ramp goes neutral too — warm text on neutral
+     * black is the same mismatch in the other direction.
+     */
+    --rv-canvas: #000000;
+    --rv-canvas-alt: #0d0d0d;
+    --rv-surface: #121212;
+    --rv-raised: #1a1a1a;
+    --rv-line: #262626;
+    --rv-line-strong: #3d3d3d;
+    --rv-ink: #f5f5f5;
+    --rv-muted: #a3a3a3;
+    /* Same AA-at-12px floor as the light ramp, measured against #000. */
+    --rv-faint: #8a8a8a;
     --rv-accent: #35cf93;
     --rv-accent-ink: #05241a;
-    --rv-accent-soft: #1a2419;
+    --rv-accent-soft: #17231d;
     --rv-danger: #fda29b;
 
     --rv-mention: #7cc4ff;
@@ -114,7 +120,7 @@
   --font-mono: var(--font-geist-mono);
 
   /* Headings only. `font-display` in markup; body text never opts in. */
-  --font-display: var(--font-sora);
+  --font-display: var(--font-space-grotesk);
 }
 
 /**

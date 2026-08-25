@@ -152,6 +152,7 @@ const POINTS = [
   {
     title: "No phone numbers",
     body: "You join as a username. Nobody in the group can see your number, because we never ask for it.",
+    tag: "Private by default",
     icon: (
       <>
         <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
@@ -162,6 +163,7 @@ const POINTS = [
   {
     title: "Openings stay findable",
     body: "Every job post is searchable later. Nothing scrolls away at 2am while you are asleep.",
+    tag: "Always searchable",
     icon: (
       <>
         <circle cx="11" cy="11" r="6.5" />
@@ -172,6 +174,7 @@ const POINTS = [
   {
     title: "Notifications you control",
     body: "Mute the room and still get mentions. A live QnA will not blow up your phone any more.",
+    tag: "Quiet by choice",
     icon: (
       <>
         <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
@@ -182,6 +185,7 @@ const POINTS = [
   {
     title: "Ask and get answered",
     body: "Reply to any message, tag anyone, and find the answer again next week.",
+    tag: "Answers that stay",
     icon: (
       <>
         <path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z" />
@@ -189,6 +193,82 @@ const POINTS = [
     ),
   },
 ];
+
+/**
+ * The two rooms side by side.
+ *
+ * Written to be fair rather than flattering: the group is where all of these
+ * people already are, and the FAQ two sections down promises it is not going
+ * anywhere. Every left-hand cell is a real property of a two-thousand-person
+ * WhatsApp channel, not a strawman — overstating it here would undercut the
+ * one thing the page is actually selling, which is trust.
+ */
+const COMPARISON = [
+  {
+    row: "Who you are",
+    group: "A phone number, visible to everyone in it",
+    revert: "A username you pick",
+  },
+  {
+    row: "Finding an old opening",
+    group: "Scroll back until you find it",
+    revert: "Search for it, any time",
+  },
+  {
+    row: "Notifications",
+    group: "All of them, or leave the group",
+    revert: "Mute the room, still get mentions",
+  },
+  {
+    row: "Asking a question",
+    group: "Buried under the next twenty messages",
+    revert: "Replied to, and still there next week",
+  },
+  {
+    row: "Getting in",
+    group: "Someone has to add you",
+    revert: "Sign in, and you are in",
+  },
+];
+
+/** Present, in the accent. Paired with CrossMark, never used on its own. */
+function CheckMark() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 10.5l4 4 8-9" />
+    </svg>
+  );
+}
+
+/**
+ * Absent. Deliberately faint rather than red — these are not failures, they are
+ * what a group chat is, and colouring them like errors would read as a smear.
+ */
+function CrossMark() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className="mt-0.5 h-4 w-4 shrink-0 text-faint"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />
+    </svg>
+  );
+}
 
 /**
  * A band of the page. `alt` swaps to the warmer paper and rules its edges, so
@@ -221,10 +301,17 @@ function Eyebrow({ children }: { children: ReactNode }) {
   );
 }
 
-/** Section heading. Semibold and tightly tracked — smaller than the hero, same face. */
+/**
+ * Section heading. Same face as the hero, but at its natural tracking.
+ *
+ * Negative tracking that flatters the hero breaks here: at 600 weight the extra
+ * ink eats the sidebearings, and -0.03em put eight letter pairs into overlap at
+ * 28px (worst was "rt", -0.89px). Space Grotesk is already compact at this size
+ * and does not need the help.
+ */
 function Heading({ children }: { children: ReactNode }) {
   return (
-    <h2 className="font-display text-[26px] font-semibold tracking-[-0.03em] text-ink sm:text-[28px]">
+    <h2 className="font-display text-[26px] font-semibold tracking-normal text-ink sm:text-[28px]">
       {children}
     </h2>
   );
@@ -322,7 +409,12 @@ export default async function LandingPage() {
                 The break is hard rather than left to the browser: "Our group,"
                 landing alone is the whole point of the line.
               */}
-              <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.04em] text-ink sm:text-[52px]">
+              {/*
+                Tracking is looser on the phone on purpose. The same -0.04em
+                that looks tight at 52px collides at 38px — measured, not
+                guessed: "it" in "without" overlaps by 0.2px there.
+              */}
+              <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.03em] text-ink sm:text-[52px] sm:tracking-[-0.04em]">
                 Our group,
                 <br />
                 <span className="text-accent">without your number.</span>
@@ -401,13 +493,21 @@ export default async function LandingPage() {
           <Eyebrow>What changes</Eyebrow>
           <Heading>The parts that kept breaking, fixed.</Heading>
 
-          <ul className="mt-10 grid gap-x-10 gap-y-9 sm:grid-cols-2">
+          {/*
+            One bordered field rather than four floating cards. The hairlines
+            are the grid's own background showing through a 1px gap, so every
+            join meets exactly and there are no doubled or orphaned borders to
+            chase with nth-child rules.
+          */}
+          <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
             {POINTS.map((point) => (
-              <li key={point.title} className="flex items-start gap-4">
+              <li key={point.title} className="flex flex-col gap-3 bg-canvas p-6">
                 <IconTile>{point.icon}</IconTile>
-                <span className="flex flex-col gap-1.5">
-                  <span className="text-[16px] font-semibold text-ink">{point.title}</span>
-                  <span className="text-[15px] leading-[1.6] text-muted">{point.body}</span>
+                <span className="text-[16px] font-semibold text-ink">{point.title}</span>
+                <span className="text-[15px] leading-[1.6] text-muted">{point.body}</span>
+                {/* mt-auto pins the tag to the bottom, so it lines up across a row. */}
+                <span className="mt-auto pt-1 text-[13px] font-medium text-accent">
+                  {point.tag}
                 </span>
               </li>
             ))}
@@ -415,11 +515,97 @@ export default async function LandingPage() {
         </Section>
 
         {/*
+          A real table, because it is real tabular data — five properties
+          compared across two rooms. On a phone the header row is dropped and
+          each row becomes a labelled block; the column names come back as
+          sm:hidden labels inside the cells, which keeps every value attributed
+          without making the page scroll sideways.
+        */}
+        <Section alt wide>
+          <Eyebrow>Side by side</Eyebrow>
+          <Heading>The same group, in a room built for it</Heading>
+
+          <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
+            Nothing here is a knock on the group — it is where all of us already are,
+            and it is staying. This is just what a group chat cannot do.
+          </p>
+
+          <div className="mt-10 overflow-hidden rounded-md border border-line">
+            <table className="w-full text-left">
+              <caption className="sr-only">
+                The WhatsApp group and Revert compared across five things people run
+                into.
+              </caption>
+
+              <thead className="hidden sm:table-header-group">
+                <tr className="bg-raised">
+                  <th scope="col" className="w-[28%] px-5 py-3">
+                    <span className="sr-only">What is being compared</span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-faint"
+                  >
+                    WhatsApp group
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent"
+                  >
+                    Revert
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {COMPARISON.map((item) => (
+                  <tr
+                    key={item.row}
+                    className="block border-t border-line max-sm:first:border-t-0 sm:table-row"
+                  >
+                    <th
+                      scope="row"
+                      className="block px-5 pt-5 text-[15px] font-semibold text-ink sm:table-cell sm:py-4 sm:align-top"
+                    >
+                      {item.row}
+                    </th>
+
+                    <td className="block px-5 pt-3 sm:table-cell sm:py-4 sm:align-top">
+                      <span className="flex items-start gap-2.5">
+                        <CrossMark />
+                        <span className="text-[15px] leading-[1.5] text-muted">
+                          <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-faint sm:hidden">
+                            WhatsApp group
+                          </span>
+                          {item.group}
+                        </span>
+                      </span>
+                    </td>
+
+                    <td className="block px-5 pt-3 pb-5 sm:table-cell sm:py-4 sm:align-top">
+                      <span className="flex items-start gap-2.5">
+                        <CheckMark />
+                        <span className="text-[15px] leading-[1.5] text-ink">
+                          <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-accent sm:hidden">
+                            Revert
+                          </span>
+                          {item.revert}
+                        </span>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        {/*
           Someone whose only group chat has ever been WhatsApp does not know
           what happens after they tap Join. Not knowing is what stops a signup,
           so the three steps are spelled out plainly.
         */}
-        <Section alt wide>
+        <Section wide>
           <Eyebrow>Getting in</Eyebrow>
           <Heading>How it works</Heading>
 
@@ -431,7 +617,7 @@ export default async function LandingPage() {
           reason anyone is on this page at all. Worth a face rather than a
           footer credit.
         */}
-        <Section>
+        <Section alt>
           <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:gap-8">
             <Avatar src={PHOTO} name="minianon" size={88} className="shrink-0 ring-1 ring-line" />
 
@@ -463,7 +649,7 @@ export default async function LandingPage() {
           </div>
         </Section>
 
-        <Section alt wide>
+        <Section wide>
           <Eyebrow>On the way</Eyebrow>
           <Heading>What is coming</Heading>
 
@@ -510,7 +696,7 @@ export default async function LandingPage() {
           </Section>
         )}
 
-        <Section wide>
+        <Section alt wide>
           <Eyebrow>Before you join</Eyebrow>
           <Heading>Questions people ask</Heading>
 
@@ -532,9 +718,9 @@ export default async function LandingPage() {
           Set at hero scale rather than inside a card: it is the last thing on
           the page, so it gets to be a statement instead of a box.
         */}
-        <section className="border-t border-line bg-canvas-alt px-6 py-24">
+        <section className="border-t border-line px-6 py-24">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-            <h2 className="font-display text-[30px] font-normal leading-[1.15] tracking-[-0.03em] text-ink sm:text-[40px]">
+            <h2 className="font-display text-[30px] font-normal leading-[1.15] tracking-[-0.02em] text-ink sm:text-[40px]">
               Revert is free,
               <br />
               <span className="text-accent">and stays free.</span>
