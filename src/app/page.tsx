@@ -549,17 +549,6 @@ export default async function LandingPage() {
           <div className="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14">
             <div className="flex flex-col">
               {/*
-                The heart sits at the end rather than mid-phrase. Between the
-                separator and "for" it read as a second piece of punctuation in a
-                row; at the end there is nothing after it to align against, which
-                is where a glyph like this behaves.
-              */}
-              <Eyebrow>
-                By minianon · for my community
-                <HeartIcon />
-              </Eyebrow>
-
-              {/*
                 A line of continuity, then the difference, the difference in
                 accent. The break is hard rather than left to the browser:
                 "Same alerts." landing alone is what earns the second line.
@@ -617,6 +606,19 @@ export default async function LandingPage() {
                 zero hides rather than reading as broken.
               */}
               <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-6 text-[13px] text-muted">
+                {/*
+                  The attribution moved down here from above the headline. As an
+                  eyebrow it was the first thing the eye landed on, and it is not
+                  a hook — it is a reason to trust the hook. This row is already
+                  the "why believe this" block, so it belongs with the counts
+                  rather than in front of the claim.
+                */}
+                <span>
+                  By <span className="font-semibold text-ink">minianon</span> · for my
+                  community
+                  <HeartIcon />
+                </span>
+
                 <span className="flex items-center gap-2">
                   <WhatsAppIcon className="h-4 w-4 shrink-0 text-[#25D366]" />
                   <span>
@@ -779,13 +781,14 @@ export default async function LandingPage() {
           footer credit.
         */}
         {/*
-          Two columns rather than one, because the old shape did not work: an
-          88px circle beside a 470px column of text left most of a tall column
-          empty, and five stacked blocks of prose gave a reader nothing to fix
-          on. Now the person is a bio block on the left and the projects are a
-          bordered list on the right — the same motif the rest of the page uses
-          for a set of things, instead of two more paragraphs pretending not to
-          be a list.
+          One column, like every other section on the page.
+
+          Two columns were the problem rather than the spacing inside them: the
+          bio is short and the meta beside it was long, so whichever side lost
+          left a void, and no gutter width fixes that. Flowing it — name, prose,
+          then a bordered field of the projects, then the credit — means there is
+          no second column to balance against, and it reads with the same rhythm
+          as What you get and What is coming.
 
           Naming the projects here still costs the Join button nothing, which is
           why they are down here and not in a band further up.
@@ -797,164 +800,136 @@ export default async function LandingPage() {
             Built by <Highlighted>minianon</Highlighted>
           </Heading>
 
-          {/*
-            The left track is the prose measure itself rather than a 1fr track
-            with a max-w inside it. That combination left 48px of the track
-            unused, and with a 64px gap on top of it the two halves sat 112px
-            apart — far enough to read as two unrelated columns. Now the gutter
-            is just the gap, and the right column takes the width that frees up,
-            which also shortens its cards.
-          */}
-          <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)]">
-            <div>
-              {/*
-                Photo and name together. On its own the circle read as a stray
-                ornament; against the name it reads as a person, and it lets the
-                name carry the profile link instead of spending an "I am" on it.
-              */}
-              <div className="flex items-center gap-4">
-                <Avatar
-                  src={PHOTO}
-                  name="minianon"
-                  size={72}
-                  className="shrink-0 ring-2 ring-gold"
-                />
+          <div className="mt-10 flex items-center gap-4">
+            <Avatar
+              src={PHOTO}
+              name="minianon"
+              size={72}
+              className="shrink-0 ring-2 ring-gold"
+            />
 
-                {/*
-                  The tick sits after the name, not on the photo. On the avatar it
-                  had to be a small disc punched out of the edge to read at all;
-                  beside the name it is doing what every platform does with it,
-                  which is the whole reason a reader recognises it without being
-                  told.
-                */}
-                <span className="flex min-w-0 items-center gap-1.5">
+            {/*
+              The tick sits after the name, where every platform puts it, which
+              is most of why it is recognised without explanation.
+            */}
+            <span className="flex min-w-0 items-center gap-1.5">
+              <a
+                href={PROFILE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="truncate font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
+              >
+                Tushar Bhardwaj
+              </a>
+
+              <VerifiedTick />
+            </span>
+          </div>
+
+          {/* Capped well inside the section: full width would be an unreadable measure. */}
+          <p className="mt-6 max-w-2xl text-[15px] leading-[1.7] text-muted">
+            I have been running the channel for a while now — posting openings,
+            answering the same questions at midnight, and watching good roles scroll
+            away before anyone saw them. Revert is the room that channel never had.
+          </p>
+
+          <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
+            If you want to talk through a resume, a switch, or where to even start, you
+            can{" "}
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={PROSE_LINK}
+            >
+              book time with me
+            </a>
+            . Otherwise I am in the room, same as everyone else.
+          </p>
+
+          <div className="mt-12">
+            <span className={MICRO_LABEL}>Also built</span>
+
+            {/*
+              The same bordered field the rest of the page uses for a set of
+              things, at full width — as a narrow stack in a side column these
+              read as two boxes floating on the ground rather than one field. The
+              hairlines are the grid's background showing through a 1px gap, so
+              the cells have to be opaque and match this section's canvas.
+            */}
+            <ul className="mt-3 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
+              {PROJECTS.map((project) => (
+                <li key={project.name} className="bg-canvas">
                   <a
-                    href={PROFILE_URL}
+                    href={project.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="truncate font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
+                    className="group flex h-full flex-col gap-1.5 p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
                   >
-                    Tushar Bhardwaj
-                  </a>
+                    <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                      {/*
+                        Each project's own mark, copied into public/logos rather
+                        than hotlinked, so a card here does not go blank when
+                        another deployment is down.
 
-                  <VerifiedTick />
-                </span>
-              </div>
+                        A plain img on purpose: at 18px the optimiser buys
+                        nothing, and putting an SVG through it would mean
+                        enabling dangerouslyAllowSVG for every image on the site,
+                        including the avatars members upload.
+                      */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={project.logo}
+                        alt=""
+                        width={18}
+                        height={18}
+                        className="h-[18px] w-[18px] shrink-0 rounded-sm"
+                      />
 
-              <p className="mt-6 text-[15px] leading-[1.7] text-muted">
-                I have been running the channel for a while now — posting openings,
-                answering the same questions at midnight, and watching good roles
-                scroll away before anyone saw them. Revert is the room that channel
-                never had.
-              </p>
+                      {project.name}
 
-              <p className="mt-4 text-[15px] leading-[1.7] text-muted">
-                If you want to talk through a resume, a switch, or where to even start,
-                you can{" "}
-                <a
-                  href={BOOKING_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={PROSE_LINK}
-                >
-                  book time with me
-                </a>
-                . Otherwise I am in the room, same as everyone else.
-              </p>
-            </div>
+                      <ExternalArrow />
+                    </span>
 
-            <div>
-              <span className={MICRO_LABEL}>Also built</span>
-
-              {/*
-                The whole row is the link, so the target is the card and not four
-                words inside it. No background on hover — the name taking the
-                accent and the arrow arriving is the same signal without painting
-                a band across the row.
-              */}
-              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-md border border-line">
-                {PROJECTS.map((project) => (
-                  <li key={project.name}>
-                    <a
-                      href={project.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex flex-col gap-1.5 p-4 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
-                    >
-                      <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
-                        {/*
-                          Each project's own mark, copied into public/logos rather
-                          than hotlinked, so a card here does not go blank when
-                          another deployment is down.
-
-                          A plain img on purpose: at 18px the optimiser buys
-                          nothing, and putting an SVG through it would mean
-                          enabling dangerouslyAllowSVG for every image on the
-                          site — including the avatars members upload.
-                        */}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={project.logo}
-                          alt=""
-                          width={18}
-                          height={18}
-                          className="h-[18px] w-[18px] shrink-0 rounded-sm"
-                        />
-
-                        {project.name}
-
-                        <ExternalArrow />
-                      </span>
-
-                      <span className="text-[14px] leading-[1.55] text-muted">
-                        {project.body}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-
-              {/*
-                A contributor credit, the way a repository does it: a face, a
-                name, and a link to the account. It sits under the projects
-                because this whole column is the meta column — the left side is
-                the person writing, this side is everything around them.
-              */}
-              <div className="mt-6">
-                <span className={MICRO_LABEL}>Thanks to</span>
-
-                {/*
-                  Same bordered card and same hover behaviour as the projects
-                  above it. As a loose row it read as a caption under the cards
-                  rather than as its own thing worth clicking.
-                */}
-                <div className="mt-3 overflow-hidden rounded-md border border-line">
-                  <a
-                    href={CONTRIBUTOR_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 p-4 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
-                  >
-                    <Avatar
-                      src={CONTRIBUTOR_PHOTO}
-                      name="Kartik"
-                      size={32}
-                      className="shrink-0 ring-1 ring-line"
-                    />
-
-                    <span className="flex min-w-0 flex-col">
-                      <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
-                        Kartik
-                        <ExternalArrow />
-                      </span>
-                      <span className="truncate text-[12px] text-faint">
-                        @kaizakin · contributor
-                      </span>
+                    <span className="text-[14px] leading-[1.55] text-muted">
+                      {project.body}
                     </span>
                   </a>
-                </div>
-              </div>
-            </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/*
+            A credit, not a card. One box on its own was the thing that looked
+            stranded — a single cell has no field to belong to, and at full width
+            it is mostly empty. A rule and a row says the same thing and settles
+            the section instead of leaving another rectangle hanging.
+          */}
+          <div className="mt-12 border-t border-line pt-6">
+            <span className={MICRO_LABEL}>Thanks to</span>
+
+            <a
+              href={CONTRIBUTOR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-3 flex w-fit items-center gap-3"
+            >
+              <Avatar
+                src={CONTRIBUTOR_PHOTO}
+                name="Kartik"
+                size={36}
+                className="shrink-0 ring-1 ring-line"
+              />
+
+              <span className="flex min-w-0 flex-col">
+                <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                  Kartik
+                  <ExternalArrow />
+                </span>
+                <span className="text-[12px] text-faint">@kaizakin · contributor</span>
+              </span>
+            </a>
           </div>
         </Section>
 
