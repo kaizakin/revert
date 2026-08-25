@@ -83,27 +83,30 @@ function MemberRow({
 function SearchPanel() {
   return (
     <Panel>
-      <div className="flex items-center gap-2 rounded border border-line bg-surface px-2.5 py-2">
-        <svg
-          viewBox="0 0 24 24"
-          className="h-3.5 w-3.5 shrink-0 text-faint"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <circle cx="11" cy="11" r="6.5" />
-          <path d="M16 16l4.5 4.5" />
-        </svg>
-        <span className="text-[12px] text-faint">backend intern</span>
-      </div>
-
       {/*
+        The query is the first beat, so the results read as answering it rather
+        than as three rows that happen to be stacked.
+
         Two results, not three. A third row overflowed the fixed frame by 24px
         at 375px wide, and the frame clips silently — so it looked fine on a
         desktop and quietly ate a row on a phone.
       */}
-      <div className="wyg-stagger mt-2 flex flex-col gap-1.5">
+      <div className="wyg-stagger flex flex-col gap-1.5">
+        <div className="flex items-center gap-2 rounded border border-line bg-surface px-2.5 py-2">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5 shrink-0 text-faint"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <circle cx="11" cy="11" r="6.5" />
+            <path d="M16 16l4.5 4.5" />
+          </svg>
+          <span className="text-[12px] text-faint">backend intern</span>
+        </div>
+
         <Row left="Amazon" right="2 weeks ago" />
         <Row left="Zoho" right="last month" />
       </div>
@@ -115,7 +118,7 @@ function ReplyPanel() {
   return (
     <Panel>
       <div className="flex flex-col gap-2">
-        <span className="max-w-[88%] rounded-md rounded-tl-sm bg-bubble-in px-2.5 py-1.5 text-[12px] leading-[1.45] text-bubble-in-ink">
+        <span className="wyg-ask max-w-[88%] rounded-md rounded-tl-sm bg-bubble-in px-2.5 py-1.5 text-[12px] leading-[1.45] text-bubble-in-ink">
           Anyone done round 2 at Google recently?
         </span>
 
@@ -131,14 +134,16 @@ function ReferralPanel() {
   return (
     <Panel>
       <div className="flex flex-col gap-1.5">
-        <MemberRow initials="pr" name="@priya" meta="looking for a referral" />
+        <div className="wyg-ask">
+          <MemberRow initials="pr" name="@priya" meta="looking for a referral" />
+        </div>
 
         {/* The line draws from the person asking to the person already inside. */}
         <div className="flex items-center gap-1.5 px-2 py-0.5">
           <span className="wyg-draw h-px flex-1 origin-left bg-accent" />
           <svg
             viewBox="0 0 24 24"
-            className="h-3 w-3 shrink-0 text-accent"
+            className="wyg-arrow h-3 w-3 shrink-0 text-accent"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
@@ -179,7 +184,7 @@ function Switch({ on, late = false }: { on: boolean; late?: boolean }) {
     <span
       className={`relative block h-3.5 w-6 shrink-0 rounded-full ${
         on ? "bg-accent" : "bg-line-strong"
-      }`}
+      } ${on ? "wyg-track" : ""} ${on && late ? "wyg-track-late" : ""}`}
     >
       <span
         className={`absolute top-0.5 h-2.5 w-2.5 rounded-full bg-surface ${
@@ -199,7 +204,7 @@ function NotificationsPanel() {
 
   return (
     <Panel>
-      <div className="flex flex-col gap-1.5">
+      <div className="wyg-stagger flex flex-col gap-1.5">
         {rows.map((row, index) => (
           <div
             key={row.label}
@@ -218,17 +223,18 @@ function NotificationsPanel() {
 function ProfilePanel() {
   return (
     <Panel>
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[13px] font-semibold text-accent">
-          pr
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-[12px] font-semibold text-ink">@priya</span>
-          <span className="truncate text-[11px] text-faint">Backend · Bengaluru</span>
-        </span>
-      </div>
+      {/* The person first, then what the room knows about them. Three beats. */}
+      <div className="wyg-stagger flex flex-col gap-1.5">
+        <div className="flex items-center gap-2.5 pb-1">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[13px] font-semibold text-accent">
+            pr
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-[12px] font-semibold text-ink">@priya</span>
+            <span className="truncate text-[11px] text-faint">Backend · Bengaluru</span>
+          </span>
+        </div>
 
-      <div className="wyg-stagger mt-3 flex flex-col gap-1.5">
         <Row left="Username" right="@priya" dim />
         <Row left="Phone number" right="never asked" dim />
       </div>

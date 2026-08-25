@@ -344,10 +344,26 @@ select:focus-visible {
  * equivalent because the cards hold no focusable elements — they are
  * illustration, and the copy beneath each one already says what it shows.
  */
+/*
+ * Timing scale. One step is slow enough to actually read, and steps are spaced
+ * about as far apart as they are long, so a panel of three resolves over four
+ * to five seconds rather than in a blink.
+ *
+ * A sequence this long means most hovers will end before it does. That is why
+ * it is choreographed as discrete steps instead of one slow drift: leaving
+ * after a second still shows a complete first beat, rather than something
+ * caught halfway.
+ */
+:root {
+  --wyg-step: 1.4s;
+  --wyg-gap: 1.3s;
+  --wyg-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @keyframes wyg-rise {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -358,7 +374,7 @@ select:focus-visible {
 @keyframes wyg-pop {
   from {
     opacity: 0;
-    transform: scale(0.94);
+    transform: translateY(10px) scale(0.85);
   }
   to {
     opacity: 1;
@@ -376,6 +392,16 @@ select:focus-visible {
   }
 }
 
+/* The track fills as the knob lands, so the switch reads as switching on. */
+@keyframes wyg-track {
+  from {
+    background-color: var(--rv-line-strong);
+  }
+  to {
+    background-color: var(--rv-accent);
+  }
+}
+
 @keyframes wyg-draw {
   from {
     transform: scaleX(0);
@@ -385,48 +411,76 @@ select:focus-visible {
   }
 }
 
+@keyframes wyg-arrow {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   /* Rows arrive in order, like results landing. */
   .wyg-card:hover .wyg-stagger > * {
-    animation: wyg-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: wyg-rise var(--wyg-step) var(--wyg-ease) both;
   }
 
   .wyg-card:hover .wyg-stagger > *:nth-child(2) {
-    animation-delay: 70ms;
+    animation-delay: var(--wyg-gap);
   }
 
   .wyg-card:hover .wyg-stagger > *:nth-child(3) {
-    animation-delay: 140ms;
+    animation-delay: calc(var(--wyg-gap) * 2);
   }
 
   /* People, rather than rows: they appear instead of sliding. */
   .wyg-card:hover .wyg-pop-stagger > * {
-    animation: wyg-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: wyg-pop var(--wyg-step) var(--wyg-ease) both;
   }
 
   .wyg-card:hover .wyg-pop-stagger > *:nth-child(2) {
-    animation-delay: 70ms;
+    animation-delay: var(--wyg-gap);
   }
 
   .wyg-card:hover .wyg-pop-stagger > *:nth-child(3) {
-    animation-delay: 140ms;
+    animation-delay: calc(var(--wyg-gap) * 2);
   }
 
-  /* The answer lands a beat after the question, because that is the point. */
+  /* The question, then a real pause, then the answer. The pause is the point. */
+  .wyg-card:hover .wyg-ask {
+    animation: wyg-rise var(--wyg-step) var(--wyg-ease) both;
+  }
+
   .wyg-card:hover .wyg-reply {
-    animation: wyg-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) 130ms both;
+    animation: wyg-pop 1.6s var(--wyg-ease) calc(var(--wyg-gap) * 2) both;
   }
 
   .wyg-card:hover .wyg-knob {
-    animation: wyg-knob 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: wyg-knob var(--wyg-step) var(--wyg-ease) 1s both;
   }
 
-  .wyg-card:hover .wyg-knob-late {
-    animation-delay: 90ms;
+  .wyg-card:hover .wyg-track {
+    animation: wyg-track var(--wyg-step) var(--wyg-ease) 1s both;
   }
 
-  /* The hand-off draws itself from the person asking to the person inside. */
+  .wyg-card:hover .wyg-knob-late,
+  .wyg-card:hover .wyg-track-late {
+    animation-delay: calc(1s + var(--wyg-gap));
+  }
+
+  /*
+   * The hand-off: the asker arrives, a line draws across to the person inside,
+   * the arrow follows it, and only then does the referrer appear. Four beats,
+   * roughly five seconds, and it only makes sense in that order.
+   */
   .wyg-card:hover .wyg-draw {
-    animation: wyg-draw 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: wyg-draw 1.6s var(--wyg-ease) var(--wyg-gap) both;
+  }
+
+  .wyg-card:hover .wyg-arrow {
+    animation: wyg-arrow 1.2s var(--wyg-ease) calc(var(--wyg-gap) * 2) both;
   }
 }
