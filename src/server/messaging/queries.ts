@@ -23,6 +23,7 @@ export type RoomSummary = {
   topic: string | null;
   type: "chat" | "announce" | "ama";
   unread: number;
+  avatarUrl: string | null;
   lastBody: string | null;
   lastAuthor: string | null;
   lastAt: Date | null;
@@ -37,6 +38,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
       name: conversations.name,
       topic: conversations.topic,
       type: conversations.type,
+      avatarUrl: conversations.avatarUrl,
       lastReadAt: messageReads.lastReadAt,
     })
     .from(conversationMembers)
@@ -131,6 +133,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
       name: r.name ?? r.slug ?? "",
       topic: r.topic,
       type: r.type,
+      avatarUrl: r.avatarUrl,
       unread: unreadBy.get(r.id) ?? 0,
       lastBody: preview?.body ?? null,
       lastAuthor: preview?.username ?? null,

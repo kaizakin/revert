@@ -36,6 +36,7 @@ const ROOMS = [
     slug: "hub",
     name: "Mini Anon Hub",
     topic: "Jobs, questions and everything else. No phone numbers, ever.",
+    avatarUrl: "/groups/mini-anon-hub.jpeg",
     type: "chat" as const,
     isDefault: true,
   },
@@ -64,6 +65,7 @@ async function main() {
         slug: room.slug,
         name: room.name,
         topic: room.topic,
+        avatarUrl: room.avatarUrl,
         isDefault: room.isDefault,
       })
       .onConflictDoNothing({ target: [conversations.spaceId, conversations.slug] });

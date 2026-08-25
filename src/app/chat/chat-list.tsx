@@ -112,13 +112,22 @@ export function ChatList({ rooms }: { rooms: RoomSummary[] }) {
                 active ? "bg-raised" : "hover:bg-raised/60"
               }`}
             >
-              <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                style={{ backgroundColor: avatarColour(room.slug) }}
-                aria-hidden
-              >
-                {initials(room.name)}
-              </span>
+              {room.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={room.avatarUrl}
+                  alt=""
+                  className="h-12 w-12 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <span
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
+                  style={{ backgroundColor: avatarColour(room.slug) }}
+                  aria-hidden
+                >
+                  {initials(room.name)}
+                </span>
+              )}
 
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="flex items-baseline justify-between gap-2">
