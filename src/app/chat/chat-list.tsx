@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
 import type { RoomSummary } from "@/server/messaging/queries";
@@ -37,12 +38,18 @@ export function ChatList({ rooms }: { rooms: RoomSummary[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
-  const unreadTotal = rooms.reduce((sum, room) => sum + (room.unread > 0 ? 1 : 0), 0);
+  const { data: cachedRooms = rooms } = useQuery<RoomSummary[]>({
+    queryKey: ["chat", "rooms"],
+    initialData: rooms,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const unreadTotal = cachedRooms.reduce((sum, room) => sum + (room.unread > 0 ? 1 : 0), 0);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
-    return rooms.filter((room) => {
+    return cachedRooms.filter((room) => {
       if (filter === "unread" && room.unread === 0) return false;
       if (!needle) return true;
 
@@ -51,7 +58,7 @@ export function ChatList({ rooms }: { rooms: RoomSummary[] }) {
         (room.lastBody ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [rooms, query, filter]);
+  }, [cachedRooms, query, filter]);
 
   return (
     <>

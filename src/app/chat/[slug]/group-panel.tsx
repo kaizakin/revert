@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
 
@@ -241,30 +242,20 @@ export function GroupPanel({
   onOpenMember: (username: string) => void;
   refreshKey?: number;
 }) {
-  const [info, setInfo] = useState<RoomInfo | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
+  const { data: info = null, isLoading } = useQuery<RoomInfo | null>({
+    queryKey: ["chat", "room-info", slug, refreshKey],
+    queryFn: () => fetchRoomInfo(slug),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const state = isLoading ? "loading" : info ? "ready" : "missing";
+
   const reload = () => {
-    void fetchRoomInfo(slug).then((result) => {
-      setInfo(result);
-      setState(result ? "ready" : "missing");
-    });
+    void queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void fetchRoomInfo(slug).then((result) => {
-      if (cancelled) return;
-      setInfo(result);
-      setState(result ? "ready" : "missing");
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, refreshKey]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
