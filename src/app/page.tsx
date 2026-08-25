@@ -735,7 +735,10 @@ export default async function LandingPage() {
         */}
         <Section wide>
           <Eyebrow>Who runs this</Eyebrow>
-          <Heading>Built by minianon</Heading>
+          {/* The name in accent, the same way the hero and the closing line do it. */}
+          <Heading>
+            Built by <span className="text-accent">minianon</span>
+          </Heading>
 
           <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)] lg:gap-16">
             <div className="max-w-xl">
@@ -745,12 +748,32 @@ export default async function LandingPage() {
                 name carry the profile link instead of spending an "I am" on it.
               */}
               <div className="flex items-center gap-4">
-                <Avatar
-                  src={PHOTO}
-                  name="minianon"
-                  size={72}
-                  className="shrink-0 ring-1 ring-line"
-                />
+                {/*
+                  Gold ring and a crown, because this is the one person on the
+                  page who owns the place. The wrapper is what the crown hangs
+                  off, so it must not clip: relative with no overflow rule, and
+                  the crown pulled above the top edge.
+                */}
+                <div className="relative shrink-0">
+                  <Avatar
+                    src={PHOTO}
+                    name="minianon"
+                    size={72}
+                    className="ring-2 ring-gold"
+                  />
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="absolute -top-2.5 left-1/2 h-5 w-5 -translate-x-1/2 text-gold drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                    aria-hidden
+                    focusable="false"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M3 9.5l3.5 2.6L12 5l5.5 7.1L21 9.5 19.4 18H4.6z"
+                    />
+                  </svg>
+                </div>
 
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <a
