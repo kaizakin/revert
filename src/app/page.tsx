@@ -449,7 +449,16 @@ function Section({
         id ? "scroll-mt-16" : ""
       }`}
     >
-      <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-3xl"}`}>{children}</div>
+      {/*
+        Every section shares one container, so every heading starts on the same
+        left edge down the whole page. A narrow section then constrains its
+        content inside that container rather than being a narrower container of
+        its own — centring the narrow ones inset them by about 128px a side, and
+        their headings visibly stepped in from the rest.
+      */}
+      <div className="mx-auto w-full max-w-5xl">
+        <div className={wide ? undefined : "max-w-3xl"}>{children}</div>
+      </div>
     </section>
   );
 }
