@@ -142,6 +142,14 @@ const FAQ = [
     q: "What if I already have a job?",
     a: "Plenty of people here do. They are the ones answering questions and passing on referrals, which is most of what makes the room worth being in.",
   },
+  {
+    q: "Can I post an opening myself?",
+    a: "Yes, anyone can. If you know about a role, post it — and unlike a forward, it stays searchable for the person who starts looking next month.",
+  },
+  {
+    q: "What happens to fake recruiters?",
+    a: "Report them. Reports get read and acted on, because a job community without moderation fills up with fake recruiters fast.",
+  },
 ];
 
 /**
@@ -256,14 +264,23 @@ function CrossMark() {
 function Section({
   alt = false,
   wide = false,
+  id,
   children,
 }: {
   alt?: boolean;
   wide?: boolean;
+  /** Set only where the footer links to it, so no id exists without a referrer. */
+  id?: string;
   children: ReactNode;
 }) {
   return (
-    <section className={`px-6 py-20 ${alt ? "border-y border-line bg-canvas-alt" : ""}`}>
+    <section
+      id={id}
+      className={`px-6 py-20 ${alt ? "border-y border-line bg-canvas-alt" : ""} ${
+        /* Clears the sticky header when jumped to from a footer link. */
+        id ? "scroll-mt-16" : ""
+      }`}
+    >
       <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-3xl"}`}>{children}</div>
     </section>
   );
@@ -325,6 +342,11 @@ const SECONDARY_BUTTON =
 /** Quiet underline for links inside running prose. */
 const PROSE_LINK =
   "text-ink underline decoration-line-strong underline-offset-2 transition-colors hover:text-accent";
+
+const FOOTER_LABEL = "text-[11px] font-semibold uppercase tracking-[0.12em] text-faint";
+
+const FOOTER_LINK =
+  "flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink";
 
 export default async function LandingPage() {
   const { userId } = await auth();
@@ -476,7 +498,7 @@ export default async function LandingPage() {
           before they get an argument about why they should — not knowing is
           what stops a signup, and no amount of side-by-side fixes that.
         */}
-        <Section wide>
+        <Section wide id="how-it-works">
           <Eyebrow>Getting in</Eyebrow>
           <Heading>How it works</Heading>
 
@@ -580,7 +602,7 @@ export default async function LandingPage() {
           The heading deliberately does not count the cards. It said "Four
           things" for exactly as long as it took to add a fifth.
         */}
-        <Section wide>
+        <Section wide id="what-you-get">
           <Eyebrow>What you get</Eyebrow>
           <Heading>What a feed cannot do</Heading>
 
@@ -687,18 +709,43 @@ export default async function LandingPage() {
           </Section>
         )}
 
-        <Section alt wide>
+        {/*
+          Native details/summary rather than a JavaScript accordion: it is
+          keyboard operable, findable by the browser's own in-page search even
+          while collapsed, and works before hydration. One column rather than
+          two, because a question and its answer read badly across a gutter.
+
+          The first one is open, so the section does not look like a wall of
+          closed doors — and it is the question everyone actually arrives with.
+        */}
+        <Section alt id="faq">
           <Eyebrow>Before you join</Eyebrow>
           <Heading>Questions people ask</Heading>
 
-          <dl className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-2">
-            {FAQ.map((item) => (
-              <div key={item.q} className="flex flex-col gap-2">
-                <dt className="text-[16px] font-semibold text-ink">{item.q}</dt>
-                <dd className="text-[15px] leading-[1.6] text-muted">{item.a}</dd>
-              </div>
+          <div className="mt-10 divide-y divide-line overflow-hidden rounded-md border border-line bg-canvas">
+            {FAQ.map((item, index) => (
+              <details key={item.q} open={index === 0} className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[16px] font-semibold text-ink transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden">
+                  {item.q}
+
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 shrink-0 text-faint transition-transform duration-300 group-open:rotate-180 motion-reduce:transition-none"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M6 9.5l6 6 6-6" />
+                  </svg>
+                </summary>
+
+                <p className="px-5 pb-5 text-[15px] leading-[1.7] text-muted">{item.a}</p>
+              </details>
             ))}
-          </dl>
+          </div>
         </Section>
 
         {/*
@@ -747,25 +794,57 @@ export default async function LandingPage() {
 
       <footer className="border-t border-line bg-surface">
         <div className="mx-auto w-full max-w-5xl px-6 py-14">
-          <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
-            <div className="flex max-w-xs flex-col gap-3">
+          {/*
+            Four groups rather than two. One brand block and one link column
+            left a third of the footer as dead space on a wide screen, which is
+            what made it read as unfinished — the fix is more structure, not
+            more centring.
+          */}
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:gap-8">
+            <div className="flex max-w-sm flex-col gap-3">
               <Logo size={28} />
+
               <p className="text-[13px] leading-[1.7] text-muted">
                 Job alerts, questions and referrals — where you are a username, not a phone
                 number.
               </p>
+
+              {/* The same two numbers as the strip up top, kept honest the same way. */}
+              <p className="text-[12px] leading-[1.7] text-faint">
+                {CHANNEL_SIZE} follow the channel
+                {members > 0
+                  ? `. ${members.toLocaleString("en-IN")} ${
+                      members === 1 ? "person is" : "people are"
+                    } in the room.`
+                  : "."}
+              </p>
             </div>
 
+            {/* Anchors back into the page, so the footer is a way up rather than a dead end. */}
             <nav className="flex flex-col gap-3">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-faint">
-                Elsewhere
-              </span>
+              <span className={FOOTER_LABEL}>On this page</span>
+
+              <a href="#how-it-works" className={FOOTER_LINK}>
+                How it works
+              </a>
+
+              <a href="#what-you-get" className={FOOTER_LINK}>
+                What you get
+              </a>
+
+              <a href="#faq" className={FOOTER_LINK}>
+                Questions
+              </a>
+            </nav>
+
+            <nav className="flex flex-col gap-3">
+              <span className={FOOTER_LABEL}>Elsewhere</span>
 
               <a
                 href={CHANNEL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
+                className={FOOTER_LINK}
               >
                 <WhatsAppIcon />
                 Job alerts channel
@@ -775,7 +854,7 @@ export default async function LandingPage() {
                 href={BOOKING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
+                className={FOOTER_LINK}
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
                   <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" strokeWidth="1.7" />
@@ -787,14 +866,21 @@ export default async function LandingPage() {
                     strokeLinecap="round"
                   />
                 </svg>
-                Book time with minianon
+                Book a call
               </a>
 
+              {/*
+                The address stays visible rather than hiding behind the word
+                "email": a mailto is useless to anyone without a mail client
+                configured, and a recruiter wanting to post a role needs
+                something they can copy. break-all because it is one long word
+                in a narrow column.
+              */}
               <a
                 href={`mailto:${EMAIL}`}
-                className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
+                className="flex items-start gap-2 break-all text-[13px] text-muted transition-colors hover:text-ink"
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden>
                   <path
                     d="M3.5 6.5h17v11h-17z"
                     fill="none"
@@ -813,27 +899,60 @@ export default async function LandingPage() {
                 </svg>
                 {EMAIL}
               </a>
+            </nav>
 
-              <Link
-                href="/sign-in"
-                className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
+            <nav className="flex flex-col gap-3">
+              <span className={FOOTER_LABEL}>Get in</span>
+
+              {signedIn ? (
+                <Link href="/chat/hub" className={FOOTER_LINK}>
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                    <path
+                      d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Open the room
+                </Link>
+              ) : (
+                <>
+                  <Link href="/sign-up" className={FOOTER_LINK}>
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                      <path
+                        d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    Join the room
+                  </Link>
+
+                  <Link href="/sign-in" className={FOOTER_LINK}>
+                    Sign in
+                  </Link>
+                </>
+              )}
+
+              <a
+                href={SPONSOR_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={FOOTER_LINK}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
-                  <path
-                    d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Sign in
-              </Link>
+                <SocialIcon provider="github" className="h-4 w-4 shrink-0" />
+                Sponsor
+              </a>
             </nav>
           </div>
 
-          <div className="mt-10 flex flex-col gap-3 border-t border-line pt-7">
+          <div className="mt-12 flex flex-col gap-4 border-t border-line pt-7 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
             {/*
               Kept in the footer rather than buried in a policy page: it is the
               one thing about Revert that could otherwise be assumed wrongly,
@@ -844,7 +963,7 @@ export default async function LandingPage() {
               because a job community without moderation fills up with fake recruiters fast.
             </p>
 
-            <p className="text-[12px] text-faint">
+            <p className="shrink-0 text-[12px] text-faint">
               © 2026 Revert · built by{" "}
               <a
                 href={TOPMATE_URL}
