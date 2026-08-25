@@ -21,7 +21,7 @@ import {
   type RoomSummary,
 } from "@/server/messaging/queries";
 import { toggleReaction } from "@/server/messaging/reactions";
-import { loadAuthor, sendMessage } from "@/server/messaging/send";
+import { sendMessage } from "@/server/messaging/send";
 import {
   applyReciprocity,
   getPublicProfile,

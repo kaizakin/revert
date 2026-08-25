@@ -1,16 +1,11 @@
-import { and, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/server/db";
-import {
-  conversationMembers,
-  conversations,
-  mentions,
-  messages,
-  users,
-} from "@/server/db/schema";
+import { conversations, messages, users } from "@/server/db/schema";
 import { transport } from "@/server/realtime";
 
 import { getRoomForUser, type MessageRow } from "./queries";
+import { messageQueue } from "./queue";
 import { consumeRateLimit, MESSAGE_LIMIT } from "./rate-limit";
 
 export const MESSAGE_MAX_LENGTH = 4000;
@@ -42,9 +37,8 @@ type Author = {
 };
 
 /**
- * Persist a message, then fan it out. Order matters: the database is the source
- * of truth, and realtime only broadcasts what is already committed. A client
- * must never be told about a message that failed to save.
+ * Validates, immediately broadcasts to connected room members, and enqueues to
+ * a background FIFO worker to persist in order in PostgreSQL.
  */
 export async function sendMessage(
   author: Author,
@@ -103,89 +97,46 @@ export async function sendMessage(
   }
 
   const handles = extractMentions(body);
-
-  const inserted = await db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(messages)
-      .values({
-        conversationId: room.id,
-        authorId: author.id,
-        kind: "text",
-        body,
-        replyToId: replyTo?.id ?? null,
-      })
-      .returning({
-        id: messages.id,
-        body: messages.body,
-        createdAt: messages.createdAt,
-        editedAt: messages.editedAt,
-        replyToId: messages.replyToId,
-      });
-
-    if (handles.length) {
-      /**
-       * @all resolves to every other member of the room, so it is a membership
-       * lookup rather than a username lookup. The author is excluded — nobody
-       * needs a notification about their own message.
-       */
-      const mentionsAll = handles.includes(MENTION_ALL);
-
-      const named = handles.filter((h) => h !== MENTION_ALL);
-
-      const mentioned = mentionsAll
-        ? await tx
-            .select({ id: users.id })
-            .from(conversationMembers)
-            .innerJoin(users, eq(users.id, conversationMembers.userId))
-            .where(
-              and(
-                eq(conversationMembers.conversationId, room.id),
-                ne(conversationMembers.userId, author.id),
-                isNull(users.deletedAt),
-              ),
-            )
-        : named.length
-          ? await tx
-              .select({ id: users.id })
-              .from(users)
-              .where(and(inArray(users.username, named), isNull(users.deletedAt)))
-          : [];
-
-      if (mentioned.length) {
-        await tx
-          .insert(mentions)
-          .values(mentioned.map((m) => ({ messageId: row.id, userId: m.id })))
-          .onConflictDoNothing();
-      }
-    }
-
-    return row;
-  });
+  const messageId = crypto.randomUUID();
+  const createdAt = new Date();
 
   const messageRow: MessageRow = {
-    id: inserted.id,
-    body: inserted.body,
-    createdAt: inserted.createdAt,
-    editedAt: inserted.editedAt,
+    id: messageId,
+    body,
+    createdAt,
+    editedAt: null,
     authorId: author.id,
     authorUsername: author.username,
     authorAvatarUrl: author.avatarUrl,
-    replyToId: inserted.replyToId,
+    replyToId: replyTo?.id ?? null,
     readByAll: false,
     replyTo,
     reactions: [],
   };
 
-  // Publish to realtime asynchronously without blocking the client response
+  // 1. Immediately fan out to all connected members in the chat room
   void transport
     .publish({
       type: "message.new",
       conversationId: room.id,
-      messageId: inserted.id,
+      messageId,
+      message: messageRow,
     })
-    .catch((err) => console.error("[realtime] publish error", err));
+    .catch((err) => console.error("[realtime] broadcast error:", err));
 
-  return { ok: true, messageId: inserted.id, message: messageRow };
+  // 2. Enqueue message to background FIFO queue for database persistence
+  messageQueue.enqueue({
+    id: messageId,
+    conversationId: room.id,
+    authorId: author.id,
+    kind: "text",
+    body,
+    replyToId: replyTo?.id ?? null,
+    createdAt,
+    handles,
+  });
+
+  return { ok: true, messageId, message: messageRow };
 }
 
 /** Author fields sendMessage needs, loaded once per request. */

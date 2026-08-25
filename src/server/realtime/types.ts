@@ -5,8 +5,10 @@
  * a bundled build.
  */
 
+import type { MessageRow } from "@/server/messaging/queries";
+
 export type RealtimeEvent =
-  | { type: "message.new"; conversationId: string; messageId: string }
+  | { type: "message.new"; conversationId: string; messageId: string; message?: MessageRow }
   | { type: "message.edited"; conversationId: string; messageId: string }
   | { type: "message.deleted"; conversationId: string; messageId: string }
   | { type: "reaction.changed"; conversationId: string; messageId: string };

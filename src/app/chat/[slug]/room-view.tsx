@@ -305,14 +305,60 @@ export function RoomView({
 
     const channel = supabase
       .channel(`conversation:${conversationId}`)
-      .on("broadcast", { event: "message.new" }, () => void catchUp())
+      .on(
+        "broadcast",
+        { event: "message.new" },
+        (payload: { payload?: { message?: MessageRow } }) => {
+          const incomingMsg = payload?.payload?.message;
+          if (incomingMsg) {
+            queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => {
+              // Avoid duplicate insertion
+              if (prev.some((m) => m.id === incomingMsg.id)) {
+                return prev;
+              }
+
+              // Reconcile if this replaces an optimistic message by this author
+              const optIndex = prev.findIndex(
+                (m) =>
+                  m.id.startsWith("opt-") &&
+                  m.authorId === incomingMsg.authorId &&
+                  (m.body ?? "").trim() === (incomingMsg.body ?? "").trim(),
+              );
+
+              if (optIndex !== -1) {
+                const next = [...prev];
+                next[optIndex] = incomingMsg;
+                return next;
+              }
+
+              return [...prev, incomingMsg];
+            });
+
+            // Update sidebar room summary instantly
+            queryClient.setQueryData<RoomSummary[]>(["chat", "rooms"], (prev = []) => {
+              return prev.map((r) => {
+                if (r.id !== conversationId && r.slug !== slug) return r;
+                return {
+                  ...r,
+                  lastBody: incomingMsg.body,
+                  lastAuthor: incomingMsg.authorUsername,
+                  lastAt: new Date(incomingMsg.createdAt),
+                };
+              });
+            });
+          }
+
+          // Catch up in background to reconcile DB sequence and read status
+          void catchUp();
+        },
+      )
       .on("broadcast", { event: "reaction.changed" }, () => void reload())
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, catchUp, reload]);
+  }, [conversationId, slug, catchUp, reload, queryClient]);
 
   useEffect(() => {
     scrollToBottom(false);
