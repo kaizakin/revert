@@ -854,13 +854,7 @@ export default async function LandingPage() {
               className="shrink-0 ring-2 ring-gold"
             />
 
-            {/*
-              Capped, now that the section runs the full width: without it the
-              copy would set at about 100 characters a line. Prose is allowed to
-              stop short of the right edge — the field below it is what makes the
-              section read as full width.
-            */}
-            <div className="min-w-0 max-w-2xl">
+            <div className="min-w-0 flex-1">
               {/*
                 The tick sits after the name, where every platform puts it, which
                 is most of why it is recognised without explanation.
@@ -878,26 +872,38 @@ export default async function LandingPage() {
                 <VerifiedTick />
               </span>
 
-              <p className="mt-3 text-[15px] leading-[1.7] text-muted">
-                I have been running the channel for a while now — posting openings,
-                answering the same questions at midnight, and watching good roles
-                scroll away before anyone saw them. Revert is the room that channel
-                never had.
-              </p>
+              {/*
+                The copy runs in two columns rather than one capped column.
 
-              <p className="mt-4 text-[15px] leading-[1.7] text-muted">
-                If you want to talk through a resume, a switch, or where to even start,
-                you can{" "}
-                <a
-                  href={BOOKING_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={PROSE_LINK}
-                >
-                  book time with me
-                </a>
-                . Otherwise I am in the room, same as everyone else.
-              </p>
+                Capped, it stopped at 784px while the card row below it reached
+                1024 — a 240px notch down the section's right edge, and that
+                raggedness was the problem rather than the width itself. Split,
+                the paragraphs fill the block and each sets around 52 characters
+                a line: short, but well inside readable, and these are two short
+                paragraphs rather than a long read.
+              */}
+              <div className="mt-3 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                <p className="text-[15px] leading-[1.7] text-muted">
+                  I have been running the channel for a while now — posting openings,
+                  answering the same questions at midnight, and watching good roles
+                  scroll away before anyone saw them. Revert is the room that channel
+                  never had.
+                </p>
+
+                <p className="text-[15px] leading-[1.7] text-muted">
+                  If you want to talk through a resume, a switch, or where to even
+                  start, you can{" "}
+                  <a
+                    href={BOOKING_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={PROSE_LINK}
+                  >
+                    book time with me
+                  </a>
+                  . Otherwise I am in the room, same as everyone else.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1049,9 +1055,22 @@ export default async function LandingPage() {
           <Eyebrow>Before you join</Eyebrow>
           <Heading>Questions people ask</Heading>
 
-          <div className="mt-10 divide-y divide-line overflow-hidden rounded-md border border-line bg-canvas">
+          {/*
+            Two columns, because one was the actual problem here.
+
+            A question is 180 to 290px of text. In a single full-width row that
+            left 670 to 790px of nothing between the question and its own
+            chevron — the chevron was parked most of a screen away from the thing
+            it belonged to, which is what made this look broken rather than wide.
+            Halved, a row is about 500px: the width is genuinely used, the
+            chevron stays near its question, and the section is half as tall.
+
+            The hairlines are the grid's background through a 1px gap, so cells
+            have to be opaque and match this section's canvas.
+          */}
+          <div className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
             {FAQ.map((item, index) => (
-              <details key={item.q} open={index === 0} className="group">
+              <details key={item.q} open={index === 0} className="group bg-canvas">
                 {/*
                   No background change on hover. Filling the row with `raised`
                   painted a grey band across the whole width, which read as a
@@ -1076,15 +1095,8 @@ export default async function LandingPage() {
                   </svg>
                 </summary>
 
-                {/*
-                  The row spans the section; the answer inside it does not. At
-                  the full width an answer would set at about 120 characters a
-                  line, so the box reaches the right edge and the text stops
-                  where it stays readable.
-                */}
-                <p className="max-w-3xl px-5 pb-5 text-[15px] leading-[1.7] text-muted">
-                  {item.a}
-                </p>
+                {/* No cap needed: a half-width column already sets a readable line. */}
+                <p className="px-5 pb-5 text-[15px] leading-[1.7] text-muted">{item.a}</p>
               </details>
             ))}
           </div>
