@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
+import { Avatar } from "@/components/avatar";
 import { Logo } from "@/components/logo";
 import { publicMemberCount } from "@/server/messaging/queries";
 
@@ -28,12 +29,44 @@ const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
  */
 const EMAIL = "tusharbhardwaj2617@gmail.com";
 
+const SPONSOR_URL = "https://github.com/sponsors/minianon";
+
+/**
+ * Drop a photo at public/minianon.jpg and set this to "/minianon.jpg".
+ * Left null rather than pointing at a file that is not there yet — a missing
+ * image 404s instead of degrading, and the initials fallback looks deliberate.
+ */
+const PHOTO: string | null = null;
+
+/** Size of the WhatsApp group. Rounded down, because it moves. */
+const GROUP_SIZE = "2,000+";
+
 /**
  * Real quotes from real people only. The array is empty until there are some —
  * an invented testimonial on a page whose entire promise is trust would be the
  * worst possible thing to ship.
  */
 const TESTIMONIALS: { quote: string; name: string; role: string }[] = [];
+
+/**
+ * Directions, not dates. Someone who finds one room needs to know more is
+ * coming; someone who is promised a date and does not get it stops believing
+ * the rest of the page.
+ */
+const COMING = [
+  {
+    title: "Direct messages",
+    body: "Reply to someone privately about a role without either of you swapping numbers first.",
+  },
+  {
+    title: "Referral rooms",
+    body: "Company-wise rooms where people already inside can pass a profile along.",
+  },
+  {
+    title: "Profiles worth reading",
+    body: "A page that shows what you have built and where you are trying to go, not a CV.",
+  },
+];
 
 const STEPS = [
   {
@@ -120,11 +153,11 @@ export default async function LandingPage() {
    * WhatsApp link opens. A member count is worth showing but not worth a 500,
    * so a database that is down just costs the number.
    *
-   * Hidden below a threshold too: "4 members" reads as abandoned, and an
-   * honest small number is still worse than no number at all this early.
+   * Shown next to the size of the WhatsApp group, which is the number that
+   * carries the trust. A small count beside it reads as early rather than
+   * empty — but zero would just look broken, so that one hides.
    */
   const members = await publicMemberCount().catch(() => 0);
-  const showMembers = members >= 25;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -224,11 +257,37 @@ export default async function LandingPage() {
 
             <p className="text-xs text-faint">
               Takes about twenty seconds. Google or email — no phone number, ever.
-              {showMembers && ` ${members.toLocaleString("en-IN")} people have joined so far.`}
             </p>
           </div>
 
           <ChatPreview />
+        </section>
+
+        {/*
+          The WhatsApp figure is what carries the trust; the Revert figure is
+          queried rather than claimed, so it stays honest as it grows.
+        */}
+        <section className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-line bg-surface px-6 py-5">
+          <p className="text-sm text-muted">
+            <span className="text-[17px] font-semibold text-ink">{GROUP_SIZE}</span> in the{" "}
+            <a
+              href={GROUP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline underline-offset-2 hover:text-accent"
+            >
+              WhatsApp group
+            </a>
+          </p>
+
+          {members > 0 && (
+            <p className="text-sm text-muted">
+              <span className="text-[17px] font-semibold text-ink">
+                {members.toLocaleString("en-IN")}
+              </span>{" "}
+              {members === 1 ? "person is" : "people are"} already on Revert
+            </p>
+          )}
         </section>
 
         <section className="border-t border-line py-14">
@@ -284,6 +343,61 @@ export default async function LandingPage() {
           </ol>
         </section>
 
+        {/*
+          People join a community because of a person, and minianon is the
+          reason anyone is on this page at all. Worth a face rather than a
+          footer credit.
+        */}
+        <section className="border-t border-line py-14">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-7">
+            <Avatar src={PHOTO} name="minianon" size={88} className="ring-1 ring-line" />
+
+            <div className="flex max-w-2xl flex-col gap-3">
+              <h2 className="text-lg font-semibold tracking-tight text-ink">
+                Built by minianon
+              </h2>
+
+              <p className="text-sm leading-relaxed text-muted">
+                I am Tushar. I have been running the job alerts group for a while now —
+                posting openings, answering the same questions at midnight, and watching
+                good roles scroll away before anyone saw them. Revert is that group with
+                the parts that kept breaking fixed.
+              </p>
+
+              <p className="text-sm leading-relaxed text-muted">
+                If you want to talk through a resume, a switch, or where to even start,
+                you can{" "}
+                <a
+                  href={BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-ink underline underline-offset-2 hover:text-accent"
+                >
+                  book time with me
+                </a>
+                . Otherwise I am in the group, same as everyone else.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-t border-line py-14">
+          <h2 className="text-lg font-semibold tracking-tight text-ink">What is coming</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+            One room today, on purpose — a quiet room full of people beats five empty
+            ones. Next, in roughly this order:
+          </p>
+
+          <ul className="mt-7 grid gap-8 sm:grid-cols-3 sm:gap-6">
+            {COMING.map((item) => (
+              <li key={item.title} className="flex flex-col gap-2 border-l-2 border-line pl-4">
+                <span className="text-[15px] font-semibold text-ink">{item.title}</span>
+                <span className="text-sm leading-relaxed text-muted">{item.body}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {TESTIMONIALS.length > 0 && (
           <section className="border-t border-line py-14">
             <h2 className="text-lg font-semibold tracking-tight text-ink">
@@ -325,28 +439,40 @@ export default async function LandingPage() {
         </section>
 
         {/*
-          Recruiters are the other half of a job community and arrive with a
-          different question than a job seeker does, so they get told where to
-          write rather than being pointed at a signup button.
+          No ads and no paywall means someone has to cover the bills. Asked for
+          plainly and once, with no guilt and nothing withheld from people who
+          scroll past — this is a job community, and most of it is broke.
         */}
         <section className="border-t border-line py-14">
           <div className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
             <div className="flex max-w-xl flex-col gap-2">
               <h2 className="text-lg font-semibold tracking-tight text-ink">
-                Hiring? Send us the opening.
+                Revert is free, and stays free.
               </h2>
               <p className="text-sm leading-relaxed text-muted">
-                Roles that are real, open, and actually reachable for someone early in
-                their career. Mail the role, location and how to apply — no fees, and no
-                listing goes up without a way to apply directly.
+                No ads, no data sold, nobody paying to reach you. It is one person and a
+                server bill. If it has been useful and you are in a position to, you can
+                chip in — and if you are not, ignore this and use it anyway. That is what
+                it is for.
               </p>
             </div>
 
             <a
-              href={`mailto:${EMAIL}?subject=Job%20opening%20for%20Revert`}
-              className="w-fit shrink-0 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
+              href={SPONSOR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-fit shrink-0 items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
             >
-              Mail an opening
+              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                <path
+                  d="M12 20s-7-4.4-7-9a4 4 0 017-2.6A4 4 0 0119 11c0 4.6-7 9-7 9z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Sponsor on GitHub
             </a>
           </div>
         </section>
