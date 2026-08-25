@@ -204,13 +204,48 @@ function Bubble({ line }: { line: Line }) {
 }
 
 /**
- * How far each card behind the front one is pushed down and shrunk. Small
- * numbers: the point is to show there is more behind this, not to build a
- * fan. Cards past the third are transparent — a stack of six visible edges
- * reads as clutter.
+ * Stack geometry.
+ *
+ * Scaling happens about the centre, so a card's own shrink eats into the offset
+ * that is meant to expose it: the visible sliver is STACK_Y minus half the
+ * height lost to STACK_SCALE. On a card this tall that is most of it, which is
+ * why the first pass at these numbers produced a seam rather than a stack.
  */
-const STACK_Y = 14;
-const STACK_SCALE = 0.03;
+const STACK_Y = 20;
+const STACK_SCALE = 0.045;
+
+/** Nothing below the third layer is drawn — six visible edges is clutter. */
+const VISIBLE_DEPTH = 2;
+
+const FADE = [1, 0.55, 0.24];
+
+/**
+ * Where a card sits, given how far back it is.
+ *
+ * The card that just left the front lifts off the top and fades, the way one is
+ * dealt off a deck. Sending it down through every other layer to reach the back
+ * was the wrong direction and by far the longest travel on screen, which is
+ * what made the rotation look heavy.
+ *
+ * Everything behind the third layer parks at the third layer's position while
+ * invisible. So the card arriving there only has to fade in — it does not slide
+ * up from somewhere off the bottom — and the card on its way round to the back
+ * covers that distance with nobody watching.
+ */
+function stackStyle(depth: number, total: number): React.CSSProperties {
+  const leaving = depth === total - 1;
+
+  if (leaving) {
+    return { transform: "translateY(-26px) scale(1.03)", opacity: 0 };
+  }
+
+  const resting = Math.min(depth, VISIBLE_DEPTH);
+
+  return {
+    transform: `translateY(${resting * STACK_Y}px) scale(${1 - resting * STACK_SCALE})`,
+    opacity: depth > VISIBLE_DEPTH ? 0 : FADE[depth],
+  };
+}
 
 function SceneCard({
   lines,
@@ -226,13 +261,15 @@ function SceneCard({
 
   return (
     <div
-      className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl transition-all duration-700 ease-out motion-reduce:transition-none"
+      className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl transition-[transform,opacity] duration-[600ms] motion-reduce:transition-none"
       style={{
-        transform: `translateY(${depth * STACK_Y}px) scale(${1 - depth * STACK_SCALE})`,
-        // Only three cards are ever visible. The one that just left the front
-        // is sent to the largest depth, so it sinks and fades rather than
-        // sliding off somewhere.
-        opacity: depth > 2 ? 0 : 1 - depth * 0.28,
+        ...stackStyle(depth, SCENES.length),
+        // The same curve the bubbles arrive on, so the card settling and the
+        // messages landing on it read as one movement.
+        transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+        // Both animated properties are declared up front, so the browser keeps
+        // the card on its own layer instead of repainting it every frame.
+        willChange: "transform, opacity",
       }}
     >
       <div className="flex items-center gap-2.5 border-b border-line bg-surface px-3.5 py-2.5">
@@ -257,7 +294,11 @@ function SceneCard({
           <div
             key={index}
             className={front ? "chat-line" : undefined}
-            style={front ? { animationDelay: `${0.3 + index * 1.25}s` } : undefined}
+            // Starts as the card in front of this one is clearing, so the
+            // incoming conversation is already filling in rather than sitting
+            // blank for a beat. The 1.25s spacing between lines is what makes
+            // it read as a conversation and is left alone.
+            style={front ? { animationDelay: `${0.15 + index * 1.25}s` } : undefined}
           >
             <Bubble line={line} />
           </div>
