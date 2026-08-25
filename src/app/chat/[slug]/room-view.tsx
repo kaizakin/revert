@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 
-import { avatarColour, initials } from "@/lib/avatar";
+import { Avatar } from "@/components/avatar";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import type { MessageRow } from "@/server/messaging/queries";
 
@@ -407,18 +407,7 @@ export function RoomView({
           aria-label="Open group info"
           className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors hover:opacity-90"
         >
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-          ) : (
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
-              style={{ backgroundColor: avatarColour(slug) }}
-              aria-hidden
-            >
-              {initials(name)}
-            </span>
-          )}
+          <Avatar src={avatarUrl} name={name || slug} size={40} />
 
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[15px] font-semibold text-ink">{name}</h1>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { LogoMark } from "@/components/logo";
-import { avatarColour, initials } from "@/lib/avatar";
+import { Avatar } from "@/components/avatar";
 import { listRoomsForUser } from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
 
@@ -106,22 +106,7 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
           title={`@${me.username}`}
           className="rounded-full transition-opacity hover:opacity-80"
         >
-          {me.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={me.avatarUrl}
-              alt=""
-              className="h-8 w-8 rounded-full object-cover ring-1 ring-line"
-            />
-          ) : (
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-              style={{ backgroundColor: avatarColour(me.username) }}
-              aria-hidden
-            >
-              {initials(me.username)}
-            </span>
-          )}
+          <Avatar src={me.avatarUrl} name={me.username} size={32} className="ring-1 ring-line" />
         </Link>
       </nav>
 

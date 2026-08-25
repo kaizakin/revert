@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { avatarColour, initials } from "@/lib/avatar";
@@ -17,7 +18,12 @@ type Props = {
  * WhatsApp. Falls back to initials, which are not clickable — there is nothing
  * to enlarge.
  */
-export function AvatarLightbox({ url, username, size = 96, className = "" }: Props) {
+export function AvatarLightbox({
+  url,
+  username,
+  size = 96,
+  className = "",
+}: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -64,8 +70,7 @@ export function AvatarLightbox({ url, username, size = 96, className = "" }: Pro
         className={`shrink-0 overflow-hidden rounded-full transition-opacity hover:opacity-90 ${className}`}
         style={{ width: size, height: size }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={url}
           alt=""
           width={size}
@@ -82,7 +87,9 @@ export function AvatarLightbox({ url, username, size = 96, className = "" }: Pro
           className="fixed inset-0 z-50 flex flex-col bg-black/95"
         >
           <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[15px] font-medium text-white">@{username}</span>
+            <span className="text-[15px] font-medium text-white">
+              @{username}
+            </span>
             <button
               type="button"
               onClick={() => setOpen(false)}

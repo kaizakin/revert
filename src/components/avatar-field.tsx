@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import Image from "next/image";
+
 import { avatarColour, initials } from "@/lib/avatar";
 import type { AvatarPreset } from "@/server/users/avatar-presets";
 
@@ -100,8 +102,13 @@ export function AvatarField({ seed, currentUrl, presets, compact }: Props) {
                       : "opacity-75 hover:opacity-100"
                   }`}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={option.url} alt="" className="h-11 w-11 object-cover" />
+                  <Image
+                    src={option.url}
+                    alt=""
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 object-cover"
+                  />
                 </button>
               );
             })}

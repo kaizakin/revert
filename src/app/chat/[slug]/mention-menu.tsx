@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { avatarColour, initials } from "@/lib/avatar";
+import { Avatar } from "@/components/avatar";
 
 import { searchRoomMembers, type MentionCandidate } from "../actions";
 
@@ -94,18 +94,7 @@ export function MentionMenu({ slug, query, onPick, onClose }: Props) {
             index === active ? "bg-raised" : ""
           }`}
         >
-          {item.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
-          ) : (
-            <span
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-              style={{ backgroundColor: avatarColour(item.username) }}
-              aria-hidden
-            >
-              {initials(item.username)}
-            </span>
-          )}
+          <Avatar src={item.avatarUrl} name={item.username} size={28} />
 
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-[13px] text-ink">

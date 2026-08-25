@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { Avatar } from "@/components/avatar";
 import { Tick } from "@/components/bubble-marks";
 import { avatarColour, initials } from "@/lib/avatar";
 
@@ -227,12 +228,7 @@ export function ChatPreview() {
       className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
     >
       <div className="flex items-center gap-2.5 border-b border-line bg-surface px-3.5 py-2.5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/groups/mini-anon-hub.jpeg"
-          alt=""
-          className="h-8 w-8 shrink-0 rounded-full object-cover"
-        />
+        <Avatar src="/groups/mini-anon-hub.jpeg" name="Mini Anon Hub" size={32} priority />
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-[13px] font-semibold text-ink">Mini Anon Hub</span>
           <span className="truncate text-[11px] text-muted">2,041 members · 96 online</span>

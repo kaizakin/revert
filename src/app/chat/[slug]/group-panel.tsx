@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 
-import { avatarColour, initials } from "@/lib/avatar";
+import { Avatar } from "@/components/avatar";
 
 import { fetchRoomInfo, updateRoomAction, type RoomInfo } from "../actions";
 
@@ -46,18 +46,7 @@ function GroupPicture({
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const picture = avatarUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={avatarUrl} alt="" className="h-24 w-24 rounded-full object-cover" />
-  ) : (
-    <span
-      className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-semibold text-white"
-      style={{ backgroundColor: avatarColour(slug) }}
-      aria-hidden
-    >
-      {initials(name)}
-    </span>
-  );
+  const picture = <Avatar src={avatarUrl} name={name || slug} size={96} />;
 
   if (!canEdit) return picture;
 
@@ -393,22 +382,7 @@ export function GroupPanel({
                       className="-mx-2 flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-raised"
                     >
                       <span className="relative shrink-0">
-                        {member.avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={member.avatarUrl}
-                            alt=""
-                            className="h-9 w-9 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span
-                            className="flex h-9 w-9 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                            style={{ backgroundColor: avatarColour(member.username) }}
-                            aria-hidden
-                          >
-                            {initials(member.username)}
-                          </span>
-                        )}
+                        <Avatar src={member.avatarUrl} name={member.username} size={36} />
                         {member.isOnline && (
                           <span
                             title="Online"

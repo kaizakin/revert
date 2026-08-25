@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { BubbleTail, Tick } from "@/components/bubble-marks";
 import { renderRichText } from "@/lib/rich-text";
-import { avatarColour, initials } from "@/lib/avatar";
+import { Avatar } from "@/components/avatar";
 import type { MessageRow } from "@/server/messaging/queries";
 import { REACTION_EMOJI } from "@/lib/reactions";
 
@@ -46,33 +46,6 @@ const timeOf = (value: Date | string) =>
     .toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
     .toLowerCase();
 
-function Avatar({ username, url }: { username: string | null; url: string | null }) {
-  if (url) {
-    // Clerk avatars, already on a CDN; a plain img avoids configuring remote
-    // image patterns for a 28px circle.
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt=""
-        width={28}
-        height={28}
-        className="h-7 w-7 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
-
-  return (
-    <span
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-      style={{ backgroundColor: avatarColour(username) }}
-      aria-hidden
-    >
-      {initials(username)}
-    </span>
-  );
-}
-
 export function MessageBubble({
   message,
   isMine,
@@ -104,7 +77,7 @@ export function MessageBubble({
             aria-label={`Open profile of ${message.authorUsername ?? "user"}`}
             className="shrink-0 rounded-full transition-opacity hover:opacity-80"
           >
-            <Avatar username={message.authorUsername} url={message.authorAvatarUrl} />
+            <Avatar src={message.authorAvatarUrl} name={message.authorUsername ?? "?"} size={28} />
           </button>
         ) : (
           <span className="w-7 shrink-0" aria-hidden />
