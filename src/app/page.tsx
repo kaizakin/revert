@@ -193,6 +193,25 @@ function YouTubeIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 /**
+ * A phrase in the accent with a highlighter bar under it.
+ *
+ * Colour alone was carrying the hero's promise, and colour alone is the emphasis
+ * a skimming reader misses. Shared so the two places that lean on a phrase mark
+ * it the same way rather than drifting apart.
+ */
+function Highlighted({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative inline-block text-accent">
+      {children}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 -bottom-[0.04em] h-[0.09em] rounded-full bg-accent/40"
+      />
+    </span>
+  );
+}
+
+/**
  * The arrow that arrives on hover, marking a row as a link that leaves the page.
  * Shared by the project cards and the contributor credit, so the two read as the
  * same kind of thing rather than as a card and a loose line of text.
@@ -556,18 +575,7 @@ export default async function LandingPage() {
               <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.01em] text-ink sm:text-[52px] sm:tracking-[-0.03em]">
                 Same alerts.
                 <br />
-                {/*
-                  The promise gets a highlighter bar as well as the accent. Colour
-                  alone was carrying it, and colour alone is the one emphasis a
-                  reader skimming past can miss.
-                */}
-                <span className="relative inline-block text-accent">
-                  Now you can reply.
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-0 -bottom-[0.04em] h-[0.09em] rounded-full bg-accent/40"
-                  />
-                </span>
+                <Highlighted>Now you can reply.</Highlighted>
               </h1>
 
               <p className="mt-6 max-w-lg text-[17px] leading-[1.6] text-muted">
@@ -784,13 +792,21 @@ export default async function LandingPage() {
         */}
         <Section wide>
           <Eyebrow>Who runs this</Eyebrow>
-          {/* The name in accent, the same way the hero and the closing line do it. */}
+          {/* Marked the same way as the hero's promise, not just coloured. */}
           <Heading>
-            Built by <span className="text-accent">minianon</span>
+            Built by <Highlighted>minianon</Highlighted>
           </Heading>
 
-          <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)] lg:gap-16">
-            <div className="max-w-xl">
+          {/*
+            The left track is the prose measure itself rather than a 1fr track
+            with a max-w inside it. That combination left 48px of the track
+            unused, and with a 64px gap on top of it the two halves sat 112px
+            apart — far enough to read as two unrelated columns. Now the gutter
+            is just the gap, and the right column takes the width that frees up,
+            which also shortens its cards.
+          */}
+          <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,36rem)_minmax(0,1fr)]">
+            <div>
               {/*
                 Photo and name together. On its own the circle read as a stray
                 ornament; against the name it reads as a person, and it lets the
@@ -904,7 +920,7 @@ export default async function LandingPage() {
                 because this whole column is the meta column — the left side is
                 the person writing, this side is everything around them.
               */}
-              <div className="mt-8">
+              <div className="mt-6">
                 <span className={MICRO_LABEL}>Thanks to</span>
 
                 {/*
