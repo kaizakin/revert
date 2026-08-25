@@ -428,7 +428,7 @@ export default async function LandingPage() {
         <section className="px-6 pt-14 pb-16 lg:pt-20 lg:pb-20">
           <div className="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14">
             <div className="flex flex-col">
-              <Eyebrow>By minianon · for my community</Eyebrow>
+              <Eyebrow>By minianon · ❤️ for my community</Eyebrow>
 
               {/*
                 A line of continuity, then the difference, the difference in
@@ -689,11 +689,14 @@ export default async function LandingPage() {
               <div className="flex items-center gap-4">
                 {/*
                   Gold ring and a crown, because this is the one person on the
-                  page who owns the place. The wrapper is what the crown hangs
-                  off, so it must not clip: relative with no overflow rule, and
-                  the crown sitting on the upper-left arc. -left-1 -top-1 puts a
-                  24px crown centred on that arc rather than floating in the
-                  corner gap outside the circle.
+                  page who owns the place.
+
+                  The crown is a badge punched out of the photo's edge rather
+                  than a loose glyph laid over it. Centred on top it read as
+                  perched on the head; sitting on the arc it read as dropped
+                  there. A filled disc with a ring in the section's own ground
+                  colour cuts a clean hole in the circle, which is the one
+                  arrangement that looks deliberate at this size.
                 */}
                 <div className="relative shrink-0">
                   <Avatar
@@ -703,17 +706,21 @@ export default async function LandingPage() {
                     className="ring-2 ring-gold"
                   />
 
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="absolute -left-1 -top-1 h-6 w-6 -rotate-[20deg] text-gold drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                  <span
                     aria-hidden
-                    focusable="false"
+                    className="absolute -right-0.5 -top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-gold ring-2 ring-canvas"
                   >
-                    <path
-                      fill="currentColor"
-                      d="M3 9.5l3.5 2.6L12 5l5.5 7.1L21 9.5 19.4 18H4.6z"
-                    />
-                  </svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-3.5 w-3.5 text-canvas"
+                      focusable="false"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M3 9.5l3.5 2.6L12 5l5.5 7.1L21 9.5 19.4 18H4.6z"
+                      />
+                    </svg>
+                  </span>
                 </div>
 
                 <a
