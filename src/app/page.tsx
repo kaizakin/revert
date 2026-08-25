@@ -614,8 +614,16 @@ export default async function LandingPage() {
                   rather than in front of the claim.
                 */}
                 <span>
-                  By <span className="font-semibold text-ink">minianon</span> · for my
-                  community
+                  By{" "}
+                  <a
+                    href={PROFILE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-ink underline decoration-line-strong underline-offset-2 transition-colors hover:text-accent"
+                  >
+                    minianon
+                  </a>{" "}
+                  · for my community
                   <HeartIcon />
                 </span>
 
@@ -803,57 +811,80 @@ export default async function LandingPage() {
         */}
         <Section>
           <Eyebrow>Who runs this</Eyebrow>
-          {/* Marked the same way as the hero's promise, not just coloured. */}
+          {/*
+            The name is the link, marked the same way as the hero's promise. The
+            anchor wraps the mark rather than sitting inside it, so the
+            highlighter bar is part of what you click.
+          */}
           <Heading>
-            Built by <Highlighted>minianon</Highlighted>
+            Built by{" "}
+            <a
+              href={PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-opacity hover:opacity-75"
+            >
+              <Highlighted>minianon</Highlighted>
+            </a>
           </Heading>
 
-          <div className="mt-10 flex items-center gap-4">
+          {/*
+            The avatar sits beside the copy instead of on a row of its own.
+
+            Stacked, it spent a whole row on a circle and pushed the prose down
+            the page; alongside, it costs nothing vertically and the text column
+            takes the width the max-w cap used to leave empty. That column lands
+            around 73 characters a line on its own, so the cap is gone with it —
+            it was only ever there to stop a full-width measure.
+          */}
+          <div className="mt-10 flex flex-col gap-5 sm:flex-row sm:gap-6">
             <Avatar
               src={PHOTO}
               name="minianon"
-              size={72}
+              size={88}
               className="shrink-0 ring-2 ring-gold"
             />
 
-            {/*
-              The tick sits after the name, where every platform puts it, which
-              is most of why it is recognised without explanation.
-            */}
-            <span className="flex min-w-0 items-center gap-1.5">
-              <a
-                href={PROFILE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="truncate font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
-              >
-                Tushar Bhardwaj
-              </a>
+            <div className="min-w-0">
+              {/*
+                The tick sits after the name, where every platform puts it, which
+                is most of why it is recognised without explanation.
+              */}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <a
+                  href={PROFILE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
+                >
+                  Tushar Bhardwaj
+                </a>
 
-              <VerifiedTick />
-            </span>
+                <VerifiedTick />
+              </span>
+
+              <p className="mt-3 text-[15px] leading-[1.7] text-muted">
+                I have been running the channel for a while now — posting openings,
+                answering the same questions at midnight, and watching good roles
+                scroll away before anyone saw them. Revert is the room that channel
+                never had.
+              </p>
+
+              <p className="mt-4 text-[15px] leading-[1.7] text-muted">
+                If you want to talk through a resume, a switch, or where to even start,
+                you can{" "}
+                <a
+                  href={BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={PROSE_LINK}
+                >
+                  book time with me
+                </a>
+                . Otherwise I am in the room, same as everyone else.
+              </p>
+            </div>
           </div>
-
-          {/* Capped well inside the section: full width would be an unreadable measure. */}
-          <p className="mt-6 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            I have been running the channel for a while now — posting openings,
-            answering the same questions at midnight, and watching good roles scroll
-            away before anyone saw them. Revert is the room that channel never had.
-          </p>
-
-          <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            If you want to talk through a resume, a switch, or where to even start, you
-            can{" "}
-            <a
-              href={BOOKING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={PROSE_LINK}
-            >
-              book time with me
-            </a>
-            . Otherwise I am in the room, same as everyone else.
-          </p>
 
           <div className="mt-12">
             <span className={MICRO_LABEL}>Also built</span>
