@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
 
@@ -29,28 +30,23 @@ type Props = {
 };
 
 export function MentionMenu({ slug, query, onPick, onClose }: Props) {
-  const [items, setItems] = useState<MentionCandidate[]>([]);
   const [active, setActive] = useState(0);
+  const trimmed = query.trim().toLowerCase();
 
-  useEffect(() => {
-    let cancelled = false;
+  const { data: candidates = [] } = useQuery<MentionCandidate[]>({
+    queryKey: ["chat", "mentions", slug, trimmed],
+    queryFn: () => searchRoomMembers(slug, trimmed),
+    staleTime: 1000 * 60 * 5,
+  });
 
-    void searchRoomMembers(slug, query).then((result) => {
-      if (cancelled) return;
+  const items = useMemo(() => {
+    // @all first, and only while it still matches what has been typed.
+    const all: MentionCandidate[] = "all".startsWith(trimmed)
+      ? [{ username: "all", displayName: "Everyone in this group", avatarUrl: null }]
+      : [];
 
-      // @all first, and only while it still matches what has been typed.
-      const all: MentionCandidate[] = "all".startsWith(query.toLowerCase())
-        ? [{ username: "all", displayName: "Everyone in this group", avatarUrl: null }]
-        : [];
-
-      setItems([...all, ...result]);
-      setActive(0);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, query]);
+    return [...all, ...candidates];
+  }, [trimmed, candidates]);
 
   /**
    * Bound on the window during capture, so the arrow keys and Enter are claimed

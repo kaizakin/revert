@@ -10,10 +10,11 @@ import {
   useRef,
   useState,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import type { MessageRow } from "@/server/messaging/queries";
+import type { MessageRow, PinnedMessage } from "@/server/messaging/queries";
 
 import {
   syncPresence,
@@ -82,76 +83,37 @@ export function RoomView({
   postDeniedReason,
   initialMessages,
 }: Props) {
-  /**
-   * Only messages that arrived over realtime live in state. The server-rendered
-   * page stays the base list and the two are merged below.
-   *
-   * Copying props into state and syncing them in an effect is the obvious
-   * approach and the wrong one: it triggers a second render on every
-   * revalidation and leaves two sources of truth one race apart.
-   */
-  const [live, setLive] = useState<MessageRow[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data: messages = initialMessages } = useQuery<MessageRow[]>({
+    queryKey: ["chat", "messages", slug],
+    queryFn: () => refetchMessages(slug),
+    initialData: initialMessages,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: stats = initialStats } = useQuery<{ total: number; active: number }>({
+    queryKey: ["chat", "presence", slug],
+    queryFn: async () => {
+      const next = await syncPresence(slug);
+      return next ?? initialStats;
+    },
+    initialData: initialStats,
+    refetchInterval: 45_000,
+    refetchIntervalInBackground: false,
+    staleTime: 1000 * 30,
+  });
+
+  const { data: pinned = null } = useQuery<PinnedMessage | null>({
+    queryKey: ["chat", "pinned", slug],
+    queryFn: () => fetchPinned(slug),
+    staleTime: 1000 * 60 * 5,
+  });
+
   const [draft, setDraft] = useState("");
   const [reactError, setReactError] = useState<string | null>(null);
-  /**
-   * Polled counts are tagged with the room they came from, and the server
-   * render is used until a poll for this room lands. Copying the prop into
-   * state and re-syncing it in an effect would be the obvious approach and
-   * causes a cascading render — and briefly shows the previous room's counts.
-   */
-  const [polled, setPolled] = useState<{
-    slug: string;
-    stats: { total: number; active: number };
-  } | null>(null);
-
-  const stats = polled?.slug === slug ? polled.stats : initialStats;
-  const [pinned, setPinned] = useState<{
-    id: string;
-    body: string | null;
-    authorUsername: string | null;
-  } | null>(null);
   const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
-
-  const refreshPresence = useCallback(() => {
-    void syncPresence(slug).then((next) => {
-      if (next) setPolled({ slug, stats: next });
-    });
-  }, [slug]);
-
-  /**
-   * Poll while the tab is visible.
-   *
-   * 45 seconds against a five-minute activity window, so a reader stays marked
-   * present with margin to spare. Hidden tabs are skipped — a backgrounded tab
-   * reporting presence would show people as online who walked away hours ago,
-   * and would keep polling for nothing.
-   */
-  useEffect(() => {
-    refreshPresence();
-
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") refreshPresence();
-    }, 45_000);
-
-    const onVisible = () => {
-      if (document.visibilityState === "visible") refreshPresence();
-    };
-
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [refreshPresence]);
-
-  const refreshPinned = useCallback(() => {
-    void fetchPinned(slug).then(setPinned);
-  }, [slug]);
-
-  useEffect(() => {
-    refreshPinned();
-  }, [refreshPinned]);
 
   const togglePin = useCallback(
     async (messageId: string) => {
@@ -162,9 +124,9 @@ export function RoomView({
         return;
       }
       setReactError(null);
-      refreshPinned();
+      void queryClient.invalidateQueries({ queryKey: ["chat", "pinned", slug] });
     },
-    [slug, pinned, refreshPinned],
+    [slug, pinned, queryClient],
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -220,11 +182,6 @@ export function RoomView({
   const [state, action, pending] = useActionState<SendState, FormData>(sendMessageAction, {});
   const formRef = useRef<HTMLFormElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  const messages = useMemo(() => {
-    const seen = new Set(initialMessages.map((m) => m.id));
-    return [...initialMessages, ...live.filter((m) => !seen.has(m.id))];
-  }, [initialMessages, live]);
 
   const [optimistic, addOptimistic] = useOptimistic(messages, (current, draft: string) => [
     ...current,
@@ -292,21 +249,28 @@ export function RoomView({
   }, [messages]);
 
   const catchUp = useCallback(async () => {
-    const since = latestAtRef.current ?? new Date(Date.now() - 60_000).toISOString();
+    const current =
+      queryClient.getQueryData<MessageRow[]>(["chat", "messages", slug]) ?? messages;
+    const last = current.at(-1)?.createdAt;
+    const since = last
+      ? new Date(last).toISOString()
+      : new Date(Date.now() - 60_000).toISOString();
     const fresh = await fetchNewMessages(slug, since);
     if (!fresh.length) return;
 
-    setLive((prev) => {
+    queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = current) => {
       const seen = new Set(prev.map((m) => m.id));
       const added = fresh.filter((m) => !seen.has(m.id));
       return added.length ? [...prev, ...added] : prev;
     });
-  }, [slug]);
+  }, [slug, messages, queryClient]);
 
   const reload = useCallback(async () => {
     const fresh = await refetchMessages(slug);
-    if (fresh.length) setLive(fresh);
-  }, [slug]);
+    if (fresh.length) {
+      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], fresh);
+    }
+  }, [slug, queryClient]);
 
   const handleReact = useCallback(
     async (messageId: string, emoji: string) => {

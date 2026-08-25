@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { searchInRoom } from "../actions";
 import type { SearchHit } from "@/server/messaging/queries";
@@ -42,21 +43,16 @@ export function SearchPanel({
   onJumpTo: (messageId: string) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [hits, setHits] = useState<SearchHit[]>([]);
-  const [searched, setSearched] = useState(false);
+  const trimmed = query.trim();
 
-  useEffect(() => {
-    if (query.trim().length < 2) return;
+  const { data: hits = [], isFetched } = useQuery<SearchHit[]>({
+    queryKey: ["chat", "search", slug, trimmed],
+    queryFn: () => searchInRoom(slug, trimmed),
+    enabled: trimmed.length >= 2,
+    staleTime: 1000 * 60,
+  });
 
-    const timer = setTimeout(() => {
-      void searchInRoom(slug, query).then((result) => {
-        setHits(result);
-        setSearched(true);
-      });
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [slug, query]);
+  const searched = trimmed.length >= 2 && isFetched;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

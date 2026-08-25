@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { AvatarLightbox } from "@/components/avatar-lightbox";
 import { SocialIcon } from "@/components/social-icon";
@@ -37,27 +38,13 @@ export function MemberPanel({
   username: string;
   onClose: () => void;
 }) {
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
+  const { data: profile = null, isLoading } = useQuery<PublicProfile | null>({
+    queryKey: ["chat", "member-profile", username],
+    queryFn: () => fetchProfile(username),
+    staleTime: 1000 * 60 * 5,
+  });
 
-  /**
-   * No synchronous setState here: the panel is keyed by username in the room
-   * view, so a different member remounts it and the initial state is already
-   * "loading". Resetting it in the effect would just cause an extra render.
-   */
-  useEffect(() => {
-    let cancelled = false;
-
-    void fetchProfile(username).then((result) => {
-      if (cancelled) return;
-      setProfile(result);
-      setState(result ? "ready" : "missing");
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [username]);
+  const state = isLoading ? "loading" : profile ? "ready" : "missing";
 
   // Escape closes, which is the one keyboard affordance a panel like this owes.
   useEffect(() => {
