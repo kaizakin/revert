@@ -204,74 +204,30 @@ function Bubble({ line }: { line: Line }) {
 }
 
 /**
- * Stack geometry.
+ * One panel, and it never moves.
  *
- * Scaling happens about the centre, so a card's own shrink eats into the offset
- * that is meant to expose it: the visible sliver is STACK_Y minus half the
- * height lost to STACK_SCALE. On a card this tall that is most of it, which is
- * why the first pass at these numbers produced a seam rather than a stack.
+ * This was a deck: six of these stacked with a 20px offset and a slight shrink,
+ * rotating one to the back every scene. A deck needs an offset that is large
+ * next to the card, and this card is not far off 300px tall — so after the
+ * shrink ate into the offset, the cards behind showed as a few pixels of
+ * ghosted duplicate edge with five shadows piling up along it. The geometry was
+ * never going to read as a deck at this size, and the whole panel shifting
+ * every eleven seconds pulled attention off the headline beside it.
+ *
+ * So the room holds still and the conversation in it changes. That is also
+ * closer to what is true: this is one room where different things get asked,
+ * not six separate cards.
  */
-const STACK_Y = 20;
-const STACK_SCALE = 0.045;
-
-/** Nothing below the third layer is drawn — six visible edges is clutter. */
-const VISIBLE_DEPTH = 2;
-
-const FADE = [1, 0.55, 0.24];
-
-/**
- * Where a card sits, given how far back it is.
- *
- * The card that just left the front lifts off the top and fades, the way one is
- * dealt off a deck. Sending it down through every other layer to reach the back
- * was the wrong direction and by far the longest travel on screen, which is
- * what made the rotation look heavy.
- *
- * Everything behind the third layer parks at the third layer's position while
- * invisible. So the card arriving there only has to fade in — it does not slide
- * up from somewhere off the bottom — and the card on its way round to the back
- * covers that distance with nobody watching.
- */
-function stackStyle(depth: number, total: number): React.CSSProperties {
-  const leaving = depth === total - 1;
-
-  if (leaving) {
-    return { transform: "translateY(-26px) scale(1.03)", opacity: 0 };
-  }
-
-  const resting = Math.min(depth, VISIBLE_DEPTH);
-
-  return {
-    transform: `translateY(${resting * STACK_Y}px) scale(${1 - resting * STACK_SCALE})`,
-    opacity: depth > VISIBLE_DEPTH ? 0 : FADE[depth],
-  };
-}
-
-function SceneCard({
+function ScenePanel({
   lines,
-  depth,
-  /** Bumped every time this card comes forward, to replay the bubbles. */
+  /** Bumped when the conversation changes, to replay the bubbles. */
   turn,
 }: {
   lines: Line[];
-  depth: number;
   turn: number;
 }) {
-  const front = depth === 0;
-
   return (
-    <div
-      className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl transition-[transform,opacity] duration-[600ms] motion-reduce:transition-none"
-      style={{
-        ...stackStyle(depth, SCENES.length),
-        // The same curve the bubbles arrive on, so the card settling and the
-        // messages landing on it read as one movement.
-        transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
-        // Both animated properties are declared up front, so the browser keeps
-        // the card on its own layer instead of repainting it every frame.
-        willChange: "transform, opacity",
-      }}
-    >
+    <div className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl">
       <div className="flex items-center gap-2.5 border-b border-line bg-surface px-3.5 py-2.5">
         <Avatar src="/groups/mini-anon-hub.jpeg" name="Mini Anon Hub" size={32} priority />
         <span className="flex min-w-0 flex-col">
@@ -281,24 +237,23 @@ function SceneCard({
       </div>
 
       {/*
-        Keyed on the turn so React remounts the lines and the entry animations
-        restart each time this card comes forward. Cards sitting in the stack
-        skip the animation class entirely and just show their conversation —
-        bubbles arriving on a card nobody is looking at is motion for nothing.
+        Keyed on the turn, so React remounts the lines and their entry
+        animations restart with every new conversation.
+
+        The height is fixed and the lines sit at the bottom, which is what lets
+        the panel hold still: every scene is two lines, but even if one were not,
+        the room would not resize under the reader. The 1.25s between lines is
+        what makes it read as a conversation rather than a list appearing.
       */}
       <div
-        key={front ? turn : "resting"}
+        key={turn}
         className="chat-pattern relative flex h-[13.5rem] flex-col justify-end gap-2 overflow-hidden px-3.5 py-4"
       >
         {lines.map((line, index) => (
           <div
             key={index}
-            className={front ? "chat-line" : undefined}
-            // Starts as the card in front of this one is clearing, so the
-            // incoming conversation is already filling in rather than sitting
-            // blank for a beat. The 1.25s spacing between lines is what makes
-            // it read as a conversation and is left alone.
-            style={front ? { animationDelay: `${0.15 + index * 1.25}s` } : undefined}
+            className="chat-line"
+            style={{ animationDelay: `${0.15 + index * 1.25}s` }}
           >
             <Bubble line={line} />
           </div>
@@ -321,17 +276,18 @@ function SceneCard({
 
 export function ChatPreview() {
   /**
-   * Counts forward forever rather than wrapping, so each card can tell how many
-   * times it has been at the front and replay its bubbles on every turn. A
-   * wrapped index cannot distinguish the first pass from the fourth.
+   * Counts forward forever rather than wrapping, so it can key the lines and
+   * replay their entry on every change. A wrapped index cannot tell the first
+   * pass from the fourth, so React would reuse the same nodes and the bubbles
+   * would never animate again.
    */
   const [turn, setTurn] = useState(0);
 
   /**
-   * Rotation is set up only when motion is welcome. Auto-advancing content is
-   * exactly what prefers-reduced-motion covers, so the check gates whether the
-   * interval exists at all rather than shortening it — and reading the media
-   * query here keeps this out of the render path.
+   * The rotation exists only when motion is welcome. Content that advances by
+   * itself is exactly what prefers-reduced-motion covers, so the check gates
+   * whether the interval is created at all rather than shortening it — and
+   * reading the media query here keeps it out of the render path.
    */
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -343,36 +299,13 @@ export function ChatPreview() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const active = turn % SCENES.length;
-
   return (
     /*
-      Room below the stack for the two cards peeking out from under the front.
-      The cards deeper than that are transparent rather than unmounted, so they
-      still have a box — pointer-events-none keeps those invisible boxes from
-      swallowing clicks meant for the section underneath.
+      pointer-events-none because this is illustration: it should not swallow a
+      click meant for anything around it.
     */
-    <div aria-hidden className="pointer-events-none relative w-full pb-8">
-      {SCENES.map((lines, index) => {
-        /**
-         * Distance from the front, counting forward. The card that just left
-         * the front lands on the largest depth — the back of the deck — which
-         * is what makes it look like it was pushed under the others.
-         */
-        const depth = (index - active + SCENES.length) % SCENES.length;
-
-        return (
-          <div
-            key={index}
-            // The first card holds the stack's height; the others sit on top of
-            // it. They are all the same height, so it does not matter which.
-            className={index === 0 ? "relative" : "absolute inset-x-0 top-0"}
-            style={{ zIndex: SCENES.length - depth }}
-          >
-            <SceneCard lines={lines} depth={depth} turn={turn} />
-          </div>
-        );
-      })}
+    <div aria-hidden className="pointer-events-none w-full">
+      <ScenePanel lines={SCENES[turn % SCENES.length]} turn={turn} />
     </div>
   );
 }
