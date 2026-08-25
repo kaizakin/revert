@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
+import { Logo } from "@/components/logo";
+
 import { ChatPreview } from "./chat-preview";
 
 /**
@@ -68,15 +70,7 @@ export default async function LandingPage() {
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-3.5">
-          <span className="flex items-center gap-2">
-            <span
-              aria-hidden
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-[13px] font-bold text-accent-ink"
-            >
-              R
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight text-ink">Revert</span>
-          </span>
+          <Logo size={28} />
 
           <nav className="flex items-center gap-1 text-sm">
             {signedIn ? (
@@ -237,17 +231,7 @@ export default async function LandingPage() {
         <div className="mx-auto w-full max-w-5xl px-6 py-10">
           <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
             <div className="flex max-w-xs flex-col gap-2.5">
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-[13px] font-bold text-accent-ink"
-                >
-                  R
-                </span>
-                <span className="text-[15px] font-semibold tracking-tight text-ink">
-                  Revert
-                </span>
-              </span>
+              <Logo size={28} />
               <p className="text-[13px] leading-relaxed text-muted">
                 Job alerts, questions and referrals — where you are a username, not a phone
                 number.

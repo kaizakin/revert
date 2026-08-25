@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { LogoMark } from "@/components/logo";
 import { avatarColour, initials } from "@/lib/avatar";
 import { listRoomsForUser } from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
@@ -64,6 +65,12 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
     <div className="flex h-dvh overflow-hidden bg-canvas">
       <nav className="hidden w-14 shrink-0 flex-col items-center justify-between border-r border-line bg-surface py-3 md:flex">
         <div className="flex flex-col items-center gap-1">
+          {/* The product mark sits above the rail, so the app is identifiable
+              even with the chat list hidden. */}
+          <Link href="/" aria-label="Revert home" className="mb-2">
+            <LogoMark size={28} />
+          </Link>
+
           {RAIL.map((item) =>
             item.live && item.href ? (
               <Link

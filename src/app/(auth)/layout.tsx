@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AuthCard } from "@/components/auth-card";
+import { LogoMark } from "@/components/logo";
 import { BackButton } from "@/components/back-button";
 
 const FEATURES = [
@@ -56,12 +57,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         />
 
         <Link href="/" className="relative flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-[15px] font-bold text-accent-ink"
-          >
-            R
-          </span>
+          <LogoMark size={36} />
           <span className="text-lg font-semibold tracking-tight text-ink">Revert</span>
         </Link>
 
