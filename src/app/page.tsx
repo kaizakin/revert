@@ -47,6 +47,25 @@ const PROFILE_URL = "https://link.minianon.in/tusharbhardwaj";
 const MINILINK_URL = "https://link.minianon.in";
 const SHORTLISTME_URL = "https://shortlistme.site";
 
+/**
+ * ShortlistMe first, because it is the one of the two that a reader of this page
+ * can actually use. Descriptions stay to what is checkable — neither site's own
+ * reach claims appear here, since the whole argument of this page is that it
+ * does not overstate.
+ */
+const PROJECTS = [
+  {
+    name: "ShortlistMe",
+    body: "Upload a resume and it builds you a portfolio site.",
+    href: SHORTLISTME_URL,
+  },
+  {
+    name: "MiniLink",
+    body: "A free and open source link-in-bio page. The profile above runs on it.",
+    href: MINILINK_URL,
+  },
+];
+
 /** Booking goes straight to Topmate. */
 const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
 
@@ -422,7 +441,8 @@ const SECONDARY_BUTTON =
 const PROSE_LINK =
   "text-ink underline decoration-line-strong underline-offset-2 transition-colors hover:text-accent";
 
-const FOOTER_LABEL = "text-[11px] font-semibold uppercase tracking-[0.12em] text-faint";
+/** Small caps label. Used in the footer columns and above the projects list. */
+const MICRO_LABEL = "text-[11px] font-semibold uppercase tracking-[0.12em] text-faint";
 
 const FOOTER_LINK =
   "flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink";
@@ -701,28 +721,57 @@ export default async function LandingPage() {
           reason anyone is on this page at all. Worth a face rather than a
           footer credit.
         */}
-        <Section>
-          <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:gap-8">
-            <Avatar src={PHOTO} name="minianon" size={88} className="shrink-0 ring-1 ring-line" />
+        {/*
+          Two columns rather than one, because the old shape did not work: an
+          88px circle beside a 470px column of text left most of a tall column
+          empty, and five stacked blocks of prose gave a reader nothing to fix
+          on. Now the person is a bio block on the left and the projects are a
+          bordered list on the right — the same motif the rest of the page uses
+          for a set of things, instead of two more paragraphs pretending not to
+          be a list.
 
-            <div className="flex flex-col">
-              <Eyebrow>Who runs this</Eyebrow>
-              <Heading>Built by minianon</Heading>
+          Naming the projects here still costs the Join button nothing, which is
+          why they are down here and not in a band further up.
+        */}
+        <Section wide>
+          <Eyebrow>Who runs this</Eyebrow>
+          <Heading>Built by minianon</Heading>
 
-              <p className="mt-5 text-[15px] leading-[1.7] text-muted">
-                I am{" "}
-                <a
-                  href={PROFILE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={PROSE_LINK}
-                >
-                  Tushar
-                </a>
-                . I have been running the job alerts channel for a while now —
-                posting openings, answering the same questions at midnight, and watching
-                good roles scroll away before anyone saw them. Revert is the room that
-                channel never had.
+          <div className="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)] lg:gap-16">
+            <div className="max-w-xl">
+              {/*
+                Photo and name together. On its own the circle read as a stray
+                ornament; against the name it reads as a person, and it lets the
+                name carry the profile link instead of spending an "I am" on it.
+              */}
+              <div className="flex items-center gap-4">
+                <Avatar
+                  src={PHOTO}
+                  name="minianon"
+                  size={72}
+                  className="shrink-0 ring-1 ring-line"
+                />
+
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <a
+                    href={PROFILE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-fit font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
+                  >
+                    Tushar Bhardwaj
+                  </a>
+                  <span className="text-[13px] text-faint">
+                    Runs the job alerts channel
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-6 text-[15px] leading-[1.7] text-muted">
+                I have been running the channel for a while now — posting openings,
+                answering the same questions at midnight, and watching good roles
+                scroll away before anyone saw them. Revert is the room that channel
+                never had.
               </p>
 
               <p className="mt-4 text-[15px] leading-[1.7] text-muted">
@@ -738,46 +787,49 @@ export default async function LandingPage() {
                 </a>
                 . Otherwise I am in the room, same as everyone else.
               </p>
+            </div>
+
+            <div>
+              <span className={MICRO_LABEL}>Also built</span>
 
               {/*
-                The other projects go here rather than anywhere above. This is the
-                one part of the page that is about a person, so other things they
-                built belong in it — and naming them here costs the Join button
-                nothing, where a banner further up would have split the single ask
-                this page exists to make.
-
-                A list rather than more prose, because two of them read as a
-                digression in a paragraph and as a fact in a list.
+                The whole row is the link, so the target is the card and not four
+                words inside it. No background on hover — the name taking the
+                accent and the arrow arriving is the same signal without painting
+                a band across the row.
               */}
-              <p className="mt-5 text-[15px] leading-[1.7] text-muted">
-                I build other things too:
-              </p>
+              <ul className="mt-3 divide-y divide-line overflow-hidden rounded-md border border-line">
+                {PROJECTS.map((project) => (
+                  <li key={project.name}>
+                    <a
+                      href={project.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex flex-col gap-1.5 p-4"
+                    >
+                      <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                        {project.name}
 
-              <ul className="mt-3 flex flex-col gap-2.5">
-                <li className="text-[15px] leading-[1.6] text-muted">
-                  <a
-                    href={SHORTLISTME_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={PROSE_LINK}
-                  >
-                    ShortlistMe
-                  </a>{" "}
-                  — upload a resume and it builds you a portfolio site. Probably the
-                  one worth a look if you are mid-hunt.
-                </li>
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M7 17L17 7M10 7h7v7" />
+                        </svg>
+                      </span>
 
-                <li className="text-[15px] leading-[1.6] text-muted">
-                  <a
-                    href={MINILINK_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={PROSE_LINK}
-                  >
-                    MiniLink
-                  </a>{" "}
-                  — a free and open source link-in-bio page. My own profile runs on it.
-                </li>
+                      <span className="text-[14px] leading-[1.55] text-muted">
+                        {project.body}
+                      </span>
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -974,7 +1026,7 @@ export default async function LandingPage() {
               links are still shareable.
             */}
             <nav className="flex flex-col gap-3">
-              <span className={FOOTER_LABEL}>Follow</span>
+              <span className={MICRO_LABEL}>Follow</span>
 
               {SOCIALS.map((social) => (
                 <a
@@ -991,7 +1043,7 @@ export default async function LandingPage() {
             </nav>
 
             <nav className="flex flex-col gap-3">
-              <span className={FOOTER_LABEL}>Elsewhere</span>
+              <span className={MICRO_LABEL}>Elsewhere</span>
 
               <a
                 href={CHANNEL_URL}
@@ -1107,7 +1159,7 @@ export default async function LandingPage() {
             </nav>
 
             <nav className="flex flex-col gap-3">
-              <span className={FOOTER_LABEL}>Get in</span>
+              <span className={MICRO_LABEL}>Get in</span>
 
               {signedIn ? (
                 <Link href="/chat/hub" className={FOOTER_LINK}>
