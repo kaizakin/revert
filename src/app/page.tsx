@@ -38,8 +38,14 @@ const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb67tYF0rGiSuzXcHw2C";
  */
 const PROFILE_URL = "https://link.minianon.in/tusharbhardwaj";
 
-/** The other project. Mentioned where a person can mention it, not sold. */
+/**
+ * The other projects. Mentioned where a person can mention them, not sold.
+ *
+ * ShortlistMe is the one worth naming to this audience in particular: everyone
+ * reading this page is mid-hunt, and it turns a resume into a portfolio.
+ */
 const MINILINK_URL = "https://link.minianon.in";
+const SHORTLISTME_URL = "https://shortlistme.site";
 
 /** Booking goes straight to Topmate. */
 const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
@@ -186,6 +192,58 @@ function WhatsAppIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 /**
+ * The YouTube mark. Local for the same reason WhatsAppIcon is: SocialIcon's set
+ * is driven by SOCIAL_PROVIDERS, which is what members can put on their own
+ * profile. Widening that to light one footer row would change a product feature
+ * as a side effect.
+ */
+function YouTubeIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden focusable="false">
+      <path
+        fill="currentColor"
+        d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * minianon's own accounts, for the footer.
+ *
+ * A person's links rather than the product's, which is why they belong in the
+ * footer: someone still deciding whether to join the room does not need them,
+ * and someone who already decided might.
+ */
+const SOCIALS = [
+  {
+    label: "minianon.in",
+    href: "https://www.minianon.in/",
+    icon: <SocialIcon provider="website" className="h-4 w-4 shrink-0" />,
+  },
+  {
+    label: "GitHub",
+    href: "https://github.com/minianon",
+    icon: <SocialIcon provider="github" className="h-4 w-4 shrink-0" />,
+  },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/minianon",
+    icon: <SocialIcon provider="linkedin" className="h-4 w-4 shrink-0" />,
+  },
+  {
+    label: "X",
+    href: "https://x.com/minianondev",
+    icon: <SocialIcon provider="x" className="h-4 w-4 shrink-0" />,
+  },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/channel/UCqq8kNn9yKvsl95MeiFPIeg",
+    icon: <YouTubeIcon />,
+  },
+];
+
+/**
  * The two rooms side by side.
  *
  * The comparison is against a WhatsApp *channel*, not a group, and the
@@ -286,7 +344,11 @@ function Section({
 }: {
   alt?: boolean;
   wide?: boolean;
-  /** Set only where the footer links to it, so no id exists without a referrer. */
+  /**
+   * An anchor, so a section can be linked to directly. The footer used to be
+   * the only referrer; these are kept now for sharing a link straight to the
+   * steps or the questions.
+   */
   id?: string;
   children: ReactNode;
 }) {
@@ -678,25 +740,45 @@ export default async function LandingPage() {
               </p>
 
               {/*
-                The other project goes here rather than anywhere above it. This
-                section is the one place on the page that is about a person, so a
-                second thing they built belongs in it — and mentioning it here
-                costs the Join button nothing, where a banner further up would
-                have split the one ask this page exists to make.
+                The other projects go here rather than anywhere above. This is the
+                one part of the page that is about a person, so other things they
+                built belong in it — and naming them here costs the Join button
+                nothing, where a banner further up would have split the single ask
+                this page exists to make.
+
+                A list rather than more prose, because two of them read as a
+                digression in a paragraph and as a fact in a list.
               */}
-              <p className="mt-4 text-[15px] leading-[1.7] text-muted">
-                I also build{" "}
-                <a
-                  href={MINILINK_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={PROSE_LINK}
-                >
-                  MiniLink
-                </a>
-                , a free and open source link-in-bio page — one link that holds all
-                your others. My own profile runs on it.
+              <p className="mt-5 text-[15px] leading-[1.7] text-muted">
+                I build other things too:
               </p>
+
+              <ul className="mt-3 flex flex-col gap-2.5">
+                <li className="text-[15px] leading-[1.6] text-muted">
+                  <a
+                    href={SHORTLISTME_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={PROSE_LINK}
+                  >
+                    ShortlistMe
+                  </a>{" "}
+                  — upload a resume and it builds you a portfolio site. Probably the
+                  one worth a look if you are mid-hunt.
+                </li>
+
+                <li className="text-[15px] leading-[1.6] text-muted">
+                  <a
+                    href={MINILINK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={PROSE_LINK}
+                  >
+                    MiniLink
+                  </a>{" "}
+                  — a free and open source link-in-bio page. My own profile runs on it.
+                </li>
+              </ul>
             </div>
           </div>
         </Section>
@@ -884,21 +966,28 @@ export default async function LandingPage() {
               </p>
             </div>
 
-            {/* Anchors back into the page, so the footer is a way up rather than a dead end. */}
+            {/*
+              minianon's own accounts, in place of the in-page anchors that were
+              here. The anchors were the more useful thing for a reader, but this
+              is a page about a person's community and the person is allowed a
+              column — the section ids stay in the markup either way, so the
+              links are still shareable.
+            */}
             <nav className="flex flex-col gap-3">
-              <span className={FOOTER_LABEL}>On this page</span>
+              <span className={FOOTER_LABEL}>Follow</span>
 
-              <a href="#how-it-works" className={FOOTER_LINK}>
-                How it works
-              </a>
-
-              <a href="#what-you-get" className={FOOTER_LINK}>
-                What you get
-              </a>
-
-              <a href="#faq" className={FOOTER_LINK}>
-                Questions
-              </a>
+              {SOCIALS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={FOOTER_LINK}
+                >
+                  {social.icon}
+                  {social.label}
+                </a>
+              ))}
             </nav>
 
             <nav className="flex flex-col gap-3">
@@ -938,6 +1027,32 @@ export default async function LandingPage() {
                   />
                 </svg>
                 MiniLink
+              </a>
+
+              <a
+                href={SHORTLISTME_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={FOOTER_LINK}
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                  <path
+                    d="M6 3.5h7.5L18 8v12.5H6z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M13.5 3.5V8H18M9 12.5h6M9 16h4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                ShortlistMe
               </a>
 
               <a
