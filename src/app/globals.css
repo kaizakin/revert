@@ -295,51 +295,10 @@ select:focus-visible {
   animation: chat-line-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Typing dots that fade out just as the reply lands. */
-@keyframes chat-typing-out {
-  0%,
-  70% {
-    opacity: 1;
-    transform: none;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-
-.chat-typing {
-  animation: chat-typing-out 2.6s ease-in forwards;
-}
-
-@keyframes chat-dot {
-  0%,
-  60%,
-  100% {
-    opacity: 0.35;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-2px);
-  }
-}
-
-.chat-dot {
-  animation: chat-dot 1.1s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .chat-line {
     opacity: 1;
     animation: none;
   }
 
-  .chat-typing {
-    display: none;
-  }
-
-  .chat-dot {
-    animation: none;
-  }
 }

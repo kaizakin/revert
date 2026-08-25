@@ -1,13 +1,20 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { Tick } from "@/components/bubble-marks";
 import { avatarColour, initials } from "@/lib/avatar";
 
 /**
- * A fake conversation for the landing page.
+ * A rotating set of fake conversations for the landing page.
  *
  * Rendered from the same tokens and tick component as the real room rather than
- * a screenshot, so it cannot drift out of date, it works in light and dark, and
- * it costs nothing to load. It is decorative — hidden from screen readers,
- * which get the surrounding copy instead.
+ * screenshots, so it cannot drift out of date, works in light and dark, and
+ * costs nothing to load. The whole panel is aria-hidden — it is illustration,
+ * and the copy beside it already says everything it shows.
+ *
+ * Each scene shows a different thing the group is for, because one scene can
+ * only argue one of them.
  */
 
 type Line = {
@@ -17,27 +24,140 @@ type Line = {
   mine?: boolean;
   read?: boolean;
   reaction?: string;
+  /** Structured job post, rendered as label/value rows with a link. */
+  job?: { company: string; role: string; batch: string; url: string };
 };
 
-const LINES: Line[] = [
-  {
-    from: "priya",
-    body: "Anyone here interviewed at Zoho recently? What did rounds 2 and 3 look like?",
-    time: "9:41 am",
-  },
-  {
-    from: "arjun",
-    body: "3 rounds. DSA, then system design, then culture. They reverted in 4 days.",
-    time: "9:43 am",
-    reaction: "🙏",
-  },
-  {
-    body: "For round 2, do not just solve it — say your tradeoffs out loud. That is what they are actually scoring.",
-    time: "9:46 am",
-    mine: true,
-    read: true,
-  },
+const SCENES: Line[][] = [
+  // Guidance — the reason someone joins rather than following a job board.
+  [
+    {
+      from: "priya",
+      body: "Anyone interviewed at Google recently? What did rounds 2 and 3 look like?",
+      time: "9:41 am",
+    },
+    {
+      from: "arjun",
+      body: "3 rounds. DSA, then system design, then Googleyness. They reverted in 6 days.",
+      time: "9:43 am",
+      reaction: "🙏",
+    },
+    {
+      body: "For round 2, do not just solve it — say your tradeoffs out loud. That is what they are scoring.",
+      time: "9:46 am",
+      mine: true,
+      read: true,
+    },
+  ],
+
+  // Job alert — the thing the WhatsApp group already does, except findable.
+  [
+    {
+      body: "",
+      time: "10:12 am",
+      mine: true,
+      read: true,
+      job: {
+        company: "Amazon",
+        role: "Software Engineering Intern",
+        batch: "2027",
+        url: "amazon.jobs/en/jobs/10506481",
+      },
+    },
+    {
+      from: "neha",
+      body: "Applied. Thank you 🙏",
+      time: "10:14 am",
+    },
+  ],
+
+  // Referrals — the thing no job board can replicate.
+  [
+    {
+      from: "rahul",
+      body: "I have 3 referral slots at Flipkart this quarter. Backend, 1 to 3 years.",
+      time: "4:02 pm",
+      reaction: "🔥",
+    },
+    {
+      from: "sana",
+      body: "Sending my resume now. 2 years on Java and Spring.",
+      time: "4:04 pm",
+    },
+  ],
+
+  // Outcomes — proof that the room works.
+  [
+    {
+      from: "vikram",
+      body: "Got the offer 🎉 The mock interview last week is what saved me on system design.",
+      time: "6:20 pm",
+      reaction: "🎉",
+    },
+    {
+      body: "Well earned. Post the rounds when you get a minute — it helps the next person.",
+      time: "6:22 pm",
+      mine: true,
+      read: true,
+    },
+  ],
+
+  // Shared knowledge — searchable later, which WhatsApp cannot do.
+  [
+    {
+      from: "aisha",
+      body: "Zeta interview experience: 4 rounds, 2 DSA, 1 low level design, 1 hiring manager.",
+      time: "8:15 pm",
+      reaction: "👍",
+    },
+    {
+      from: "kiran",
+      body: "Searched this before my call yesterday. Exactly matched.",
+      time: "8:31 pm",
+    },
+  ],
+
+  // Just people, being people.
+  [
+    {
+      from: "dev",
+      body: "4 rejections this week. Considering a career in farming 🌾",
+      time: "11:04 pm",
+      reaction: "😂",
+    },
+    {
+      from: "priya",
+      body: "Same. See you at the farm.",
+      time: "11:05 pm",
+    },
+    {
+      body: "Both of you had interviews this week. That is the part that counts.",
+      time: "11:09 pm",
+      mine: true,
+      read: true,
+    },
+  ],
 ];
+
+const SCENE_MS = 7000;
+
+function JobCard({ job }: { job: NonNullable<Line["job"]> }) {
+  return (
+    <span className="flex flex-col gap-0.5 text-[13px] leading-[1.4]">
+      {[
+        ["Company", job.company],
+        ["Role", job.role],
+        ["Batch", job.batch],
+      ].map(([label, value]) => (
+        <span key={label}>
+          <span className="opacity-60">{label}: </span>
+          <span className="font-medium">{value}</span>
+        </span>
+      ))}
+      <span className="mt-1 truncate text-mention underline underline-offset-2">{job.url}</span>
+    </span>
+  );
+}
 
 function Bubble({ line }: { line: Line }) {
   const mine = Boolean(line.mine);
@@ -60,11 +180,13 @@ function Bubble({ line }: { line: Line }) {
           }`}
           style={{ borderRadius: mine ? "8px 0 8px 8px" : "0 8px 8px 8px" }}
         >
-          {!mine && (
-            <p className="mb-px text-[12px] font-semibold text-mention">@{line.from}</p>
-          )}
+          {!mine && <p className="mb-px text-[12px] font-semibold text-mention">@{line.from}</p>}
 
-          <p className="text-[13.5px] leading-[1.35]">{line.body}</p>
+          {line.job ? (
+            <JobCard job={line.job} />
+          ) : (
+            <p className="text-[13.5px] leading-[1.35]">{line.body}</p>
+          )}
 
           <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] leading-none text-bubble-meta">
             {line.time}
@@ -85,6 +207,26 @@ function Bubble({ line }: { line: Line }) {
 }
 
 export function ChatPreview() {
+  const [scene, setScene] = useState(0);
+
+  /**
+   * Rotation is set up only when motion is welcome. Auto-advancing content is
+   * exactly what prefers-reduced-motion covers, so the check gates whether the
+   * interval exists at all rather than shortening it — and reading the media
+   * query here keeps this out of the render path.
+   */
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const timer = window.setInterval(() => {
+      setScene((current) => (current + 1) % SCENES.length);
+    }, SCENE_MS);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const lines = SCENES[scene];
+
   return (
     <div
       aria-hidden
@@ -100,28 +242,24 @@ export function ChatPreview() {
         </span>
       </div>
 
-      <div className="chat-pattern relative flex flex-col gap-2 px-3.5 py-4">
-        {LINES.map((line, index) => (
+      {/*
+        Keyed by scene so React remounts the lines and the entry animations
+        restart. Without the key the nodes persist and only the text swaps,
+        which reads as a glitch rather than a new conversation.
+      */}
+      <div
+        key={scene}
+        className="chat-pattern relative flex min-h-[13.5rem] flex-col justify-end gap-2 px-3.5 py-4"
+      >
+        {lines.map((line, index) => (
           <div
             key={index}
             className="chat-line"
-            /* Each line waits its turn, so the panel plays as a conversation. */
-            style={{ animationDelay: `${0.25 + index * 0.9}s` }}
+            style={{ animationDelay: `${0.2 + index * 0.7}s` }}
           >
             <Bubble line={line} />
           </div>
         ))}
-
-        {/* Sits where the reply will land and fades out as it arrives. */}
-        <div className="chat-typing pointer-events-none absolute bottom-4 right-3.5 flex items-center gap-1 rounded-lg bg-bubble-out px-2.5 py-2 shadow-sm">
-          {[0, 1, 2].map((dot) => (
-            <span
-              key={dot}
-              className="chat-dot h-1.5 w-1.5 rounded-full bg-bubble-out-ink"
-              style={{ animationDelay: `${dot * 0.15}s` }}
-            />
-          ))}
-        </div>
       </div>
 
       <div className="flex items-center gap-2 border-t border-line bg-surface px-3.5 py-2.5">
