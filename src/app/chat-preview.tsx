@@ -139,7 +139,11 @@ const SCENES: Line[][] = [
   ],
 ];
 
-const SCENE_MS = 7000;
+/**
+ * Long enough to actually read the scene. The last bubble finishes arriving
+ * around 3.5s in, leaving roughly seven seconds before the next one.
+ */
+const SCENE_MS = 11000;
 
 function JobCard({ job }: { job: NonNullable<Line["job"]> }) {
   return (
@@ -249,13 +253,13 @@ export function ChatPreview() {
       */}
       <div
         key={scene}
-        className="chat-pattern relative flex min-h-[13.5rem] flex-col justify-end gap-2 px-3.5 py-4"
+        className="chat-pattern relative flex h-[17rem] flex-col justify-end gap-2 overflow-hidden px-3.5 py-4"
       >
         {lines.map((line, index) => (
           <div
             key={index}
             className="chat-line"
-            style={{ animationDelay: `${0.2 + index * 0.7}s` }}
+            style={{ animationDelay: `${0.3 + index * 1.25}s` }}
           >
             <Bubble line={line} />
           </div>
