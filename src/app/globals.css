@@ -53,6 +53,14 @@
    */
   --rv-verified: #1d9bf0;
 
+  /*
+   * Gold, for the ring around the owner's avatar. Deeper than a true metallic
+   * yellow because it sits on cream here — a brighter gold reads as a
+   * highlighter pen against warm paper, and it has to hold up as a 2px ring
+   * rather than a large fill.
+   */
+  --rv-gold: #b58a2b;
+
   /* Mentions read as links inside a bubble, on both bubble colours. */
   --rv-mention: #1d74c4;
   --rv-mention-soft: rgba(29, 116, 196, 0.12);
@@ -93,6 +101,9 @@
     /* A touch lighter, so it holds against black rather than sinking into it. */
     --rv-verified: #3ba9f5;
 
+    /* Brighter here: on black the light-mode gold reads as mud, not metal. */
+    --rv-gold: #e9c46a;
+
     --rv-mention: #7cc4ff;
     --rv-mention-soft: rgba(124, 196, 255, 0.14);
 
@@ -120,6 +131,7 @@
   --color-accent-soft: var(--rv-accent-soft);
   --color-danger: var(--rv-danger);
   --color-verified: var(--rv-verified);
+  --color-gold: var(--rv-gold);
   --color-mention: var(--rv-mention);
   --color-bubble-out: var(--rv-bubble-out);
   --color-bubble-out-ink: var(--rv-bubble-out-ink);

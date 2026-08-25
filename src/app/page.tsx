@@ -59,11 +59,13 @@ const PROJECTS = [
     name: "ShortlistMe",
     body: "Upload a resume and it builds you a portfolio site.",
     href: SHORTLISTME_URL,
+    logo: "/logos/shortlistme.svg",
   },
   {
     name: "MiniLink",
     body: "A free and open source link-in-bio page. The profile above runs on it.",
     href: MINILINK_URL,
+    logo: "/logos/minilink.png",
   },
 ];
 
@@ -185,6 +187,55 @@ function YouTubeIcon({ className = "h-4 w-4" }: { className?: string }) {
       <path
         fill="currentColor"
         d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * The arrow that arrives on hover, marking a row as a link that leaves the page.
+ * Shared by the project cards and the contributor credit, so the two read as the
+ * same kind of thing rather than as a card and a loose line of text.
+ */
+function ExternalArrow() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M7 17L17 7M10 7h7v7" />
+    </svg>
+  );
+}
+
+/**
+ * A heart, drawn rather than typed.
+ *
+ * The emoji was the problem, not the sentiment. Emoji ignore letter-spacing, so
+ * it broke the eyebrow's tracking, and its own multicolour palette fought a
+ * label that is otherwise a single accent colour. A path takes exactly the size
+ * and baseline offset it is given.
+ *
+ * Red as a literal, like the tick's white check: a heart is red in both themes,
+ * and the one red token here means "danger".
+ */
+function HeartIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="ml-1.5 inline-block h-[11px] w-[11px] align-[-0.05em] text-[#e0245e]"
+      aria-hidden
+      focusable="false"
+    >
+      <path
+        fill="currentColor"
+        d="M12 21C12 21 3 14.6 3 8.9 3 6.2 5.1 4 7.7 4c1.7 0 3.3.9 4.3 2.3C13 4.9 14.6 4 16.3 4 18.9 4 21 6.2 21 8.9 21 14.6 12 21 12 21z"
       />
     </svg>
   );
@@ -478,7 +529,16 @@ export default async function LandingPage() {
         <section className="px-6 pt-14 pb-16 lg:pt-20 lg:pb-20">
           <div className="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14">
             <div className="flex flex-col">
-              <Eyebrow>By minianon · ❤️ for my community</Eyebrow>
+              {/*
+                The heart sits at the end rather than mid-phrase. Between the
+                separator and "for" it read as a second piece of punctuation in a
+                row; at the end there is nothing after it to align against, which
+                is where a glyph like this behaves.
+              */}
+              <Eyebrow>
+                By minianon · for my community
+                <HeartIcon />
+              </Eyebrow>
 
               {/*
                 A line of continuity, then the difference, the difference in
@@ -741,7 +801,7 @@ export default async function LandingPage() {
                   src={PHOTO}
                   name="minianon"
                   size={72}
-                  className="shrink-0 ring-1 ring-line"
+                  className="shrink-0 ring-2 ring-gold"
                 />
 
                 {/*
@@ -805,21 +865,29 @@ export default async function LandingPage() {
                       rel="noopener noreferrer"
                       className="group flex flex-col gap-1.5 p-4 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
                     >
-                      <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                      <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                        {/*
+                          Each project's own mark, copied into public/logos rather
+                          than hotlinked, so a card here does not go blank when
+                          another deployment is down.
+
+                          A plain img on purpose: at 18px the optimiser buys
+                          nothing, and putting an SVG through it would mean
+                          enabling dangerouslyAllowSVG for every image on the
+                          site — including the avatars members upload.
+                        */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={project.logo}
+                          alt=""
+                          width={18}
+                          height={18}
+                          className="h-[18px] w-[18px] shrink-0 rounded-sm"
+                        />
+
                         {project.name}
 
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden
-                        >
-                          <path d="M7 17L17 7M10 7h7v7" />
-                        </svg>
+                        <ExternalArrow />
                       </span>
 
                       <span className="text-[14px] leading-[1.55] text-muted">
@@ -839,26 +907,36 @@ export default async function LandingPage() {
               <div className="mt-8">
                 <span className={MICRO_LABEL}>Thanks to</span>
 
-                <a
-                  href={CONTRIBUTOR_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group mt-3 flex w-fit items-center gap-2.5"
-                >
-                  <Avatar
-                    src={CONTRIBUTOR_PHOTO}
-                    name="Kartik"
-                    size={32}
-                    className="ring-1 ring-line"
-                  />
+                {/*
+                  Same bordered card and same hover behaviour as the projects
+                  above it. As a loose row it read as a caption under the cards
+                  rather than as its own thing worth clicking.
+                */}
+                <div className="mt-3 overflow-hidden rounded-md border border-line">
+                  <a
+                    href={CONTRIBUTOR_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 p-4 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+                  >
+                    <Avatar
+                      src={CONTRIBUTOR_PHOTO}
+                      name="Kartik"
+                      size={32}
+                      className="shrink-0 ring-1 ring-line"
+                    />
 
-                  <span className="flex flex-col">
-                    <span className="text-[14px] font-medium text-ink transition-colors group-hover:text-accent">
-                      Kartik
+                    <span className="flex min-w-0 flex-col">
+                      <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                        Kartik
+                        <ExternalArrow />
+                      </span>
+                      <span className="truncate text-[12px] text-faint">
+                        @kaizakin · contributor
+                      </span>
                     </span>
-                    <span className="text-[12px] text-faint">@kaizakin · contributor</span>
-                  </span>
-                </a>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
