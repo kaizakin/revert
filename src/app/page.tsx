@@ -7,7 +7,6 @@ import { SocialIcon } from "@/components/social-icon";
 import { publicMemberCount } from "@/server/messaging/queries";
 
 import { ChatPreview } from "./chat-preview";
-import { Faq } from "./faq";
 import { HowItWorks } from "./how-it-works";
 
 /**
@@ -422,7 +421,10 @@ export default async function LandingPage() {
 
           <ul className="mt-7 grid gap-8 sm:grid-cols-3 sm:gap-6">
             {COMING.map((item) => (
-              <li key={item.title} className="flex flex-col gap-2.5">
+              <li
+                key={item.title}
+                className="flex flex-col gap-2.5 rounded-xl border border-line bg-surface p-5"
+              >
                 <span
                   aria-hidden
                   className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-surface text-accent"
@@ -476,7 +478,14 @@ export default async function LandingPage() {
             Questions people ask
           </h2>
 
-          <Faq items={FAQ} />
+          <dl className="mt-7 grid gap-x-10 gap-y-7 sm:grid-cols-2">
+            {FAQ.map((item) => (
+              <div key={item.q} className="flex flex-col gap-1.5">
+                <dt className="text-[15px] font-semibold text-ink">{item.q}</dt>
+                <dd className="text-sm leading-relaxed text-muted">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         {/*

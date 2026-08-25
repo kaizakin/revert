@@ -7,7 +7,7 @@ import { Tick } from "@/components/bubble-marks";
 import { avatarColour, initials } from "@/lib/avatar";
 
 /**
- * A rotating set of fake conversations for the landing page.
+ * A deck of fake conversations for the landing page.
  *
  * Rendered from the same tokens and tick component as the real room rather than
  * screenshots, so it cannot drift out of date, works in light and dark, and
@@ -15,7 +15,9 @@ import { avatarColour, initials } from "@/lib/avatar";
  * and the copy beside it already says everything it shows.
  *
  * Each scene shows a different thing the group is for, because one scene can
- * only argue one of them.
+ * only argue one of them. They are stacked like cards: the live one is on top,
+ * the next two peek out below it, and when a scene ends its card drops to the
+ * back of the deck and the one behind comes forward.
  */
 
 type Line = {
@@ -201,31 +203,37 @@ function Bubble({ line }: { line: Line }) {
   );
 }
 
-export function ChatPreview() {
-  const [scene, setScene] = useState(0);
+/**
+ * How far each card behind the front one is pushed down and shrunk. Small
+ * numbers: the point is to show there is more behind this, not to build a
+ * fan. Cards past the third are transparent — a stack of six visible edges
+ * reads as clutter.
+ */
+const STACK_Y = 14;
+const STACK_SCALE = 0.03;
 
-  /**
-   * Rotation is set up only when motion is welcome. Auto-advancing content is
-   * exactly what prefers-reduced-motion covers, so the check gates whether the
-   * interval exists at all rather than shortening it — and reading the media
-   * query here keeps this out of the render path.
-   */
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const timer = window.setInterval(() => {
-      setScene((current) => (current + 1) % SCENES.length);
-    }, SCENE_MS);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const lines = SCENES[scene];
+function SceneCard({
+  lines,
+  depth,
+  /** Bumped every time this card comes forward, to replay the bubbles. */
+  turn,
+}: {
+  lines: Line[];
+  depth: number;
+  turn: number;
+}) {
+  const front = depth === 0;
 
   return (
     <div
-      aria-hidden
-      className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
+      className="w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-xl transition-all duration-700 ease-out motion-reduce:transition-none"
+      style={{
+        transform: `translateY(${depth * STACK_Y}px) scale(${1 - depth * STACK_SCALE})`,
+        // Only three cards are ever visible. The one that just left the front
+        // is sent to the largest depth, so it sinks and fades rather than
+        // sliding off somewhere.
+        opacity: depth > 2 ? 0 : 1 - depth * 0.28,
+      }}
     >
       <div className="flex items-center gap-2.5 border-b border-line bg-surface px-3.5 py-2.5">
         <Avatar src="/groups/mini-anon-hub.jpeg" name="Mini Anon Hub" size={32} priority />
@@ -236,19 +244,20 @@ export function ChatPreview() {
       </div>
 
       {/*
-        Keyed by scene so React remounts the lines and the entry animations
-        restart. Without the key the nodes persist and only the text swaps,
-        which reads as a glitch rather than a new conversation.
+        Keyed on the turn so React remounts the lines and the entry animations
+        restart each time this card comes forward. Cards sitting in the stack
+        skip the animation class entirely and just show their conversation —
+        bubbles arriving on a card nobody is looking at is motion for nothing.
       */}
       <div
-        key={scene}
+        key={front ? turn : "resting"}
         className="chat-pattern relative flex h-[13.5rem] flex-col justify-end gap-2 overflow-hidden px-3.5 py-4"
       >
         {lines.map((line, index) => (
           <div
             key={index}
-            className="chat-line"
-            style={{ animationDelay: `${0.3 + index * 1.25}s` }}
+            className={front ? "chat-line" : undefined}
+            style={front ? { animationDelay: `${0.3 + index * 1.25}s` } : undefined}
           >
             <Bubble line={line} />
           </div>
@@ -265,6 +274,64 @@ export function ChatPreview() {
           </svg>
         </span>
       </div>
+    </div>
+  );
+}
+
+export function ChatPreview() {
+  /**
+   * Counts forward forever rather than wrapping, so each card can tell how many
+   * times it has been at the front and replay its bubbles on every turn. A
+   * wrapped index cannot distinguish the first pass from the fourth.
+   */
+  const [turn, setTurn] = useState(0);
+
+  /**
+   * Rotation is set up only when motion is welcome. Auto-advancing content is
+   * exactly what prefers-reduced-motion covers, so the check gates whether the
+   * interval exists at all rather than shortening it — and reading the media
+   * query here keeps this out of the render path.
+   */
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const timer = window.setInterval(() => {
+      setTurn((current) => current + 1);
+    }, SCENE_MS);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const active = turn % SCENES.length;
+
+  return (
+    /*
+      Room below the stack for the two cards peeking out from under the front.
+      The cards deeper than that are transparent rather than unmounted, so they
+      still have a box — pointer-events-none keeps those invisible boxes from
+      swallowing clicks meant for the section underneath.
+    */
+    <div aria-hidden className="pointer-events-none relative w-full pb-8">
+      {SCENES.map((lines, index) => {
+        /**
+         * Distance from the front, counting forward. The card that just left
+         * the front lands on the largest depth — the back of the deck — which
+         * is what makes it look like it was pushed under the others.
+         */
+        const depth = (index - active + SCENES.length) % SCENES.length;
+
+        return (
+          <div
+            key={index}
+            // The first card holds the stack's height; the others sit on top of
+            // it. They are all the same height, so it does not matter which.
+            className={index === 0 ? "relative" : "absolute inset-x-0 top-0"}
+            style={{ zIndex: SCENES.length - depth }}
+          >
+            <SceneCard lines={lines} depth={depth} turn={turn} />
+          </div>
+        );
+      })}
     </div>
   );
 }
