@@ -1,43 +1,76 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
-const PROBLEMS = [
-  "Joining a group hands your phone number to thousands of strangers.",
-  "The best opening of the week scrolls away before most people wake up.",
-  "One QnA session notifies everybody, so people mute the group and miss the jobs too.",
-  "Applications disappear into a void, and nobody tells you why.",
-];
+import { ChatPreview } from "./chat-preview";
 
-const REASONS = [
+/**
+ * Written for someone arriving from the WhatsApp group.
+ *
+ * They already trust minianon and already live the problem, so the page does
+ * not argue that job hunting is hard — it answers what this is, whether it is
+ * safe, and how to get in. The previous version spent its best screen space
+ * explaining the problem back to the people who know it best.
+ */
+
+const POINTS = [
   {
-    title: "Your number stays yours",
-    body: "You are a username here. Nobody sees your phone number, because we never ask for it.",
+    title: "No phone numbers",
+    body: "You join as a username. Nobody in the group can see your number, because we never ask for it.",
+    icon: (
+      <>
+        <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
+        <path d="M9.5 12.5l1.8 1.8 3.4-3.6" />
+      </>
+    ),
   },
   {
-    title: "Job posts that do not vanish",
-    body: "Openings stay searchable and filterable instead of scrolling away in twenty minutes.",
+    title: "Openings stay findable",
+    body: "Every job post is searchable later. Nothing scrolls away at 2am while you are asleep.",
+    icon: (
+      <>
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="M16 16l4.5 4.5" />
+      </>
+    ),
   },
   {
-    title: "Quiet by default",
-    body: "Mute any room. During a live session only the host and mentions of you can notify you.",
+    title: "Notifications you control",
+    body: "Mute the room and still get mentions. A live QnA will not blow up your phone any more.",
+    icon: (
+      <>
+        <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
+        <path d="M10 19a2 2 0 004 0" />
+      </>
+    ),
   },
   {
-    title: "Profiles worth reading",
-    body: "GitHub, LeetCode and LinkedIn on every profile, so you know who you are talking to.",
+    title: "Ask and get answered",
+    body: "Reply to any message, tag anyone, and find the answer again next week.",
+    icon: (
+      <>
+        <path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z" />
+      </>
+    ),
   },
 ];
 
 export default async function LandingPage() {
-  // <SignedIn>/<SignedOut> were removed in Clerk Core 3, and this is a server
-  // component, so reading the session directly is simpler anyway.
   const { userId } = await auth();
   const signedIn = Boolean(userId);
 
   return (
     <div className="flex flex-1 flex-col">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-base font-semibold tracking-tight text-ink">Revert</span>
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-3.5">
+          <span className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-[13px] font-bold text-accent-ink"
+            >
+              R
+            </span>
+            <span className="text-[15px] font-semibold tracking-tight text-ink">Revert</span>
+          </span>
 
           <nav className="flex items-center gap-1 text-sm">
             {signedIn ? (
@@ -68,85 +101,112 @@ export default async function LandingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-6">
-        <section className="flex flex-col gap-7 py-20 sm:py-28">
-          <span className="w-fit rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
-            by minianon
-          </span>
+        <section className="grid items-center gap-10 py-14 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14 lg:py-20">
+          <div className="flex flex-col gap-5">
+            <span className="w-fit rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
+              by minianon · for the job alerts group
+            </span>
 
-          <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-6xl">
-            The professional network for people who don&apos;t have one.
-          </h1>
+            <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
+              Our group,
+              <br />
+              <span className="text-accent">without your number.</span>
+            </h1>
 
-          <p className="max-w-xl text-lg leading-relaxed text-muted">
-            Chat, job openings and real referrals — where you are a username, not a phone
-            number.
-          </p>
+            <p className="max-w-lg text-[17px] leading-relaxed text-muted">
+              Same job alerts, same people, same questions answered. Except you join as a
+              username, the openings stay searchable, and you decide what is allowed to
+              notify you.
+            </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            {signedIn ? (
-              <Link
-                href="/chat/hub"
-                className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
-              >
-                Open Revert
-              </Link>
-            ) : (
-              <>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {signedIn ? (
                 <Link
-                  href="/sign-up"
+                  href="/chat/hub"
                   className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
                 >
-                  Create your account
+                  Open Revert
                 </Link>
-                <Link
-                  href="/sign-in"
-                  className="rounded-lg border border-line bg-surface px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-line-strong"
-                >
-                  I already have one
-                </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link
+                    href="/sign-up"
+                    className="rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
+                  >
+                    Join the group
+                  </Link>
+                  <Link
+                    href="/sign-in"
+                    className="rounded-lg border border-line bg-surface px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-line-strong"
+                  >
+                    I already joined
+                  </Link>
+                </>
+              )}
+            </div>
+
+            <p className="text-xs text-faint">
+              Takes about twenty seconds. Google or email — no phone number, ever.
+            </p>
           </div>
+
+          <ChatPreview />
         </section>
 
-        <section className="border-t border-line py-16">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-faint">
-            The problem
-          </h2>
-          <ul className="mt-6 flex max-w-2xl flex-col gap-3">
-            {PROBLEMS.map((problem) => (
-              <li key={problem} className="flex gap-3 text-base leading-relaxed text-ink">
-                <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                {problem}
+        <section className="border-t border-line py-14">
+          <ul className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {POINTS.map((point) => (
+              <li key={point.title} className="flex items-start gap-3.5">
+                <span
+                  aria-hidden
+                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-accent"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-[18px] w-[18px]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {point.icon}
+                  </svg>
+                </span>
+                <span className="flex flex-col gap-1">
+                  <span className="text-[15px] font-semibold text-ink">{point.title}</span>
+                  <span className="text-sm leading-relaxed text-muted">{point.body}</span>
+                </span>
               </li>
             ))}
           </ul>
-          <p className="mt-6 max-w-2xl text-base text-muted">
-            Every part of this is fixable. None of it is fixable inside a WhatsApp group.
-          </p>
         </section>
 
-        <section className="border-t border-line py-16">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-faint">
-            What Revert does differently
-          </h2>
-          <ul className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
-            {REASONS.map((reason) => (
-              <li key={reason.title} className="flex flex-col gap-2">
-                <h3 className="text-base font-semibold text-ink">{reason.title}</h3>
-                <p className="text-sm leading-relaxed text-muted">{reason.body}</p>
-              </li>
-            ))}
-          </ul>
+        {/*
+          The one objection worth answering head on. Someone leaving a WhatsApp
+          group they have used for months wants to know what happens to it, and
+          an unanswered doubt is what stops a signup.
+        */}
+        <section className="border-t border-line py-14">
+          <div className="flex max-w-2xl flex-col gap-3">
+            <h2 className="text-lg font-semibold tracking-tight text-ink">
+              Is the WhatsApp group going away?
+            </h2>
+            <p className="text-sm leading-relaxed text-muted">
+              No. It stays exactly where it is. Revert is where the openings stay searchable
+              and where you can ask something without handing your number to two thousand
+              people. Use both, or use whichever one you like — nothing is being taken away.
+            </p>
+          </div>
         </section>
       </main>
 
       <footer className="border-t border-line">
-        <div className="mx-auto w-full max-w-5xl px-6 py-8">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-8">
+          <p className="text-xs text-faint">Revert — by minianon</p>
           <p className="max-w-2xl text-xs leading-relaxed text-faint">
-            Revert — by minianon. Messages are private, not end-to-end encrypted: reports
-            get read and acted on, because a job community without moderation fills up with
-            fake recruiters fast.
+            Messages are private, not end-to-end encrypted: reports get read and acted on,
+            because a job community without moderation fills up with fake recruiters fast.
           </p>
         </div>
       </footer>

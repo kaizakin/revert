@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Revert",
   description:
-    "The professional network for people who do not have one. Chat, referrals and job openings without sharing your phone number.",
+    "Job alerts, questions and referrals for job seekers — where you are a username, not a phone number.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
