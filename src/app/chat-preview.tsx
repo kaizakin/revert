@@ -32,8 +32,8 @@ const LINES: Line[] = [
     reaction: "🙏",
   },
   {
-    body: "Posting 6 backend openings in a minute — 0 to 2 years, mostly remote.",
-    time: "9:44 am",
+    body: "For round 2, do not just solve it — say your tradeoffs out loud. That is what they are actually scoring.",
+    time: "9:46 am",
     mine: true,
     read: true,
   },
@@ -100,10 +100,28 @@ export function ChatPreview() {
         </span>
       </div>
 
-      <div className="chat-pattern flex flex-col gap-2 px-3.5 py-4">
+      <div className="chat-pattern relative flex flex-col gap-2 px-3.5 py-4">
         {LINES.map((line, index) => (
-          <Bubble key={index} line={line} />
+          <div
+            key={index}
+            className="chat-line"
+            /* Each line waits its turn, so the panel plays as a conversation. */
+            style={{ animationDelay: `${0.25 + index * 0.9}s` }}
+          >
+            <Bubble line={line} />
+          </div>
         ))}
+
+        {/* Sits where the reply will land and fades out as it arrives. */}
+        <div className="chat-typing pointer-events-none absolute bottom-4 right-3.5 flex items-center gap-1 rounded-lg bg-bubble-out px-2.5 py-2 shadow-sm">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="chat-dot h-1.5 w-1.5 rounded-full bg-bubble-out-ink"
+              style={{ animationDelay: `${dot * 0.15}s` }}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 border-t border-line bg-surface px-3.5 py-2.5">

@@ -15,6 +15,9 @@ import { ChatPreview } from "./chat-preview";
 const TOPMATE_URL = "https://link.minianon.in/tusharbhardwaj";
 const GROUP_URL = "https://whatsapp.com/channel/0029Vb67tYF0rGiSuzXcHw2C";
 
+/** Booking goes straight to Topmate; the short link is the profile page. */
+const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
+
 const POINTS = [
   {
     title: "No phone numbers",
@@ -275,7 +278,7 @@ export default async function LandingPage() {
               </a>
 
               <a
-                href={TOPMATE_URL}
+                href={BOOKING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
