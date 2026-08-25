@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Four things the room does, each shown before it is described.
+ * Six things the room does, each shown before it is described.
  *
  * The panels are illustrations, not screenshots: built from the same tokens as
  * the real room, so they cannot drift out of date, they work on black and on
@@ -9,24 +9,30 @@ import type { ReactNode } from "react";
  * body underneath already say what the panel shows, and a screen reader reading
  * out a fake job post as though it were real would be worse than silence.
  *
- * They are deliberately small and quiet. A preview that tries to be a full
- * screenshot competes with the chat deck in the hero; these only need to make
- * the claim underneath them concrete.
+ * Each panel animates on hover, and the motion is specific to what the panel is
+ * claiming: results land in order, an answer arrives a beat after its question,
+ * a referral draws itself across to the person inside. The animation classes are
+ * defined in globals.css, since they need keyframes and nth-child delays.
+ *
+ * Nothing is hidden until hover. A phone has no hover, so a panel that only
+ * assembled itself on mouse-over would be a dead rectangle on the device most of
+ * this page's traffic arrives on. Every animation ends where the panel already
+ * rests.
  */
 
-/** Fixed-height frame, so all four panels align across a row. */
+/** Fixed-height frame, so all six panels align across a row. */
 function Panel({ children }: { children: ReactNode }) {
   return (
     <div
       aria-hidden
-      className="flex h-[152px] flex-col overflow-hidden rounded-md border border-line bg-raised p-3"
+      className="flex h-[152px] flex-col overflow-hidden rounded-md border border-line bg-raised p-3 transition-colors duration-200 group-hover:border-line-strong"
     >
       {children}
     </div>
   );
 }
 
-/** One row inside a panel. The shared shape is most of what makes them read as one set. */
+/** A label/value row. The shared shape is most of what makes the panels read as one set. */
 function Row({
   left,
   right,
@@ -42,6 +48,34 @@ function Row({
         {left}
       </span>
       <span className="shrink-0 text-[11px] text-faint">{right}</span>
+    </div>
+  );
+}
+
+/**
+ * A person. Initials rather than photographs, so nobody invented has a face.
+ *
+ * One line, not two. Stacking the name above the meta made the row 42px tall,
+ * and three of those overflowed the fixed frame by 25px — which the frame then
+ * clipped in silence. One line also matches Row's density, so a member list and
+ * a result list read as the same family.
+ */
+function MemberRow({
+  initials,
+  name,
+  meta,
+}: {
+  initials: string;
+  name: string;
+  meta: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded border border-line bg-surface px-2 py-1">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[9px] font-semibold text-accent">
+        {initials}
+      </span>
+      <span className="truncate text-[12px] font-medium text-ink">{name}</span>
+      <span className="ml-auto shrink-0 text-[10px] text-faint">{meta}</span>
     </div>
   );
 }
@@ -69,7 +103,7 @@ function SearchPanel() {
         at 375px wide, and the frame clips silently — so it looked fine on a
         desktop and quietly ate a row on a phone.
       */}
-      <div className="mt-2 flex flex-col gap-1.5">
+      <div className="wyg-stagger mt-2 flex flex-col gap-1.5">
         <Row left="Amazon" right="2 weeks ago" />
         <Row left="Zoho" right="last month" />
       </div>
@@ -85,7 +119,7 @@ function ReplyPanel() {
           Anyone done round 2 at Google recently?
         </span>
 
-        <span className="ml-auto max-w-[88%] rounded-md rounded-tr-sm bg-bubble-out px-2.5 py-1.5 text-[12px] leading-[1.45] text-bubble-out-ink">
+        <span className="wyg-reply ml-auto max-w-[88%] rounded-md rounded-tr-sm bg-bubble-out px-2.5 py-1.5 text-[12px] leading-[1.45] text-bubble-out-ink">
           System design. Say your tradeoffs out loud — that is what they score.
         </span>
       </div>
@@ -93,8 +127,54 @@ function ReplyPanel() {
   );
 }
 
-/** Small pill switch. Purely decorative, so it is a span rather than an input. */
-function Switch({ on }: { on: boolean }) {
+function ReferralPanel() {
+  return (
+    <Panel>
+      <div className="flex flex-col gap-1.5">
+        <MemberRow initials="pr" name="@priya" meta="looking for a referral" />
+
+        {/* The line draws from the person asking to the person already inside. */}
+        <div className="flex items-center gap-1.5 px-2 py-0.5">
+          <span className="wyg-draw h-px flex-1 origin-left bg-accent" />
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3 w-3 shrink-0 text-accent"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h13M13 7l5 5-5 5" />
+          </svg>
+        </div>
+
+        <div className="wyg-reply">
+          <MemberRow initials="ak" name="@akhil" meta="already at Zoho" />
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function MembersPanel() {
+  return (
+    <Panel>
+      <div className="wyg-pop-stagger flex flex-col gap-1.5">
+        <MemberRow initials="pr" name="@priya" meta="Backend · Bengaluru" />
+        <MemberRow initials="ak" name="@akhil" meta="Zoho · 3 yrs" />
+        <MemberRow initials="sn" name="@sneha" meta="Data · Pune" />
+      </div>
+    </Panel>
+  );
+}
+
+/**
+ * Small pill switch. Decorative, so it is a span rather than an input — a real
+ * checkbox here would be a control that does nothing, announced to a screen
+ * reader as though it did.
+ */
+function Switch({ on, late = false }: { on: boolean; late?: boolean }) {
   return (
     <span
       className={`relative block h-3.5 w-6 shrink-0 rounded-full ${
@@ -104,7 +184,7 @@ function Switch({ on }: { on: boolean }) {
       <span
         className={`absolute top-0.5 h-2.5 w-2.5 rounded-full bg-surface ${
           on ? "right-0.5" : "left-0.5"
-        }`}
+        } ${on ? "wyg-knob" : ""} ${on && late ? "wyg-knob-late" : ""}`}
       />
     </span>
   );
@@ -120,13 +200,14 @@ function NotificationsPanel() {
   return (
     <Panel>
       <div className="flex flex-col gap-1.5">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <div
             key={row.label}
             className="flex items-center justify-between gap-2 rounded border border-line bg-surface px-2.5 py-2"
           >
             <span className="truncate text-[12px] text-ink">{row.label}</span>
-            <Switch on={row.on} />
+            {/* Only the switches already on have anywhere to travel from. */}
+            <Switch on={row.on} late={index === 1} />
           </div>
         ))}
       </div>
@@ -147,7 +228,7 @@ function ProfilePanel() {
         </span>
       </div>
 
-      <div className="mt-3 flex flex-col gap-1.5">
+      <div className="wyg-stagger mt-3 flex flex-col gap-1.5">
         <Row left="Username" right="@priya" dim />
         <Row left="Phone number" right="never asked" dim />
       </div>
@@ -159,6 +240,8 @@ function ProfilePanel() {
  * Copy lives beside its panel rather than in a data array, because each panel is
  * bespoke markup anyway — an array of {title, body, panel} would just be a
  * lookup table with one entry per branch.
+ *
+ * Ordered as what you can do first, then how the room treats you.
  */
 const CARDS = [
   {
@@ -170,6 +253,16 @@ const CARDS = [
     title: "Ask, and get answered",
     body: "Reply to any message, mention anyone, and find the answer again next week.",
     panel: <ReplyPanel />,
+  },
+  {
+    title: "Ask for a referral",
+    body: "Find who is already inside a company and ask them directly, instead of firing off one more cold application.",
+    panel: <ReferralPanel />,
+  },
+  {
+    title: "People, not just posts",
+    body: "See who else is here, what they work on, and who is actually worth asking.",
+    panel: <MembersPanel />,
   },
   {
     title: "Notifications you control",
@@ -187,7 +280,7 @@ export function WhatYouGet() {
   return (
     <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
       {CARDS.map((card) => (
-        <li key={card.title} className="flex flex-col bg-canvas p-6">
+        <li key={card.title} className="wyg-card group flex flex-col bg-canvas p-6">
           {card.panel}
 
           <h3 className="mt-5 text-[16px] font-semibold text-ink">{card.title}</h3>

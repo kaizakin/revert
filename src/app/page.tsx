@@ -573,13 +573,16 @@ export default async function LandingPage() {
         {/*
           Shows before it tells. Each card leads with a small panel built from
           the room's own tokens, because "searchable" and "notifications you
-          control" are abstract until you have seen the shape of them — and the
-          four claims underneath used to be a plain icon list that said the same
-          thing without showing any of it.
+          control" are abstract until you have seen the shape of them — these
+          claims used to be a plain icon list that said the same thing without
+          showing any of it.
+
+          The heading deliberately does not count the cards. It said "Four
+          things" for exactly as long as it took to add a fifth.
         */}
         <Section wide>
           <Eyebrow>What you get</Eyebrow>
-          <Heading>Four things a feed cannot do</Heading>
+          <Heading>What a feed cannot do</Heading>
 
           <WhatYouGet />
         </Section>

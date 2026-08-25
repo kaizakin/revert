@@ -328,5 +328,105 @@ select:focus-visible {
     opacity: 1;
     animation: none;
   }
+}
 
+/**
+ * Hover motion for the "What you get" panels.
+ *
+ * Every animation below ends on the panel's resting state, and nothing is
+ * hidden until hover. That is not a style choice: a phone has no hover at all,
+ * so anything revealed only on hover would never be seen on the device most of
+ * this page's traffic arrives on. Hover replays the motion; it never carries
+ * the information.
+ *
+ * Wrapped in no-preference rather than switched off in a reduce block, so
+ * stillness is the default and motion is what opts in. There is no keyboard
+ * equivalent because the cards hold no focusable elements — they are
+ * illustration, and the copy beneath each one already says what it shows.
+ */
+@keyframes wyg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes wyg-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The knob travels in from the off position it is already sitting past. */
+@keyframes wyg-knob {
+  from {
+    transform: translateX(-10px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes wyg-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Rows arrive in order, like results landing. */
+  .wyg-card:hover .wyg-stagger > * {
+    animation: wyg-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .wyg-card:hover .wyg-stagger > *:nth-child(2) {
+    animation-delay: 70ms;
+  }
+
+  .wyg-card:hover .wyg-stagger > *:nth-child(3) {
+    animation-delay: 140ms;
+  }
+
+  /* People, rather than rows: they appear instead of sliding. */
+  .wyg-card:hover .wyg-pop-stagger > * {
+    animation: wyg-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .wyg-card:hover .wyg-pop-stagger > *:nth-child(2) {
+    animation-delay: 70ms;
+  }
+
+  .wyg-card:hover .wyg-pop-stagger > *:nth-child(3) {
+    animation-delay: 140ms;
+  }
+
+  /* The answer lands a beat after the question, because that is the point. */
+  .wyg-card:hover .wyg-reply {
+    animation: wyg-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) 130ms both;
+  }
+
+  .wyg-card:hover .wyg-knob {
+    animation: wyg-knob 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .wyg-card:hover .wyg-knob-late {
+    animation-delay: 90ms;
+  }
+
+  /* The hand-off draws itself from the person asking to the person inside. */
+  .wyg-card:hover .wyg-draw {
+    animation: wyg-draw 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 }
