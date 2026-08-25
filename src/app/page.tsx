@@ -9,6 +9,7 @@ import { publicMemberCount } from "@/server/messaging/queries";
 
 import { ChatPreview } from "./chat-preview";
 import { HowItWorks } from "./how-it-works";
+import { WhatYouGet } from "./what-you-get";
 
 /**
  * Written for someone arriving from the WhatsApp channel.
@@ -63,10 +64,19 @@ const TESTIMONIALS: { quote: string; name: string; role: string }[] = [];
  * coming; someone who is promised a date and does not get it stops believing
  * the rest of the page.
  */
-const COMING = [
+const COMING: {
+  title: string;
+  body: string;
+  tag: string;
+  /** Only the thing actually being built next carries one. */
+  badge?: string;
+  icon: ReactNode;
+}[] = [
   {
     title: "Direct messages",
     body: "Reply to someone privately about a role without either of you swapping numbers first.",
+    tag: "One to one",
+    badge: "Next",
     icon: (
       <>
         <path d="M15.5 12.5a5.5 5.5 0 01-8 4.9L4 18.5l1.1-3.5a5.5 5.5 0 117-2.5z" />
@@ -77,6 +87,7 @@ const COMING = [
   {
     title: "Referral rooms",
     body: "Company-wise rooms where people already inside can pass a profile along.",
+    tag: "Company by company",
     icon: (
       <>
         <circle cx="8" cy="8.5" r="3" />
@@ -88,6 +99,7 @@ const COMING = [
   {
     title: "Profiles worth reading",
     body: "A page that shows what you have built and where you are trying to go, not a CV.",
+    tag: "Beyond a CV",
     icon: (
       <>
         <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
@@ -147,52 +159,6 @@ function WhatsAppIcon({ className = "h-4 w-4" }: { className?: string }) {
     </svg>
   );
 }
-
-const POINTS = [
-  {
-    title: "No phone numbers",
-    body: "You join as a username. There is no number to leak, because we never ask you for one.",
-    tag: "Private by default",
-    icon: (
-      <>
-        <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
-        <path d="M9.5 12.5l1.8 1.8 3.4-3.6" />
-      </>
-    ),
-  },
-  {
-    title: "Openings stay findable",
-    body: "Every job post is searchable later. Nothing scrolls away at 2am while you are asleep.",
-    tag: "Always searchable",
-    icon: (
-      <>
-        <circle cx="11" cy="11" r="6.5" />
-        <path d="M16 16l4.5 4.5" />
-      </>
-    ),
-  },
-  {
-    title: "Notifications you control",
-    body: "Mute the room and still get mentions. A live QnA will not blow up your phone any more.",
-    tag: "Quiet by choice",
-    icon: (
-      <>
-        <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
-        <path d="M10 19a2 2 0 004 0" />
-      </>
-    ),
-  },
-  {
-    title: "Ask and get answered",
-    body: "Reply to any message, tag anyone, and find the answer again next week.",
-    tag: "Answers that stay",
-    icon: (
-      <>
-        <path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z" />
-      </>
-    ),
-  },
-];
 
 /**
  * The two rooms side by side.
@@ -504,29 +470,17 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {/*
+          Before the comparison, not after it. Someone who has only ever
+          followed a channel needs to know what happens when they tap Join
+          before they get an argument about why they should — not knowing is
+          what stops a signup, and no amount of side-by-side fixes that.
+        */}
         <Section wide>
-          <Eyebrow>What changes</Eyebrow>
-          <Heading>The parts that kept breaking, fixed.</Heading>
+          <Eyebrow>Getting in</Eyebrow>
+          <Heading>How it works</Heading>
 
-          {/*
-            One bordered field rather than four floating cards. The hairlines
-            are the grid's own background showing through a 1px gap, so every
-            join meets exactly and there are no doubled or orphaned borders to
-            chase with nth-child rules.
-          */}
-          <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
-            {POINTS.map((point) => (
-              <li key={point.title} className="flex flex-col gap-3 bg-canvas p-6">
-                <IconTile>{point.icon}</IconTile>
-                <span className="text-[16px] font-semibold text-ink">{point.title}</span>
-                <span className="text-[15px] leading-[1.6] text-muted">{point.body}</span>
-                {/* mt-auto pins the tag to the bottom, so it lines up across a row. */}
-                <span className="mt-auto pt-1 text-[13px] font-medium text-accent">
-                  {point.tag}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <HowItWorks steps={STEPS} />
         </Section>
 
         {/*
@@ -538,7 +492,7 @@ export default async function LandingPage() {
         */}
         <Section alt wide>
           <Eyebrow>Side by side</Eyebrow>
-          <Heading>The channel talks. A room talks back.</Heading>
+          <Heading>The channel ends where your questions start.</Heading>
 
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
             The channel is how two thousand people hear about a role, and it is staying
@@ -617,15 +571,17 @@ export default async function LandingPage() {
         </Section>
 
         {/*
-          Someone who has only ever followed a channel does not know what
-          happens after they tap Join. Not knowing is what stops a signup, so
-          the three steps are spelled out plainly.
+          Shows before it tells. Each card leads with a small panel built from
+          the room's own tokens, because "searchable" and "notifications you
+          control" are abstract until you have seen the shape of them — and the
+          four claims underneath used to be a plain icon list that said the same
+          thing without showing any of it.
         */}
         <Section wide>
-          <Eyebrow>Getting in</Eyebrow>
-          <Heading>How it works</Heading>
+          <Eyebrow>What you get</Eyebrow>
+          <Heading>Four things a feed cannot do</Heading>
 
-          <HowItWorks steps={STEPS} />
+          <WhatYouGet />
         </Section>
 
         {/*
@@ -674,15 +630,31 @@ export default async function LandingPage() {
             ones. Next, in roughly this order:
           </p>
 
-          <ul className="mt-10 grid gap-6 sm:grid-cols-3">
+          {/*
+            Same bordered field as the cards above: hairlines are the grid's own
+            background showing through a 1px gap, so every join meets exactly
+            and there are no nth-child border rules to keep in sync.
+          */}
+          <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-3">
             {COMING.map((item) => (
-              <li
-                key={item.title}
-                className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5"
-              >
-                <IconTile>{item.icon}</IconTile>
+              <li key={item.title} className="flex flex-col gap-3 bg-canvas p-6">
+                <span className="flex items-start justify-between gap-3">
+                  <IconTile>{item.icon}</IconTile>
+
+                  {item.badge && (
+                    <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-accent">
+                      {item.badge}
+                    </span>
+                  )}
+                </span>
+
                 <span className="text-[16px] font-semibold text-ink">{item.title}</span>
                 <span className="text-[15px] leading-[1.6] text-muted">{item.body}</span>
+
+                {/* mt-auto pins the tag to the bottom, so tags line up across the row. */}
+                <span className="mt-auto pt-1 text-[13px] font-medium text-accent">
+                  {item.tag}
+                </span>
               </li>
             ))}
           </ul>
