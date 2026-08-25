@@ -96,12 +96,14 @@ const PHOTO: string | null = "/avatars/me.jpeg";
  * Kartik, who has been sending pull requests. Credited by name and face rather
  * than in a commit log nobody reads.
  *
- * The photo is null until a file exists at public/avatars/, because a missing
- * image 404s where Avatar's initials fallback looks deliberate. Drop one in and
- * set this to its path.
+ * The photo comes from GitHub rather than a file in the repo, so it follows
+ * whatever he sets there instead of going stale. avatars.githubusercontent.com
+ * is already an allowed remote pattern for uploaded avatars, so this costs no
+ * config; the canonical /u/<id> URL is used because github.com/<user>.png
+ * redirects to it and github.com itself is not on the allow-list.
  */
 const CONTRIBUTOR_URL = "https://github.com/kaizakin";
-const CONTRIBUTOR_PHOTO: string | null = null;
+const CONTRIBUTOR_PHOTO: string | null = "https://avatars.githubusercontent.com/u/143219880?v=4";
 
 /** Size of the WhatsApp channel. Rounded down, because it moves. */
 const CHANNEL_SIZE = "2,000+";
@@ -183,6 +185,43 @@ function YouTubeIcon({ className = "h-4 w-4" }: { className?: string }) {
       <path
         fill="currentColor"
         d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * The verified tick, next to the name.
+ *
+ * The scalloped edge is what makes it read as a verification badge rather than a
+ * generic blue circle — a plain disc with a check in it looks like a form
+ * validation state. The outline is a twelve-lobe rosette generated from its own
+ * geometry (valleys on radius 8.6, lobe tips on 10, each lobe one arc), not any
+ * platform's asset: this marks the owner of this page, and it should not pass
+ * itself off as somebody else's verification.
+ *
+ * The check is white in both themes. That is the convention, and any of our inks
+ * would flip with the theme and stop reading as a tick.
+ */
+function VerifiedTick() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-[19px] w-[19px] shrink-0 text-verified"
+      role="img"
+      aria-label="Verified"
+    >
+      <path
+        fill="currentColor"
+        d="M12.00 3.40A2.31 2.31 0 0 1 16.30 4.55A2.31 2.31 0 0 1 19.45 7.70A2.31 2.31 0 0 1 20.60 12.00A2.31 2.31 0 0 1 19.45 16.30A2.31 2.31 0 0 1 16.30 19.45A2.31 2.31 0 0 1 12.00 20.60A2.31 2.31 0 0 1 7.70 19.45A2.31 2.31 0 0 1 4.55 16.30A2.31 2.31 0 0 1 3.40 12.00A2.31 2.31 0 0 1 4.55 7.70A2.31 2.31 0 0 1 7.70 4.55A2.31 2.31 0 0 1 12.00 3.40Z"
+      />
+      <path
+        d="M8.1 12.3l2.6 2.6 5.2-5.4"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -698,61 +737,32 @@ export default async function LandingPage() {
                 name carry the profile link instead of spending an "I am" on it.
               */}
               <div className="flex items-center gap-4">
+                <Avatar
+                  src={PHOTO}
+                  name="minianon"
+                  size={72}
+                  className="shrink-0 ring-1 ring-line"
+                />
+
                 {/*
-                  A verified tick, because this is the one person on the page who
-                  owns the place — and because a reader already knows what a blue
-                  tick on an avatar means without being told. A crown made them
-                  stop and work out the metaphor.
-
-                  The ring around the photo is back to a neutral hairline. Gold
-                  ring plus blue badge put two unrelated accent colours on one
-                  72px element, and the badge is the part carrying the meaning.
-
-                  The badge is punched out of the photo's edge: a filled disc
-                  with a ring in the section's own ground colour cuts a clean
-                  hole in the circle, which is what makes it read as attached
-                  rather than dropped on top.
+                  The tick sits after the name, not on the photo. On the avatar it
+                  had to be a small disc punched out of the edge to read at all;
+                  beside the name it is doing what every platform does with it,
+                  which is the whole reason a reader recognises it without being
+                  told.
                 */}
-                <div className="relative shrink-0">
-                  <Avatar
-                    src={PHOTO}
-                    name="minianon"
-                    size={72}
-                    className="ring-1 ring-line"
-                  />
-
-                  <span
-                    aria-hidden
-                    className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-verified ring-2 ring-canvas"
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <a
+                    href={PROFILE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
                   >
-                    {/*
-                      White tick rather than a token: the convention is a white
-                      check on that blue in both themes, and any of our inks
-                      would flip with the theme and stop reading as a tick.
-                    */}
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-3.5 w-3.5 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      focusable="false"
-                    >
-                      <path d="M5 12.5l4.5 4.5L19 7.5" />
-                    </svg>
-                  </span>
-                </div>
+                    Tushar Bhardwaj
+                  </a>
 
-                <a
-                  href={PROFILE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-w-0 font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
-                >
-                  Tushar Bhardwaj
-                </a>
+                  <VerifiedTick />
+                </span>
               </div>
 
               <p className="mt-6 text-[15px] leading-[1.7] text-muted">
