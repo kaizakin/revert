@@ -25,7 +25,7 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
   if (!room) notFound();
 
   const [messages, stats] = await Promise.all([
-    listMessages(room.id, me.id),
+    listMessages(room.id, me.id, { showReadReceipts: me.showReadReceipts }),
     roomStats(room.id),
   ]);
 

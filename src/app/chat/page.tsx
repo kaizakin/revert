@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { listRoomsForUser } from "@/server/messaging/queries";
@@ -32,9 +33,9 @@ export default async function ChatIndexPage() {
             <>
               Pick a chat on the left to start reading.
               <br />
-              <a href={`/chat/${first.slug}`} className="text-accent underline">
+              <Link href={`/chat/${first.slug}`} className="text-accent underline">
                 Open {first.name}
-              </a>
+              </Link>
             </>
           ) : (
             "You are not in any rooms yet."
