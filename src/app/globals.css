@@ -446,6 +446,81 @@ select:focus-visible {
   }
 }
 
+/*
+ * Progress, active border and "playing" flag all share the same cycle and the
+ * same per-card delay, so a card lights up, fills its bar and drops back in one
+ * gesture. A third of the cycle is one card's turn: 33.33%.
+ *
+ * Each ends its turn empty rather than full. A bar left full would read as three
+ * completed steps at the end of a cycle, when what it means is "not this one".
+ */
+@keyframes hiw-progress {
+  0% {
+    transform: scaleX(0);
+  }
+  33.33% {
+    transform: scaleX(1);
+  }
+  34%,
+  100% {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes hiw-active {
+  0% {
+    border-color: var(--rv-line);
+  }
+  2%,
+  31% {
+    border-color: var(--rv-accent);
+  }
+  34%,
+  100% {
+    border-color: var(--rv-line);
+  }
+}
+
+@keyframes hiw-playing {
+  0%,
+  1% {
+    opacity: 0;
+  }
+  4%,
+  31% {
+    opacity: 1;
+  }
+  34%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * Resting state for the progress fill, set here rather than with a utility.
+ *
+ * Tailwind's scale-x-0 compiles to the standalone `scale` property, while these
+ * keyframes animate `transform`. Both apply and they multiply, so `scale: 0 1`
+ * held the bar at zero width through its own turn — the fill never appeared at
+ * all. Declaring the rest state as a `transform` keeps base and animation on one
+ * property, where the animation can actually override it.
+ */
+.hiw-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* Off the cycle on purpose: a light that blinked in phase would look wired up. */
+@keyframes hiw-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .hiw-a,
   .hiw-b,
@@ -483,6 +558,26 @@ select:focus-visible {
     animation:
       hiw-caret var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards,
       hiw-blink 1.06s steps(1, end) infinite;
+  }
+
+  /*
+   * Linear, unlike the beats. A progress bar that eased would misreport how much
+   * time was left, which is the one thing it exists to say.
+   */
+  .hiw-progress {
+    animation: hiw-progress var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
+  }
+
+  .hiw-card {
+    animation: hiw-active var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
+  }
+
+  .hiw-playing {
+    animation: hiw-playing var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
+  }
+
+  .hiw-pulse {
+    animation: hiw-pulse 1.2s ease-in-out infinite;
   }
 }
 
