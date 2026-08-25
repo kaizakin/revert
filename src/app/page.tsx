@@ -54,11 +54,17 @@ const EMAIL = "tusharbhardwaj2617@gmail.com";
 const SPONSOR_URL = "https://github.com/sponsors/minianon";
 
 /**
- * Drop a photo at public/minianon.jpg and set this to "/minianon.jpg".
- * Left null rather than pointing at a file that is not there yet — a missing
- * image 404s instead of degrading, and the initials fallback looks deliberate.
+ * A face for the section that is about a person.
+ *
+ * 609x688 at the source and rendered into an 88px circle, which next/image
+ * resizes and re-encodes rather than shipping the whole thing — the point of
+ * routing it through Avatar. Portrait rather than square, so object-cover trims
+ * a few percent off the top and bottom to make the circle.
+ *
+ * Set back to null if the file ever moves: a missing image 404s, where the
+ * initials fallback looks deliberate.
  */
-const PHOTO: string | null = null;
+const PHOTO: string | null = "/avatars/me.jpeg";
 
 /** Size of the WhatsApp channel. Rounded down, because it moves. */
 const CHANNEL_SIZE = "2,000+";
@@ -642,7 +648,16 @@ export default async function LandingPage() {
               <Heading>Built by minianon</Heading>
 
               <p className="mt-5 text-[15px] leading-[1.7] text-muted">
-                I am Tushar. I have been running the job alerts channel for a while now —
+                I am{" "}
+                <a
+                  href={PROFILE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={PROSE_LINK}
+                >
+                  Tushar
+                </a>
+                . I have been running the job alerts channel for a while now —
                 posting openings, answering the same questions at midnight, and watching
                 good roles scroll away before anyone saw them. Revert is the room that
                 channel never had.
