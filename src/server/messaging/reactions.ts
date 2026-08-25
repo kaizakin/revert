@@ -97,11 +97,13 @@ export async function toggleReaction(
       .onConflictDoNothing();
   }
 
-  await transport.publish({
-    type: "reaction.changed",
-    conversationId: target.conversationId,
-    messageId,
-  });
+    void transport
+      .publish({
+        type: "reaction.changed",
+        conversationId: target.conversationId,
+        messageId,
+      })
+      .catch((err) => console.error("[realtime] reaction publish error", err));
 
-  return { ok: true, added: removed.length === 0 };
-}
+    return { ok: true, added: removed.length === 0 };
+  }

@@ -24,9 +24,15 @@ const host = supabaseHost();
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: host
-      ? [{ protocol: "https", hostname: host, pathname: "/storage/v1/object/public/**" }]
-      : [],
+    remotePatterns: [
+      ...(host
+        ? [{ protocol: "https" as const, hostname: host, pathname: "/storage/v1/object/public/**" }]
+        : []),
+      { protocol: "https", hostname: "img.clerk.com" },
+      { protocol: "https", hostname: "images.clerk.dev" },
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+    ],
   },
 
   /**

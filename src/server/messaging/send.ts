@@ -10,7 +10,7 @@ import {
 } from "@/server/db/schema";
 import { transport } from "@/server/realtime";
 
-import { getRoomForUser } from "./queries";
+import { getRoomForUser, type MessageRow } from "./queries";
 import { consumeRateLimit, MESSAGE_LIMIT } from "./rate-limit";
 
 export const MESSAGE_MAX_LENGTH = 4000;
@@ -19,7 +19,7 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const MENTION_ALL = "all";
 
 export type SendResult =
-  | { ok: true; messageId: string }
+  | { ok: true; messageId: string; message: MessageRow }
   | { ok: false; error: string };
 
 /** @username, ignoring emails and any @ that is part of a longer token. */
@@ -35,6 +35,8 @@ function extractMentions(body: string): string[] {
 
 type Author = {
   id: string;
+  username: string | null;
+  avatarUrl: string | null;
   isAdmin: boolean;
   bannedUntil: Date | null;
 };
@@ -61,51 +63,48 @@ export async function sendMessage(
     return { ok: false, error: "You cannot post right now." };
   }
 
-  // Membership is re-checked here and not trusted from the page that rendered
-  // the composer, because a server action is a public endpoint.
-  const room = await getRoomForUser(author.id, roomSlug);
+  // Run room membership check, rate limiting, and parent reply lookup in parallel
+  const [room, limit, parent] = await Promise.all([
+    getRoomForUser(author.id, roomSlug),
+    consumeRateLimit(`msg:${author.id}`, MESSAGE_LIMIT.max, MESSAGE_LIMIT.windowSeconds),
+    replyToId
+      ? db
+          .select({
+            id: messages.id,
+            body: messages.body,
+            authorUsername: users.username,
+          })
+          .from(messages)
+          .leftJoin(users, eq(users.id, messages.authorId))
+          .where(and(eq(messages.id, replyToId), isNull(messages.deletedAt)))
+          .limit(1)
+          .then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
+  ]);
+
   if (!room) return { ok: false, error: "You are not in this room." };
 
   if (room.type === "announce" && !author.isAdmin) {
     return { ok: false, error: "Only mods post in this room." };
   }
 
-  const limit = await consumeRateLimit(
-    `msg:${author.id}`,
-    MESSAGE_LIMIT.max,
-    MESSAGE_LIMIT.windowSeconds,
-  );
   if (!limit.allowed) {
     return { ok: false, error: "You are sending messages too quickly. Wait a minute." };
   }
 
-  /**
-   * A reply target is only accepted when it lives in this same room and is not
-   * deleted. The id comes from the client, so without this check anyone could
-   * quote a message out of a conversation they cannot read — the quote text is
-   * rendered to everyone in the room.
-   */
-  let replyTo: string | null = null;
+  let replyTo: { id: string; authorUsername: string | null; body: string | null } | null = null;
   if (replyToId) {
-    const [parent] = await db
-      .select({ id: messages.id })
-      .from(messages)
-      .where(
-        and(
-          eq(messages.id, replyToId),
-          eq(messages.conversationId, room.id),
-          isNull(messages.deletedAt),
-        ),
-      )
-      .limit(1);
-
     if (!parent) return { ok: false, error: "That message is no longer available." };
-    replyTo = parent.id;
+    replyTo = {
+      id: parent.id,
+      authorUsername: parent.authorUsername,
+      body: parent.body,
+    };
   }
 
   const handles = extractMentions(body);
 
-  const messageId = await db.transaction(async (tx) => {
+  const inserted = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(messages)
       .values({
@@ -113,9 +112,15 @@ export async function sendMessage(
         authorId: author.id,
         kind: "text",
         body,
-        replyToId: replyTo,
+        replyToId: replyTo?.id ?? null,
       })
-      .returning({ id: messages.id });
+      .returning({
+        id: messages.id,
+        body: messages.body,
+        createdAt: messages.createdAt,
+        editedAt: messages.editedAt,
+        replyToId: messages.replyToId,
+      });
 
     if (handles.length) {
       /**
@@ -154,16 +159,33 @@ export async function sendMessage(
       }
     }
 
-    return row.id;
+    return row;
   });
 
-  await transport.publish({
-    type: "message.new",
-    conversationId: room.id,
-    messageId,
-  });
+  const messageRow: MessageRow = {
+    id: inserted.id,
+    body: inserted.body,
+    createdAt: inserted.createdAt,
+    editedAt: inserted.editedAt,
+    authorId: author.id,
+    authorUsername: author.username,
+    authorAvatarUrl: author.avatarUrl,
+    replyToId: inserted.replyToId,
+    readByAll: false,
+    replyTo,
+    reactions: [],
+  };
 
-  return { ok: true, messageId };
+  // Publish to realtime asynchronously without blocking the client response
+  void transport
+    .publish({
+      type: "message.new",
+      conversationId: room.id,
+      messageId: inserted.id,
+    })
+    .catch((err) => console.error("[realtime] publish error", err));
+
+  return { ok: true, messageId: inserted.id, message: messageRow };
 }
 
 /** Author fields sendMessage needs, loaded once per request. */
@@ -171,6 +193,8 @@ export async function loadAuthor(userId: string): Promise<Author | null> {
   const [row] = await db
     .select({
       id: users.id,
+      username: users.username,
+      avatarUrl: users.avatarUrl,
       isAdmin: users.isAdmin,
       bannedUntil: users.bannedUntil,
     })

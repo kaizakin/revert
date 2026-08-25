@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import {
   getRoomForUser,
   listMessages,
+  listRoomsForUser,
   getPinnedMessage,
   listRoomMembers,
   markRead,
@@ -17,6 +18,7 @@ import {
   type MessageRow,
   type RoomMember,
   type RoomStats,
+  type RoomSummary,
 } from "@/server/messaging/queries";
 import { toggleReaction } from "@/server/messaging/reactions";
 import { loadAuthor, sendMessage } from "@/server/messaging/send";
@@ -28,32 +30,41 @@ import {
 import { uploadRoomAvatar } from "@/server/users/profile";
 import { getDbUser } from "@/server/users/sync";
 
-export type SendState = { error?: string };
+export type SendActionResult =
+  | { ok: true; message: MessageRow }
+  | { ok: false; error: string };
 
 export async function sendMessageAction(
-  _prev: SendState,
-  formData: FormData,
-): Promise<SendState> {
+  slug: string,
+  body: string,
+  replyToId?: string | null,
+): Promise<SendActionResult> {
   const me = await getDbUser();
-  if (!me) return { error: "You are signed out." };
+  if (!me) return { ok: false, error: "You are signed out." };
 
-  const author = await loadAuthor(me.id);
-  if (!author) return { error: "Account not found." };
+  const result = await sendMessage(
+    {
+      id: me.id,
+      username: me.username,
+      avatarUrl: me.avatarUrl,
+      isAdmin: me.isAdmin,
+      bannedUntil: me.bannedUntil,
+    },
+    slug,
+    body,
+    replyToId,
+  );
+  if (!result.ok) return { ok: false, error: result.error };
 
-  const slug = String(formData.get("slug") ?? "");
-  const body = String(formData.get("body") ?? "");
-  const replyToId = String(formData.get("replyToId") ?? "") || null;
+  return { ok: true, message: result.message };
+}
 
-  const result = await sendMessage(author, slug, body, replyToId);
-  if (!result.ok) return { error: result.error };
+/** Fetch user joined rooms with previews and unread counts */
+export async function fetchUserRooms(): Promise<RoomSummary[]> {
+  const me = await getDbUser();
+  if (!me) return [];
 
-  /**
-   * No revalidatePath here. The message is broadcast and the client fetches the
-   * new rows itself, so re-rendering the whole route server-side only adds
-   * latency — and it was the second source of the message, which is what made a
-   * sent message appear twice before settling.
-   */
-  return {};
+  return listRoomsForUser(me.id);
 }
 
 /**
