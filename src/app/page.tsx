@@ -104,7 +104,16 @@ export default async function LandingPage() {
         <section className="grid items-center gap-10 py-14 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14 lg:py-20">
           <div className="flex flex-col gap-5">
             <span className="w-fit rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
-              by minianon · for the job alerts group
+              by{" "}
+              <a
+                href="https://link.minianon.in/tusharbhardwaj"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-ink underline decoration-line underline-offset-2 transition-colors hover:decoration-ink"
+              >
+                minianon
+              </a>{" "}
+              · for the job alerts group
             </span>
 
             <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
@@ -203,7 +212,17 @@ export default async function LandingPage() {
 
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-8">
-          <p className="text-xs text-faint">Revert — by minianon</p>
+          <p className="text-xs text-faint">
+            Revert — by{" "}
+            <a
+              href="https://link.minianon.in/tusharbhardwaj"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 transition-colors hover:text-ink"
+            >
+              minianon
+            </a>
+          </p>
           <p className="max-w-2xl text-xs leading-relaxed text-faint">
             Messages are private, not end-to-end encrypted: reports get read and acted on,
             because a job community without moderation fills up with fake recruiters fast.

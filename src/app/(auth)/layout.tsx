@@ -68,7 +68,15 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         <div className="relative flex flex-col gap-10">
           <div className="flex flex-col gap-5">
             <span className="w-fit rounded-full border border-line bg-canvas px-3 py-1 text-[12px] font-medium text-muted">
-              by minianon
+              by{" "}
+              <a
+                href="https://link.minianon.in/tusharbhardwaj"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-ink underline decoration-line underline-offset-2 transition-colors hover:decoration-ink"
+              >
+                minianon
+              </a>
             </span>
 
             <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-ink">
@@ -107,7 +115,16 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         </div>
 
         <p className="relative text-[12px] text-faint">
-          © 2026 <span className="font-medium text-muted">minianon</span> · Revert
+          © 2026{" "}
+          <a
+            href="https://link.minianon.in/tusharbhardwaj"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-muted underline underline-offset-2 transition-colors hover:text-ink"
+          >
+            minianon
+          </a>{" "}
+          · Revert
         </p>
       </aside>
 
