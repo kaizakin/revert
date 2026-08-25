@@ -416,25 +416,28 @@ export default async function LandingPage() {
               <Eyebrow>By minianon · for the job alerts channel</Eyebrow>
 
               {/*
-                Two lines of statement, one of promise, the promise in accent.
-                The break is hard rather than left to the browser: "Our group,"
-                landing alone is the whole point of the line.
+                A line of continuity, then the difference, the difference in
+                accent. The break is hard rather than left to the browser:
+                "Same alerts." landing alone is what earns the second line.
+
+                Tracking is a notch looser than the rest of the display type,
+                and looser again on the phone, because "alerts" carries an "rt"
+                — the tightest pair in this face. At -0.04em its ink overlaps by
+                0.48px at 52px and 0.81px at 38px. These values clear it at 52px
+                and land it at dead zero at 38px, which is as tight as this word
+                goes. Measured per glyph rather than eyeballed, so treat it as a
+                floor: tighter than this, or a heavier weight, needs new words.
               */}
-              {/*
-                Tracking is looser on the phone on purpose. The same -0.04em
-                that looks tight at 52px collides at 38px — measured, not
-                guessed: "it" in "without" overlaps by 0.2px there.
-              */}
-              <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.03em] text-ink sm:text-[52px] sm:tracking-[-0.04em]">
-                Our group,
+              <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.01em] text-ink sm:text-[52px] sm:tracking-[-0.03em]">
+                Same alerts.
                 <br />
-                <span className="text-accent">without your number.</span>
+                <span className="text-accent">Now you can reply.</span>
               </h1>
 
               <p className="mt-6 max-w-lg text-[17px] leading-[1.6] text-muted">
-                Same job alerts, same people, same questions answered. Except you join as a
-                username, the openings stay searchable, and you decide what is allowed to
-                notify you.
+                Every opening from the channel, plus somewhere to ask about it — what the
+                interview was actually like, or who you already know inside. You join as a
+                username, and nothing scrolls away.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -445,7 +448,7 @@ export default async function LandingPage() {
                 ) : (
                   <>
                     <Link href="/sign-up" className={PRIMARY_BUTTON}>
-                      Join the group
+                      Join the room
                     </Link>
                     <Link href="/sign-in" className={SECONDARY_BUTTON}>
                       I already joined
@@ -749,7 +752,7 @@ export default async function LandingPage() {
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               {!signedIn && (
                 <Link href="/sign-up" className={PRIMARY_BUTTON}>
-                  Join the group
+                  Join the room
                 </Link>
               )}
 
