@@ -11,7 +11,7 @@ import { ChatPreview } from "./chat-preview";
 import { HowItWorks } from "./how-it-works";
 
 /**
- * Written for someone arriving from the WhatsApp group.
+ * Written for someone arriving from the WhatsApp channel.
  *
  * They already trust minianon and already live the problem, so the page does
  * not argue that job hunting is hard — it answers what this is, whether it is
@@ -27,7 +27,7 @@ import { HowItWorks } from "./how-it-works";
  */
 
 const TOPMATE_URL = "https://link.minianon.in/tusharbhardwaj";
-const GROUP_URL = "https://whatsapp.com/channel/0029Vb67tYF0rGiSuzXcHw2C";
+const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb67tYF0rGiSuzXcHw2C";
 
 /** Booking goes straight to Topmate; the short link is the profile page. */
 const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
@@ -48,8 +48,8 @@ const SPONSOR_URL = "https://github.com/sponsors/minianon";
  */
 const PHOTO: string | null = null;
 
-/** Size of the WhatsApp group. Rounded down, because it moves. */
-const GROUP_SIZE = "2,000+";
+/** Size of the WhatsApp channel. Rounded down, because it moves. */
+const CHANNEL_SIZE = "2,000+";
 
 /**
  * Real quotes from real people only. The array is empty until there are some —
@@ -115,12 +115,12 @@ const STEPS = [
 
 const FAQ = [
   {
-    q: "Is the WhatsApp group going away?",
-    a: "No. The group stays exactly where it is. Revert is where the openings stay searchable and where you can ask something without handing your number to two thousand people. Use both, or use whichever one you like — nothing is being taken away.",
+    q: "Is the WhatsApp channel going away?",
+    a: "No. The channel stays exactly where it is, and it is still the fastest way to hear that a role exists. Revert is where you can do something about it — ask what the interview was like, or find the person who already works there. Use both. Nothing is being taken away.",
   },
   {
     q: "Does it cost anything?",
-    a: "No. Joining, posting, asking and answering are free. If something paid ever shows up it will be an extra on the side, not a gate in front of the group.",
+    a: "No. Joining, posting, asking and answering are free. If something paid ever shows up it will be an extra on the side, not a gate in front of the room.",
   },
   {
     q: "Who can see my details?",
@@ -128,7 +128,7 @@ const FAQ = [
   },
   {
     q: "What if I already have a job?",
-    a: "Plenty of people here do. They are the ones answering questions and passing on referrals, which is most of what makes the group worth being in.",
+    a: "Plenty of people here do. They are the ones answering questions and passing on referrals, which is most of what makes the room worth being in.",
   },
 ];
 
@@ -151,7 +151,7 @@ function WhatsAppIcon({ className = "h-4 w-4" }: { className?: string }) {
 const POINTS = [
   {
     title: "No phone numbers",
-    body: "You join as a username. Nobody in the group can see your number, because we never ask for it.",
+    body: "You join as a username. There is no number to leak, because we never ask you for one.",
     tag: "Private by default",
     icon: (
       <>
@@ -197,37 +197,47 @@ const POINTS = [
 /**
  * The two rooms side by side.
  *
- * Written to be fair rather than flattering: the group is where all of these
- * people already are, and the FAQ two sections down promises it is not going
- * anywhere. Every left-hand cell is a real property of a two-thousand-person
- * WhatsApp channel, not a strawman — overstating it here would undercut the
- * one thing the page is actually selling, which is trust.
+ * The comparison is against a WhatsApp *channel*, not a group, and the
+ * difference matters: a channel is a broadcast. Only the owner posts, everyone
+ * else gets an emoji reaction and nothing more, and followers cannot see or
+ * reach each other at all. So every row here is about the half a broadcast
+ * cannot do — asking, answering, and reaching the person who replied.
+ *
+ * Deliberately not about phone numbers. A channel already hides a follower's
+ * number from the owner and from other followers, so claiming otherwise would
+ * be false, and false in the one direction this page cannot afford: it is
+ * selling trust to people who can check.
  */
 const COMPARISON = [
   {
-    row: "Who you are",
-    group: "A phone number, visible to everyone in it",
-    revert: "A username you pick",
+    row: "Asking a doubt",
+    channel: "You cannot — only the owner can post",
+    revert: "Ask in the room, and get answers",
+  },
+  {
+    row: "Replying to an opening",
+    channel: "An emoji reaction, and nothing else",
+    revert: "A real reply, on the message itself",
+  },
+  {
+    row: "Talking to other members",
+    channel: "Followers cannot see or reach each other",
+    revert: "Reply to anyone, mention anyone",
+  },
+  {
+    row: "Asking for a referral",
+    channel: "Nowhere to ask",
+    revert: "Ask someone who already works there",
   },
   {
     row: "Finding an old opening",
-    group: "Scroll back until you find it",
+    channel: "Scroll the feed until you find it",
     revert: "Search for it, any time",
   },
   {
-    row: "Notifications",
-    group: "All of them, or leave the group",
-    revert: "Mute the room, still get mentions",
-  },
-  {
-    row: "Asking a question",
-    group: "Buried under the next twenty messages",
-    revert: "Replied to, and still there next week",
-  },
-  {
-    row: "Getting in",
-    group: "Someone has to add you",
-    revert: "Sign in, and you are in",
+    row: "Who else is here",
+    channel: "No way to tell",
+    revert: "A member list, with profiles",
   },
 ];
 
@@ -251,7 +261,8 @@ function CheckMark() {
 
 /**
  * Absent. Deliberately faint rather than red — these are not failures, they are
- * what a group chat is, and colouring them like errors would read as a smear.
+ * simply what a broadcast is for, and colouring them like errors would read as a
+ * smear on the thing that brought everyone here.
  */
 function CrossMark() {
   return (
@@ -358,7 +369,7 @@ export default async function LandingPage() {
    * WhatsApp link opens. A member count is worth showing but not worth a 500,
    * so a database that is down just costs the number.
    *
-   * Shown next to the size of the WhatsApp group, which is the number that
+   * Shown next to the size of the WhatsApp channel, which is the number that
    * carries the trust. A small count beside it reads as early rather than
    * empty — but zero would just look broken, so that one hides.
    */
@@ -402,7 +413,7 @@ export default async function LandingPage() {
         <section className="px-6 pt-14 pb-16 lg:pt-20 lg:pb-20">
           <div className="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14">
             <div className="flex flex-col">
-              <Eyebrow>By minianon · for the job alerts group</Eyebrow>
+              <Eyebrow>By minianon · for the job alerts channel</Eyebrow>
 
               {/*
                 Two lines of statement, one of promise, the promise in accent.
@@ -463,14 +474,15 @@ export default async function LandingPage() {
             <p className="flex items-center gap-2.5 text-[14px] text-muted">
               <WhatsAppIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
               <span>
-                <span className="text-[17px] font-semibold text-ink">{GROUP_SIZE}</span> in the{" "}
+                <span className="text-[17px] font-semibold text-ink">{CHANNEL_SIZE}</span>{" "}
+                following the{" "}
                 <a
-                  href={GROUP_URL}
+                  href={CHANNEL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={PROSE_LINK}
                 >
-                  WhatsApp group
+                  WhatsApp channel
                 </a>
               </span>
             </p>
@@ -523,17 +535,18 @@ export default async function LandingPage() {
         */}
         <Section alt wide>
           <Eyebrow>Side by side</Eyebrow>
-          <Heading>The same group, in a room built for it</Heading>
+          <Heading>The channel talks. A room talks back.</Heading>
 
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            Nothing here is a knock on the group — it is where all of us already are,
-            and it is staying. This is just what a group chat cannot do.
+            The channel is how two thousand people hear about a role, and it is staying
+            exactly as it is. It just cannot do the other half — the asking, the
+            answering, and getting to the person who knows.
           </p>
 
           <div className="mt-10 overflow-hidden rounded-md border border-line">
             <table className="w-full text-left">
               <caption className="sr-only">
-                The WhatsApp group and Revert compared across five things people run
+                The WhatsApp channel and Revert compared across six things people run
                 into.
               </caption>
 
@@ -546,7 +559,7 @@ export default async function LandingPage() {
                     scope="col"
                     className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-faint"
                   >
-                    WhatsApp group
+                    WhatsApp channel
                   </th>
                   <th
                     scope="col"
@@ -575,9 +588,9 @@ export default async function LandingPage() {
                         <CrossMark />
                         <span className="text-[15px] leading-[1.5] text-muted">
                           <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-faint sm:hidden">
-                            WhatsApp group
+                            WhatsApp channel
                           </span>
-                          {item.group}
+                          {item.channel}
                         </span>
                       </span>
                     </td>
@@ -601,9 +614,9 @@ export default async function LandingPage() {
         </Section>
 
         {/*
-          Someone whose only group chat has ever been WhatsApp does not know
-          what happens after they tap Join. Not knowing is what stops a signup,
-          so the three steps are spelled out plainly.
+          Someone who has only ever followed a channel does not know what
+          happens after they tap Join. Not knowing is what stops a signup, so
+          the three steps are spelled out plainly.
         */}
         <Section wide>
           <Eyebrow>Getting in</Eyebrow>
@@ -626,10 +639,10 @@ export default async function LandingPage() {
               <Heading>Built by minianon</Heading>
 
               <p className="mt-5 text-[15px] leading-[1.7] text-muted">
-                I am Tushar. I have been running the job alerts group for a while now —
+                I am Tushar. I have been running the job alerts channel for a while now —
                 posting openings, answering the same questions at midnight, and watching
-                good roles scroll away before anyone saw them. Revert is that group with
-                the parts that kept breaking fixed.
+                good roles scroll away before anyone saw them. Revert is the room that
+                channel never had.
               </p>
 
               <p className="mt-4 text-[15px] leading-[1.7] text-muted">
@@ -643,7 +656,7 @@ export default async function LandingPage() {
                 >
                   book time with me
                 </a>
-                . Otherwise I am in the group, same as everyone else.
+                . Otherwise I am in the room, same as everyone else.
               </p>
             </div>
           </div>
@@ -675,7 +688,7 @@ export default async function LandingPage() {
         {TESTIMONIALS.length > 0 && (
           <Section wide>
             <Eyebrow>In their words</Eyebrow>
-            <Heading>From the group</Heading>
+            <Heading>From the room</Heading>
 
             <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {TESTIMONIALS.map((item) => (
@@ -771,13 +784,13 @@ export default async function LandingPage() {
               </span>
 
               <a
-                href={GROUP_URL}
+                href={CHANNEL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
               >
                 <WhatsAppIcon />
-                Job alerts group
+                Job alerts channel
               </a>
 
               <a
