@@ -33,17 +33,12 @@ const SCENES: Line[][] = [
   [
     {
       from: "priya",
-      body: "Anyone interviewed at Google recently? What did rounds 2 and 3 look like?",
+      body: "Anyone interviewed at Google recently? How is round 2?",
       time: "9:41 am",
-    },
-    {
-      from: "arjun",
-      body: "3 rounds. DSA, then system design, then Googleyness. They reverted in 6 days.",
-      time: "9:43 am",
       reaction: "🙏",
     },
     {
-      body: "For round 2, do not just solve it — say your tradeoffs out loud. That is what they are scoring.",
+      body: "System design. Say your tradeoffs out loud — that is what they score.",
       time: "9:46 am",
       mine: true,
       read: true,
@@ -126,12 +121,7 @@ const SCENES: Line[][] = [
       reaction: "😂",
     },
     {
-      from: "priya",
-      body: "Same. See you at the farm.",
-      time: "11:05 pm",
-    },
-    {
-      body: "Both of you had interviews this week. That is the part that counts.",
+      body: "You had 4 interviews this week. That is the part that counts.",
       time: "11:09 pm",
       mine: true,
       read: true,
@@ -253,7 +243,7 @@ export function ChatPreview() {
       */}
       <div
         key={scene}
-        className="chat-pattern relative flex h-[17rem] flex-col justify-end gap-2 overflow-hidden px-3.5 py-4"
+        className="chat-pattern relative flex h-[13.5rem] flex-col justify-end gap-2 overflow-hidden px-3.5 py-4"
       >
         {lines.map((line, index) => (
           <div
