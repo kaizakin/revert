@@ -369,17 +369,29 @@ select:focus-visible {
  * static illustrations built from the same tokens as the room.
  */
 :root {
-  --hiw-cycle: 9s;
+  /*
+   * Four seconds a card, not three. Every beat below is a percentage of this,
+   * so lengthening the cycle slows the whole demo proportionally — which is the
+   * fix for the pace, since the beats got quicker when they moved onto a shared
+   * clock and had to fit inside a shorter turn.
+   */
+  --hiw-cycle: 12s;
 }
 
 /* Three beats inside a step. Motion happens early, then holds for the cycle. */
+/*
+ * Wider windows than before, on top of the longer cycle. A beat runs 10% of the
+ * cycle (1.2s at 12s) and the next starts 8% later (0.96s), so the three land
+ * about a second apart and the panel has finished at 27% — comfortably inside
+ * the 33.33% that is one card's turn.
+ */
 @keyframes hiw-a {
   0%,
-  2% {
+  1% {
     opacity: 0;
     transform: translateY(10px);
   }
-  10%,
+  11%,
   100% {
     opacity: 1;
     transform: none;
@@ -388,11 +400,11 @@ select:focus-visible {
 
 @keyframes hiw-b {
   0%,
-  8% {
+  9% {
     opacity: 0;
     transform: translateY(10px);
   }
-  16%,
+  19%,
   100% {
     opacity: 1;
     transform: none;
@@ -401,24 +413,24 @@ select:focus-visible {
 
 @keyframes hiw-c {
   0%,
-  14% {
+  17% {
     opacity: 0;
     transform: translateY(10px);
   }
-  22%,
+  27%,
   100% {
     opacity: 1;
     transform: none;
   }
 }
 
-/* Typewriter. steps() bites only on the 3%-to-17% run; the rest is constant. */
+/* Typewriter. steps() bites only on the 2%-to-16% run; the rest is constant. */
 @keyframes hiw-type {
   0%,
-  3% {
+  2% {
     width: 0;
   }
-  17%,
+  16%,
   100% {
     width: 5ch;
   }
@@ -426,10 +438,10 @@ select:focus-visible {
 
 @keyframes hiw-caret {
   0%,
-  17% {
+  16% {
     opacity: 1;
   }
-  19%,
+  18%,
   100% {
     opacity: 0;
   }
@@ -447,12 +459,13 @@ select:focus-visible {
 }
 
 /*
- * Progress, active border and "playing" flag all share the same cycle and the
- * same per-card delay, so a card lights up, fills its bar and drops back in one
- * gesture. A third of the cycle is one card's turn: 33.33%.
+ * The bar is the only thing that says whose turn it is. An accent border and a
+ * "playing" flag said the same thing twice over, and three cues for one fact
+ * read as an interface reporting on itself rather than a demo.
  *
- * Each ends its turn empty rather than full. A bar left full would read as three
- * completed steps at the end of a cycle, when what it means is "not this one".
+ * A third of the cycle is one card's turn: 33.33%. It ends empty rather than
+ * full, because a bar left full reads as a completed step when what it means is
+ * "not this one".
  */
 @keyframes hiw-progress {
   0% {
@@ -464,35 +477,6 @@ select:focus-visible {
   34%,
   100% {
     transform: scaleX(0);
-  }
-}
-
-@keyframes hiw-active {
-  0% {
-    border-color: var(--rv-line);
-  }
-  2%,
-  31% {
-    border-color: var(--rv-accent);
-  }
-  34%,
-  100% {
-    border-color: var(--rv-line);
-  }
-}
-
-@keyframes hiw-playing {
-  0%,
-  1% {
-    opacity: 0;
-  }
-  4%,
-  31% {
-    opacity: 1;
-  }
-  34%,
-  100% {
-    opacity: 0;
   }
 }
 
@@ -508,17 +492,6 @@ select:focus-visible {
 .hiw-progress {
   transform: scaleX(0);
   transform-origin: left;
-}
-
-/* Off the cycle on purpose: a light that blinked in phase would look wired up. */
-@keyframes hiw-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -568,17 +541,6 @@ select:focus-visible {
     animation: hiw-progress var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
   }
 
-  .hiw-card {
-    animation: hiw-active var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
-  }
-
-  .hiw-playing {
-    animation: hiw-playing var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
-  }
-
-  .hiw-pulse {
-    animation: hiw-pulse 1.2s ease-in-out infinite;
-  }
 }
 
 /*

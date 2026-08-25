@@ -9,11 +9,11 @@ type Step = { title: string; body: string };
  * already in it, and the three things you can do once you are inside arrive one
  * at a time. The panels loop and run in sequence — a short demo, not a caption.
  *
- * Each step is a card that says whether it is the one currently running: its
- * border takes the accent, a bar along its top edge fills over its three
- * seconds, and a pulsing "playing" flag appears. Without that, three panels
- * animating on one shared clock just looks like unrelated movement — the
- * viewer cannot tell whether they are watching a sequence or a coincidence.
+ * Each step is a card, and a bar along its top edge fills across its turn. That
+ * bar is the only cue: without something marking whose turn it is, three panels
+ * on one shared clock look like unrelated movement rather than a sequence — but
+ * an accent border and a "playing" flag alongside it said the same thing three
+ * times, which read as an interface reporting on itself.
  *
  * Timing lives in globals.css. Every animated element shares one cycle length,
  * so nothing can drift; a panel's place in the sequence is its --hiw-offset, and
@@ -151,7 +151,7 @@ export function HowItWorks({ steps }: { steps: Step[] }) {
       {steps.map((step, index) => (
         <li
           key={step.title}
-          className="hiw-card relative flex flex-col overflow-hidden rounded-md border border-line bg-surface p-5"
+          className="relative flex flex-col overflow-hidden rounded-md border border-line bg-surface p-5"
           style={{ "--hiw-offset": `${index * STEP_OFFSET}s` } as CSSProperties}
         >
           {/*
@@ -164,27 +164,11 @@ export function HowItWorks({ steps }: { steps: Step[] }) {
             <span className="hiw-progress block h-full bg-accent" />
           </span>
 
-          <span className="flex items-center justify-between gap-3">
-            <span
-              aria-hidden
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent font-display text-[12px] font-semibold text-accent-ink"
-            >
-              {index + 1}
-            </span>
-
-            {/*
-              Starts hidden and is raised only by its animation, so there is no
-              "playing" claim when nothing is playing — which is exactly the
-              case under prefers-reduced-motion. aria-hidden because it reports
-              the state of a decoration.
-            */}
-            <span
-              aria-hidden
-              className="hiw-playing flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-accent opacity-0"
-            >
-              <span className="hiw-pulse h-1.5 w-1.5 rounded-full bg-accent" />
-              playing
-            </span>
+          <span
+            aria-hidden
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent font-display text-[12px] font-semibold text-accent-ink"
+          >
+            {index + 1}
           </span>
 
           <div className="mt-4">{PANELS[index]}</div>
