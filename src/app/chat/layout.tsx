@@ -63,54 +63,60 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-canvas">
-      <nav className="hidden w-14 shrink-0 flex-col items-center justify-between border-r border-line bg-surface py-3 md:flex">
-        <div className="flex flex-col items-center gap-1">
-          {/* The product mark sits above the rail, so the app is identifiable
-              even with the chat list hidden. */}
-          <Link href="/" aria-label="Revert home" className="mb-2">
-            <LogoMark size={28} />
+      <nav className="hidden w-16 shrink-0 flex-col items-center justify-between border-r border-line bg-surface py-3.5 md:flex">
+        <div className="flex flex-col items-center gap-2">
+          {/* Logo */}
+          <Link
+            href="/"
+            aria-label="Revert home"
+            className="mb-3 transition-transform hover:scale-105 active:scale-95"
+          >
+            <LogoMark size={30} />
           </Link>
 
-          {RAIL.map((item) =>
-            item.live && item.href ? (
-              <Link
-                key={item.key}
-                href={item.href}
-                aria-label={item.label}
-                className="flex h-10 w-10 items-center justify-center rounded-lg bg-raised text-ink"
-              >
-                <RailIcon name={item.key} />
-              </Link>
-            ) : (
-              <span
-                key={item.key}
-                title={item.label}
-                aria-disabled
-                className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-lg text-faint/60"
-              >
-                <RailIcon name={item.key} />
-              </span>
-            ),
-          )}
+          <div className="flex flex-col items-center gap-1.5">
+            {RAIL.map((item) =>
+              item.live && item.href ? (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  aria-label={item.label}
+                  title={item.label}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-ink shadow-xs transition-all hover:brightness-105 active:scale-90"
+                >
+                  <RailIcon name={item.key} />
+                </Link>
+              ) : (
+                <span
+                  key={item.key}
+                  title={item.label}
+                  aria-disabled
+                  className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-xl text-faint/40 transition-colors"
+                >
+                  <RailIcon name={item.key} />
+                </span>
+              ),
+            )}
+          </div>
         </div>
 
-        {/*
-          Our own avatar, linking to the profile page. Clerk's UserButton was a
-          second, differently-styled account control sitting next to ours; one
-          of them had to go, and this is the one that matches the app and leads
-          somewhere useful. Sign out lives on the profile page.
-        */}
+        {/* User avatar linking to profile */}
         <Link
           href="/me"
           aria-label="Your profile"
           title={`@${me.username}`}
-          className="rounded-full transition-opacity hover:opacity-80"
+          className="rounded-full transition-transform hover:scale-105 active:scale-95"
         >
-          <Avatar src={me.avatarUrl} name={me.username} size={32} className="ring-1 ring-line" />
+          <Avatar
+            src={me.avatarUrl}
+            name={me.username}
+            size={34}
+            className="ring-2 ring-line/60 hover:ring-accent/60 transition-all"
+          />
         </Link>
       </nav>
 
-      <aside className="hidden shrink-0 flex-col border-r border-line bg-surface md:flex md:w-64 lg:w-72 xl:w-80">
+      <aside className="hidden shrink-0 flex-col border-r border-line bg-surface md:flex md:w-68 lg:w-76 xl:w-84">
         <ChatList rooms={rooms} />
       </aside>
 

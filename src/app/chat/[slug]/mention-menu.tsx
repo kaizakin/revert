@@ -79,29 +79,56 @@ export function MentionMenu({ slug, query, onPick, onClose }: Props) {
   if (items.length === 0) return null;
 
   return (
-    <div className="absolute bottom-full left-0 z-30 mb-2 w-72 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
-      {items.map((item, index) => (
-        <button
-          key={item.username}
-          type="button"
-          onMouseEnter={() => setActive(index)}
-          onClick={() => onPick(item.username)}
-          className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors ${
-            index === active ? "bg-raised" : ""
-          }`}
-        >
-          <Avatar src={item.avatarUrl} name={item.username} size={28} />
+    <div className="absolute bottom-full left-0 z-30 mb-2 w-72 overflow-hidden rounded-2xl border border-line bg-surface/95 py-1.5 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-150">
+      <div className="px-3 py-1 text-[10.5px] font-bold uppercase tracking-wider text-faint">
+        Mention Member
+      </div>
+      {items.map((item, index) => {
+        const isActive = index === active;
+        const isAll = item.username === "all";
 
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate text-[13px] text-ink">
-              {item.displayName ?? `@${item.username}`}
-            </span>
-            {item.displayName && (
-              <span className="truncate text-[11px] text-muted">@{item.username}</span>
-            )}
-          </span>
-        </button>
-      ))}
+        return (
+          <button
+            key={item.username}
+            type="button"
+            onMouseEnter={() => setActive(index)}
+            onClick={() => onPick(item.username)}
+            className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors ${
+              isActive ? "bg-raised" : "hover:bg-raised/60"
+            }`}
+          >
+            <div className="relative shrink-0">
+              {isAll ? (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-ink text-xs font-bold">
+                  @
+                </div>
+              ) : (
+                <Avatar src={item.avatarUrl} name={item.username} size={28} />
+              )}
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex items-center justify-between gap-1">
+                <span
+                  className={`truncate text-[13px] ${
+                    isActive ? "font-bold text-ink" : "font-medium text-ink"
+                  }`}
+                >
+                  {item.displayName ?? `@${item.username}`}
+                </span>
+                {isAll && (
+                  <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider text-accent">
+                    Everyone
+                  </span>
+                )}
+              </div>
+              {item.displayName && (
+                <span className="truncate text-[11px] text-muted">@{item.username}</span>
+              )}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }

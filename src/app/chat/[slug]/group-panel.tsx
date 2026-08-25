@@ -268,35 +268,38 @@ export function GroupPanel({
   return (
     <aside
       aria-label="Group info"
-      className="flex w-full shrink-0 flex-col border-l border-line bg-surface sm:w-80"
+      className="flex w-full shrink-0 flex-col border-l border-line bg-surface sm:w-80 animate-in slide-in-from-right-4 duration-150"
     >
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
         <button
           type="button"
           onClick={onClose}
           aria-label="Close group info"
-          className="-ml-1 rounded-full p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink"
+          className="-ml-1 rounded-full p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink active:scale-95"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
             <path
               d="M6 6l12 12M18 6L6 18"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="2"
               strokeLinecap="round"
             />
           </svg>
         </button>
-        <h2 className="text-[15px] font-semibold text-ink">Group info</h2>
+        <h2 className="text-[15px] font-bold text-ink tracking-tight">Group Info</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {state === "loading" && (
-          <p className="px-4 py-8 text-center text-[13px] text-faint">Loading…</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+            <p className="mt-3 text-xs font-medium text-faint">Loading group info…</p>
+          </div>
         )}
 
         {state === "missing" && (
-          <p className="px-4 py-8 text-center text-[13px] text-faint">
+          <p className="px-4 py-12 text-center text-xs font-medium text-faint">
             This group is not available.
           </p>
         )}
@@ -313,7 +316,7 @@ export function GroupPanel({
                 onError={setError}
               />
 
-              {error && <p className="text-[11px] text-danger">{error}</p>}
+              {error && <p className="text-xs font-semibold text-danger">{error}</p>}
 
               <div className="flex w-full flex-col items-center gap-0.5 text-center">
                 <EditableField
@@ -325,19 +328,23 @@ export function GroupPanel({
                   canEdit={info.canEdit}
                   onSaved={reload}
                   render={(value) => (
-                    <span className="text-[17px] font-semibold text-ink">{value}</span>
+                    <span className="text-[17px] font-bold text-ink tracking-tight">{value}</span>
                   )}
                 />
 
-                <p className="text-[12px] text-muted">
+                <p className="text-[12.5px] font-medium text-muted">
                   {info.stats.total} {info.stats.total === 1 ? "member" : "members"}
-                  {info.stats.active > 0 && ` · ${info.stats.active} online`}
+                  {info.stats.active > 0 && (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      {` · ${info.stats.active} online`}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
 
             <div className="border-t border-line px-5 py-4">
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-faint">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-faint">
                 Description
               </p>
               <EditableField
@@ -351,52 +358,59 @@ export function GroupPanel({
                 onSaved={reload}
                 render={(value) =>
                   value ? (
-                    <span className="text-[13px] leading-relaxed text-ink">{value}</span>
+                    <span className="text-[13px] leading-relaxed text-ink/90">{value}</span>
                   ) : (
-                    <span className="text-[13px] text-faint">No description yet.</span>
+                    <span className="text-[13px] text-faint italic">No description yet.</span>
                   )
                 }
               />
             </div>
 
             <div className="border-t border-line px-5 py-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-faint">
-                {info.stats.total} {info.stats.total === 1 ? "member" : "members"}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-faint">
+                  Members ({info.stats.total})
+                </p>
+                {info.stats.active > 0 && (
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    {info.stats.active} online
+                  </span>
+                )}
+              </div>
 
-              <ul className="flex flex-col">
+              <ul className="flex flex-col gap-1">
                 {info.members.map((member) => (
                   <li key={member.id}>
                     <button
                       type="button"
                       onClick={() => onOpenMember(member.username)}
-                      className="-mx-2 flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-raised"
+                      className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-all hover:bg-raised active:scale-[0.99]"
                     >
-                      <span className="relative shrink-0">
-                        <Avatar src={member.avatarUrl} name={member.username} size={36} />
+                      <div className="relative shrink-0">
+                        <Avatar src={member.avatarUrl} name={member.username} size={38} />
                         {member.isOnline && (
                           <span
                             title="Online"
-                            className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-accent"
+                            className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500 animate-pulse"
                           />
                         )}
-                      </span>
+                      </div>
 
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="flex items-center gap-1.5">
-                          <span className="truncate text-[14px] text-ink">
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate text-[13.5px] font-bold text-ink">
                             {member.displayName ?? `@${member.username}`}
                           </span>
                           {member.isAdmin && (
-                            <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-accent">
+                            <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-accent">
                               admin
                             </span>
                           )}
-                        </span>
+                        </div>
                         <span className="truncate text-[12px] text-muted">
-                          {member.headline ?? `@${member.username}`}
+                          {member.headline ? member.headline : `@${member.username}`}
                         </span>
-                      </span>
+                      </div>
                     </button>
                   </li>
                 ))}

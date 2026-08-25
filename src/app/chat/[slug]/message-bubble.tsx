@@ -61,59 +61,70 @@ export function MessageBubble({
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
-    <div className={`group flex items-start gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
-      {/*
-        Avatar sits beside incoming messages only, and only on the first of a
-        run — repeating it on every line is what makes a group chat read as a
-        feed. The spacer keeps the rest of the run aligned under it.
-      */}
+    <div
+      className={`group relative flex items-start gap-2 transition-all ${
+        isMine ? "justify-end" : "justify-start"
+      }`}
+    >
+      {/* Avatar sits beside incoming messages on the first of a run */}
       {!isMine &&
         (startsRun ? (
           <button
             type="button"
-            onClick={() =>
-              message.authorUsername && onOpenProfile(message.authorUsername)
-            }
+            onClick={() => message.authorUsername && onOpenProfile(message.authorUsername)}
             aria-label={`Open profile of ${message.authorUsername ?? "user"}`}
-            className="shrink-0 rounded-full transition-opacity hover:opacity-80"
+            className="mt-0.5 shrink-0 rounded-full transition-transform hover:scale-105 active:scale-95"
           >
-            <Avatar src={message.authorAvatarUrl} name={message.authorUsername ?? "?"} size={28} />
+            <Avatar
+              src={message.authorAvatarUrl}
+              name={message.authorUsername ?? "?"}
+              size={30}
+              className="ring-1 ring-line/50"
+            />
           </button>
         ) : (
-          <span className="w-7 shrink-0" aria-hidden />
+          <span className="w-[30px] shrink-0" aria-hidden />
         ))}
 
-      <div className="relative flex max-w-[85%] flex-col sm:max-w-[72%] lg:max-w-[65%]">
+      <div className="relative flex max-w-[85%] flex-col sm:max-w-[75%] lg:max-w-[65%]">
         <div
-          className={`relative px-2 pt-[5px] shadow-sm ${
-            message.reactions.length > 0 ? "pb-3.5" : "pb-[5px]"
+          className={`relative px-3 pt-1.5 shadow-sm transition-all ${
+            message.reactions.length > 0 ? "pb-3.5" : "pb-1.5"
           } ${
-            isMine ? "bg-bubble-out text-bubble-out-ink" : "bg-bubble-in text-bubble-in-ink"
-          } ${isPending ? "opacity-60" : ""}`}
+            isMine
+              ? "bg-bubble-out text-bubble-out-ink border border-emerald-500/10 dark:border-emerald-400/10"
+              : "bg-bubble-in text-bubble-in-ink border border-line/40"
+          } ${isPending ? "opacity-70 ring-1 ring-accent/30 animate-pulse" : ""}`}
           style={{
             borderRadius: startsRun
               ? isMine
-                ? "8px 0 8px 8px"
-                : "0 8px 8px 8px"
-              : 8,
+                ? "12px 2px 12px 12px"
+                : "2px 12px 12px 12px"
+              : "12px",
           }}
         >
-          {/* The tail inherits the bubble colour through currentColor. */}
+          {/* The tail inherits the bubble colour through currentColor */}
           {startsRun && (
-            <span
-              aria-hidden
-              className={isMine ? "text-bubble-out" : "text-bubble-in"}
-            >
+            <span aria-hidden className={isMine ? "text-bubble-out" : "text-bubble-in"}>
               <BubbleTail side={isMine ? "right" : "left"} />
             </span>
           )}
+
+          {/* Pinned pill tag inside bubble if message is pinned */}
+          {isPinned && (
+            <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold tracking-wider text-accent uppercase">
+              <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current" aria-hidden>
+                <path d="M16 4h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-1l-1 5 2 2v1H7v-1l2-2-1-5H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h1l1-3h6l1 3z" />
+              </svg>
+              <span>Pinned Message</span>
+            </div>
+          )}
+
           {!isMine && startsRun && (
             <button
               type="button"
-              onClick={() =>
-                message.authorUsername && onOpenProfile(message.authorUsername)
-              }
-              className="mb-px block text-[12.5px] font-semibold hover:underline"
+              onClick={() => message.authorUsername && onOpenProfile(message.authorUsername)}
+              className="mb-0.5 block text-[13px] font-bold tracking-tight transition-opacity hover:opacity-85"
               style={{ color: nameColour(message.authorUsername) }}
             >
               @{message.authorUsername ?? "deleted"}
@@ -124,36 +135,38 @@ export function MessageBubble({
             <button
               type="button"
               onClick={() => onJumpTo(message.replyTo!.id)}
-              className="mb-1 flex w-full items-stretch gap-2 overflow-hidden rounded bg-black/15 text-left transition-opacity hover:opacity-85 dark:bg-black/25"
+              className="mb-1.5 flex w-full items-stretch gap-2 overflow-hidden rounded-lg bg-black/5 text-left transition-colors hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
               <span
                 aria-hidden
-                className="w-1 shrink-0 rounded-full"
+                className="w-1 shrink-0 rounded-l-lg"
                 style={{ backgroundColor: nameColour(message.replyTo.authorUsername) }}
               />
               <span className="min-w-0 flex-1 py-1 pr-2">
                 <span
-                  className="block text-[12px] font-semibold"
+                  className="block text-[11.5px] font-semibold"
                   style={{ color: nameColour(message.replyTo.authorUsername) }}
                 >
                   @{message.replyTo.authorUsername ?? "deleted"}
                 </span>
-                {/* One line only: a quote should hint at the original, not repeat it. */}
-                <span className="block truncate text-[12.5px] opacity-70">
+                <span className="block truncate text-[12px] opacity-75">
                   {message.replyTo.body}
                 </span>
               </span>
             </button>
           )}
 
-          <p className="whitespace-pre-wrap break-words text-[14.5px] leading-[1.32]">
+          <p className="whitespace-pre-wrap break-words text-[14.5px] leading-relaxed select-text">
             {renderRichText(message.body, onOpenProfile)}
-            {/* Reserves space on the last line so the timestamp never overlaps. */}
-            <span className={`inline-block select-none ${isMine ? "w-[74px]" : "w-12"}`} aria-hidden />
+            {/* Reserves space on the last line so timestamp never overlaps */}
+            <span
+              className={`inline-block select-none ${isMine ? "w-[72px]" : "w-12"}`}
+              aria-hidden
+            />
           </p>
 
-          <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] leading-none text-bubble-meta">
-            {message.editedAt && <span>edited</span>}
+          <span className="-mt-4 flex items-center justify-end gap-1 text-[10.5px] font-medium leading-none text-bubble-meta select-none">
+            {message.editedAt && <span className="opacity-75">edited</span>}
             <span>{timeOf(message.createdAt)}</span>
             {isMine && (
               <Tick state={isPending ? "pending" : message.readByAll ? "read" : "sent"} />
@@ -161,10 +174,11 @@ export function MessageBubble({
           </span>
         </div>
 
+        {/* Reaction badges */}
         {message.reactions.length > 0 && (
           <div
             className={`relative z-10 -mt-2.5 flex flex-wrap gap-1 ${
-              isMine ? "justify-end pr-2" : "justify-start pl-2"
+              isMine ? "justify-end pr-1.5" : "justify-start pl-1.5"
             }`}
           >
             {message.reactions.map((reaction) => (
@@ -173,102 +187,112 @@ export function MessageBubble({
                 type="button"
                 onClick={() => onReact(message.id, reaction.emoji)}
                 aria-pressed={reaction.mine}
-                title={reaction.mine ? "Remove your reaction" : "React"}
-                className={`flex items-center gap-0.5 rounded-full px-1.5 py-px text-[11px] leading-[1.5] shadow-sm ring-1 transition-colors ${
+                title={reaction.mine ? "Remove reaction" : "React"}
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium shadow-sm transition-all duration-150 active:scale-95 ${
                   reaction.mine
-                    ? "bg-accent-soft text-accent ring-accent/40"
-                    : "bg-raised text-muted ring-line hover:text-ink"
+                    ? "bg-accent/15 text-accent ring-1 ring-accent/40 font-semibold"
+                    : "bg-surface text-muted ring-1 ring-line hover:bg-raised hover:text-ink"
                 }`}
               >
-                <span className="text-[12px] leading-none">{reaction.emoji}</span>
-                {reaction.count > 1 && <span className="font-medium">{reaction.count}</span>}
+                <span className="text-[13px] leading-none">{reaction.emoji}</span>
+                {reaction.count > 0 && (
+                  <span className="text-[11px] font-semibold">{reaction.count}</span>
+                )}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Hidden until hover on a pointer device, and always reachable by keyboard. */}
+      {/* Floating Action Bar on hover */}
       {!isPending && (
-        <div className="relative flex items-center self-center">
-          {onTogglePin && (
+        <div
+          className={`relative flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100 self-center ${
+            isMine ? "order-first" : ""
+          }`}
+        >
+          <div className="flex items-center gap-0.5 rounded-full border border-line/60 bg-surface/95 px-1 py-0.5 shadow-sm backdrop-blur-md">
+            {/* Reaction picker trigger */}
             <button
               type="button"
-              onClick={() => onTogglePin(message.id)}
-              aria-label={isPinned ? "Unpin message" : "Pin message"}
-              title={isPinned ? "Unpin" : "Pin"}
-              className={`flex h-7 w-7 items-center justify-center rounded-full transition-opacity hover:bg-raised ${
-                isPinned
-                  ? "text-accent opacity-100"
-                  : "text-faint opacity-0 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
-              }`}
+              onClick={() => setPickerOpen((open) => !open)}
+              aria-label="React to message"
+              aria-expanded={pickerOpen}
+              title="Add reaction"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-raised hover:text-ink active:scale-90"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="9" cy="10" r="1.2" fill="currentColor" />
+                <circle cx="15" cy="10" r="1.2" fill="currentColor" />
+                <path
+                  d="M8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+
+            {/* Reply action */}
+            <button
+              type="button"
+              onClick={() => onReply(message)}
+              aria-label="Reply to message"
+              title="Reply"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-raised hover:text-ink active:scale-90"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
                 <path
-                  d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
+                  d="M10 9V5l-7 7 7 7v-4.1c5 0 8 1.6 10 5.1-1-5-4-10-10-11z"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
+                  strokeWidth="1.8"
                   strokeLinejoin="round"
                 />
               </svg>
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={() => onReply(message)}
-            aria-label="Reply to message"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-faint opacity-0 transition-opacity hover:bg-raised hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-              <path
-                d="M10 9V5l-7 7 7 7v-4.1c5 0 8 1.6 10 5.1-1-5-4-10-10-11z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+            {/* Pin action (mods only) */}
+            {onTogglePin && (
+              <button
+                type="button"
+                onClick={() => onTogglePin(message.id)}
+                aria-label={isPinned ? "Unpin message" : "Pin message"}
+                title={isPinned ? "Unpin" : "Pin message"}
+                className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-90 ${
+                  isPinned
+                    ? "text-accent bg-accent-soft"
+                    : "text-muted hover:bg-raised hover:text-ink"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                  <path
+                    d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setPickerOpen((open) => !open)}
-            aria-label="React to message"
-            aria-expanded={pickerOpen}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-faint opacity-0 transition-opacity hover:bg-raised hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.7" />
-              <circle cx="9" cy="10" r="1.2" fill="currentColor" />
-              <circle cx="15" cy="10" r="1.2" fill="currentColor" />
-              <path
-                d="M8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-
+          {/* Quick Reaction Floating Popover */}
           {pickerOpen && (
             <>
-              {/*
-                Click-away layer. A document listener would fight the trigger
-                button's own onClick and close-then-reopen the picker.
-              */}
               <button
                 type="button"
                 aria-hidden
                 tabIndex={-1}
                 onClick={() => setPickerOpen(false)}
-                className="fixed inset-0 z-10 cursor-default"
+                className="fixed inset-0 z-30 cursor-default bg-transparent"
               />
               <div
-                className={`absolute bottom-9 z-20 flex gap-0.5 rounded-full border border-line bg-surface px-1.5 py-1 shadow-lg ${
+                className={`absolute bottom-full mb-1.5 z-40 flex items-center gap-1 rounded-full border border-line bg-surface/95 px-2 py-1 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 ${
                   isMine ? "right-0" : "left-0"
                 }`}
               >
@@ -281,7 +305,7 @@ export function MessageBubble({
                       setPickerOpen(false);
                     }}
                     aria-label={`React with ${emoji}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-lg transition-transform hover:scale-125"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-xl transition-all duration-150 hover:scale-135 hover:bg-raised/70 active:scale-95"
                   >
                     {emoji}
                   </button>

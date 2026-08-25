@@ -1,16 +1,11 @@
-import { and, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/server/db";
-import {
-  conversationMembers,
-  conversations,
-  mentions,
-  messages,
-  users,
-} from "@/server/db/schema";
+import { conversations, messages, users } from "@/server/db/schema";
 import { transport } from "@/server/realtime";
 
-import { getRoomForUser } from "./queries";
+import { getRoomForUser, type MessageRow } from "./queries";
+import { messageQueue } from "./queue";
 import { consumeRateLimit, MESSAGE_LIMIT } from "./rate-limit";
 
 export const MESSAGE_MAX_LENGTH = 4000;
@@ -19,7 +14,7 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const MENTION_ALL = "all";
 
 export type SendResult =
-  | { ok: true; messageId: string }
+  | { ok: true; messageId: string; message: MessageRow }
   | { ok: false; error: string };
 
 /** @username, ignoring emails and any @ that is part of a longer token. */
@@ -35,14 +30,15 @@ function extractMentions(body: string): string[] {
 
 type Author = {
   id: string;
+  username: string | null;
+  avatarUrl: string | null;
   isAdmin: boolean;
   bannedUntil: Date | null;
 };
 
 /**
- * Persist a message, then fan it out. Order matters: the database is the source
- * of truth, and realtime only broadcasts what is already committed. A client
- * must never be told about a message that failed to save.
+ * Validates, immediately broadcasts to connected room members, and enqueues to
+ * a background FIFO worker to persist in order in PostgreSQL.
  */
 export async function sendMessage(
   author: Author,
@@ -61,109 +57,86 @@ export async function sendMessage(
     return { ok: false, error: "You cannot post right now." };
   }
 
-  // Membership is re-checked here and not trusted from the page that rendered
-  // the composer, because a server action is a public endpoint.
-  const room = await getRoomForUser(author.id, roomSlug);
+  // Run room membership check, rate limiting, and parent reply lookup in parallel
+  const [room, limit, parent] = await Promise.all([
+    getRoomForUser(author.id, roomSlug),
+    consumeRateLimit(`msg:${author.id}`, MESSAGE_LIMIT.max, MESSAGE_LIMIT.windowSeconds),
+    replyToId
+      ? db
+          .select({
+            id: messages.id,
+            body: messages.body,
+            authorUsername: users.username,
+          })
+          .from(messages)
+          .leftJoin(users, eq(users.id, messages.authorId))
+          .where(and(eq(messages.id, replyToId), isNull(messages.deletedAt)))
+          .limit(1)
+          .then((rows) => rows[0] ?? null)
+      : Promise.resolve(null),
+  ]);
+
   if (!room) return { ok: false, error: "You are not in this room." };
 
   if (room.type === "announce" && !author.isAdmin) {
     return { ok: false, error: "Only mods post in this room." };
   }
 
-  const limit = await consumeRateLimit(
-    `msg:${author.id}`,
-    MESSAGE_LIMIT.max,
-    MESSAGE_LIMIT.windowSeconds,
-  );
   if (!limit.allowed) {
     return { ok: false, error: "You are sending messages too quickly. Wait a minute." };
   }
 
-  /**
-   * A reply target is only accepted when it lives in this same room and is not
-   * deleted. The id comes from the client, so without this check anyone could
-   * quote a message out of a conversation they cannot read — the quote text is
-   * rendered to everyone in the room.
-   */
-  let replyTo: string | null = null;
+  let replyTo: { id: string; authorUsername: string | null; body: string | null } | null = null;
   if (replyToId) {
-    const [parent] = await db
-      .select({ id: messages.id })
-      .from(messages)
-      .where(
-        and(
-          eq(messages.id, replyToId),
-          eq(messages.conversationId, room.id),
-          isNull(messages.deletedAt),
-        ),
-      )
-      .limit(1);
-
     if (!parent) return { ok: false, error: "That message is no longer available." };
-    replyTo = parent.id;
+    replyTo = {
+      id: parent.id,
+      authorUsername: parent.authorUsername,
+      body: parent.body,
+    };
   }
 
   const handles = extractMentions(body);
+  const messageId = crypto.randomUUID();
+  const createdAt = new Date();
 
-  const messageId = await db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(messages)
-      .values({
-        conversationId: room.id,
-        authorId: author.id,
-        kind: "text",
-        body,
-        replyToId: replyTo,
-      })
-      .returning({ id: messages.id });
+  const messageRow: MessageRow = {
+    id: messageId,
+    body,
+    createdAt,
+    editedAt: null,
+    authorId: author.id,
+    authorUsername: author.username,
+    authorAvatarUrl: author.avatarUrl,
+    replyToId: replyTo?.id ?? null,
+    readByAll: false,
+    replyTo,
+    reactions: [],
+  };
 
-    if (handles.length) {
-      /**
-       * @all resolves to every other member of the room, so it is a membership
-       * lookup rather than a username lookup. The author is excluded — nobody
-       * needs a notification about their own message.
-       */
-      const mentionsAll = handles.includes(MENTION_ALL);
+  // 1. Immediately fan out to all connected members in the chat room
+  void transport
+    .publish({
+      type: "message.new",
+      conversationId: room.id,
+      messageId,
+      message: messageRow,
+    })
+    .catch((err) => console.error("[realtime] broadcast error:", err));
 
-      const named = handles.filter((h) => h !== MENTION_ALL);
-
-      const mentioned = mentionsAll
-        ? await tx
-            .select({ id: users.id })
-            .from(conversationMembers)
-            .innerJoin(users, eq(users.id, conversationMembers.userId))
-            .where(
-              and(
-                eq(conversationMembers.conversationId, room.id),
-                ne(conversationMembers.userId, author.id),
-                isNull(users.deletedAt),
-              ),
-            )
-        : named.length
-          ? await tx
-              .select({ id: users.id })
-              .from(users)
-              .where(and(inArray(users.username, named), isNull(users.deletedAt)))
-          : [];
-
-      if (mentioned.length) {
-        await tx
-          .insert(mentions)
-          .values(mentioned.map((m) => ({ messageId: row.id, userId: m.id })))
-          .onConflictDoNothing();
-      }
-    }
-
-    return row.id;
-  });
-
-  await transport.publish({
-    type: "message.new",
+  // 2. Enqueue message to background FIFO queue for database persistence
+  messageQueue.enqueue({
+    id: messageId,
     conversationId: room.id,
-    messageId,
+    authorId: author.id,
+    kind: "text",
+    body,
+    replyToId: replyTo?.id ?? null,
+    createdAt,
+    handles,
   });
 
-  return { ok: true, messageId };
+  return { ok: true, messageId, message: messageRow };
 }
 
 /** Author fields sendMessage needs, loaded once per request. */
@@ -171,6 +144,8 @@ export async function loadAuthor(userId: string): Promise<Author | null> {
   const [row] = await db
     .select({
       id: users.id,
+      username: users.username,
+      avatarUrl: users.avatarUrl,
       isAdmin: users.isAdmin,
       bannedUntil: users.bannedUntil,
     })

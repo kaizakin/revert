@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import {
-  useActionState,
   useCallback,
   useEffect,
   useMemo,
-  useOptimistic,
   useRef,
   useState,
 } from "react";
@@ -14,7 +12,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import type { MessageRow, PinnedMessage } from "@/server/messaging/queries";
+import type { MessageRow, PinnedMessage, RoomSummary } from "@/server/messaging/queries";
+import type { ReactionSummary } from "@/lib/reactions";
 
 import {
   syncPresence,
@@ -25,7 +24,6 @@ import {
   refetchMessages,
   sendMessageAction,
   toggleReactionAction,
-  type SendState,
 } from "../actions";
 import { GroupPanel } from "./group-panel";
 import { MemberPanel } from "./member-panel";
@@ -39,6 +37,7 @@ type Props = {
   note?: string;
   stats: { total: number; active: number };
   avatarUrl: string | null;
+  meAvatarUrl?: string | null;
   conversationId: string;
   meId: string;
   meUsername: string;
@@ -75,6 +74,7 @@ export function RoomView({
   note,
   stats: initialStats,
   avatarUrl,
+  meAvatarUrl,
   conversationId,
   meId,
   meUsername,
@@ -90,6 +90,8 @@ export function RoomView({
     queryFn: () => refetchMessages(slug),
     initialData: initialMessages,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   });
 
   const { data: stats = initialStats } = useQuery<{ total: number; active: number }>({
@@ -99,7 +101,7 @@ export function RoomView({
       return next ?? initialStats;
     },
     initialData: initialStats,
-    refetchInterval: 45_000,
+    refetchInterval: 30_000,
     refetchIntervalInBackground: false,
     staleTime: 1000 * 30,
   });
@@ -111,29 +113,74 @@ export function RoomView({
   });
 
   const [draft, setDraft] = useState("");
+  const [sendError, setSendError] = useState<string | null>(null);
   const [reactError, setReactError] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
   const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * One slot for the right-hand panel. Group info and a member profile are
+   * mutually exclusive, so a single value avoids the state where both are set.
+   */
+  const [panel, setPanel] = useState<
+    | { kind: "member"; username: string }
+    | { kind: "group" }
+    | { kind: "search" }
+    | null
+  >(null);
+
+  const scrollToBottom = useCallback((smooth = true) => {
+    bottomRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      block: "end",
+    });
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollBottom(distanceFromBottom > 250);
+  }, []);
 
   const togglePin = useCallback(
     async (messageId: string) => {
-      const next = pinned?.id === messageId ? null : messageId;
-      const result = await setPinnedAction(slug, next);
+      const isCurrentPinned = pinned?.id === messageId;
+      const nextPinnedId = isCurrentPinned ? null : messageId;
+
+      // Optimistic update for pin banner
+      const currentMsg = messages.find((m) => m.id === messageId);
+      const nextPinnedObj: PinnedMessage | null = isCurrentPinned
+        ? null
+        : currentMsg
+          ? {
+              id: currentMsg.id,
+              body: currentMsg.body,
+              authorUsername: currentMsg.authorUsername,
+            }
+          : null;
+
+      queryClient.setQueryData(["chat", "pinned", slug], nextPinnedObj);
+
+      const result = await setPinnedAction(slug, nextPinnedId);
       if (result.error) {
         setReactError(result.error);
+        void queryClient.invalidateQueries({ queryKey: ["chat", "pinned", slug] });
         return;
       }
       setReactError(null);
-      void queryClient.invalidateQueries({ queryKey: ["chat", "pinned", slug] });
     },
-    [slug, pinned, queryClient],
+    [slug, pinned, messages, queryClient],
   );
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   /**
    * Replace the @token the caret sits in, then put the caret after the inserted
-   * handle. Without moving it the caret would jump to the end of the message,
-   * which is wrong when mentioning someone mid-sentence.
+   * handle. Without moving it the caret would jump to the end of the message.
    */
   const insertMention = useCallback(
     (username: string) => {
@@ -157,8 +204,7 @@ export function RoomView({
   );
 
   /**
-   * Scroll a quoted message into view and flash it, so tapping a quote lands
-   * somewhere obvious rather than just moving the scroll position.
+   * Scroll a quoted message into view and flash it with a smooth animation.
    */
   const jumpTo = useCallback((messageId: string) => {
     const el = document.getElementById(`msg-${messageId}`);
@@ -166,102 +212,37 @@ export function RoomView({
 
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.classList.add("msg-flash");
-    window.setTimeout(() => el.classList.remove("msg-flash"), 1200);
+    window.setTimeout(() => el.classList.remove("msg-flash"), 1400);
   }, []);
-  /**
-   * One slot for the right-hand panel. Group info and a member profile are
-   * mutually exclusive, so a single value avoids the state where both are set.
-   */
-  const [panel, setPanel] = useState<
-    | { kind: "member"; username: string }
-    | { kind: "group" }
-    | { kind: "search" }
-    | null
-  >(null);
-
-  const [state, action, pending] = useActionState<SendState, FormData>(sendMessageAction, {});
-  const formRef = useRef<HTMLFormElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  const [optimistic, addOptimistic] = useOptimistic(messages, (current, draft: string) => [
-    ...current,
-    {
-      id: `pending-${current.length}`,
-      body: draft,
-      createdAt: new Date(),
-      editedAt: null,
-      authorId: meId,
-      authorUsername: meUsername,
-      authorAvatarUrl: null,
-      readByAll: false,
-      replyToId: replyingTo?.id ?? null,
-      replyTo: replyingTo
-        ? { id: replyingTo.id, authorUsername: replyingTo.authorUsername, body: replyingTo.body }
-        : null,
-      reactions: [],
-    },
-  ]);
-
-  /**
-   * Hide the optimistic copy once the real message lands.
-   *
-   * Two things add a sent message: useOptimistic shows it instantly, and the
-   * realtime broadcast fetches the saved row a moment later. Between those two
-   * the same message was on screen twice.
-   *
-   * Matching on author and body is deliberate — the optimistic row has a
-   * client-only id, so there is nothing to match on. Sending the identical text
-   * twice in quick succession collapses to one bubble for a fraction of a
-   * second, which is a far better failure than every message flickering double.
-   */
-  const visible = useMemo(() => {
-    const hasPending = optimistic.some((m) => m.id.startsWith("pending-"));
-    if (!hasPending) return optimistic;
-
-    const mine = messages.filter((m) => m.authorId === meId);
-
-    return optimistic.filter((m) => {
-      if (!m.id.startsWith("pending-")) return true;
-
-      const draftBody = (m.body ?? "").trim();
-      const draftAt = new Date(m.createdAt).getTime();
-
-      /**
-       * Compared against the draft's own timestamp rather than the clock, so
-       * this stays a pure function of its inputs — and so repeating something
-       * you also said an hour ago does not hide the new bubble until the round
-       * trip finishes.
-       */
-      return !mine.some(
-        (settled) =>
-          (settled.body ?? "").trim() === draftBody &&
-          Math.abs(new Date(settled.createdAt).getTime() - draftAt) < 60_000,
-      );
-    });
-  }, [optimistic, messages, meId]);
-
-  // Read through a ref inside the subscription so a new message does not tear
-  // down and rebuild the websocket.
-  const latestAtRef = useRef<string | null>(null);
-  useEffect(() => {
-    const last = messages.at(-1)?.createdAt;
-    latestAtRef.current = last ? new Date(last).toISOString() : null;
-  }, [messages]);
 
   const catchUp = useCallback(async () => {
     const current =
       queryClient.getQueryData<MessageRow[]>(["chat", "messages", slug]) ?? messages;
-    const last = current.at(-1)?.createdAt;
+    const settledMessages = current.filter((m) => !m.id.startsWith("opt-"));
+    const last = settledMessages.at(-1)?.createdAt;
     const since = last
       ? new Date(last).toISOString()
       : new Date(Date.now() - 60_000).toISOString();
+
     const fresh = await fetchNewMessages(slug, since);
     if (!fresh.length) return;
 
     queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = current) => {
-      const seen = new Set(prev.map((m) => m.id));
-      const added = fresh.filter((m) => !seen.has(m.id));
-      return added.length ? [...prev, ...added] : prev;
+      const seenIds = new Set(prev.map((m) => m.id));
+      const newItems = fresh.filter((m) => !seenIds.has(m.id));
+      if (!newItems.length) return prev;
+
+      // Reconcile and remove matching optimistic items
+      const newKeys = new Set(
+        newItems.map((m) => `${m.authorId}-${(m.body ?? "").trim()}`),
+      );
+      const filteredPrev = prev.filter((m) => {
+        if (!m.id.startsWith("opt-")) return true;
+        const key = `${m.authorId}-${(m.body ?? "").trim()}`;
+        return !newKeys.has(key);
+      });
+
+      return [...filteredPrev, ...newItems];
     });
   }, [slug, messages, queryClient]);
 
@@ -274,23 +255,49 @@ export function RoomView({
 
   const handleReact = useCallback(
     async (messageId: string, emoji: string) => {
+      // Instant 0ms Optimistic reaction toggle
+      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => {
+        return prev.map((msg) => {
+          if (msg.id !== messageId) return msg;
+
+          const existing = msg.reactions.find((r) => r.emoji === emoji);
+          let updatedReactions: ReactionSummary[];
+
+          if (existing) {
+            if (existing.mine) {
+              if (existing.count <= 1) {
+                updatedReactions = msg.reactions.filter((r) => r.emoji !== emoji);
+              } else {
+                updatedReactions = msg.reactions.map((r) =>
+                  r.emoji === emoji ? { ...r, count: r.count - 1, mine: false } : r,
+                );
+              }
+            } else {
+              updatedReactions = msg.reactions.map((r) =>
+                r.emoji === emoji ? { ...r, count: r.count + 1, mine: true } : r,
+              );
+            }
+          } else {
+            updatedReactions = [...msg.reactions, { emoji, count: 1, mine: true }];
+          }
+
+          return { ...msg, reactions: updatedReactions };
+        });
+      });
+
       const result = await toggleReactionAction(slug, messageId, emoji);
       if (result.error) {
         setReactError(result.error);
-        return;
+        void reload();
+      } else {
+        setReactError(null);
       }
-      setReactError(null);
-      await reload();
     },
-    [slug, reload],
+    [slug, queryClient, reload],
   );
 
   /**
-   * The broadcast carries only a message id, never its text, so a forged event
-   * can at most trigger a fetch that returns rows this user may already read.
-   *
-   * Reactions cannot use the "since this timestamp" path — they change older
-   * messages, which that query would never return — so they trigger a reload.
+   * Realtime Supabase broadcast listener.
    */
   useEffect(() => {
     const supabase = supabaseBrowser();
@@ -298,33 +305,193 @@ export function RoomView({
 
     const channel = supabase
       .channel(`conversation:${conversationId}`)
-      .on("broadcast", { event: "message.new" }, () => void catchUp())
+      .on(
+        "broadcast",
+        { event: "message.new" },
+        (payload: { payload?: { message?: MessageRow } }) => {
+          const incomingMsg = payload?.payload?.message;
+          if (incomingMsg) {
+            queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => {
+              // Avoid duplicate insertion
+              if (prev.some((m) => m.id === incomingMsg.id)) {
+                return prev;
+              }
+
+              // Reconcile if this replaces an optimistic message by this author
+              const optIndex = prev.findIndex(
+                (m) =>
+                  m.id.startsWith("opt-") &&
+                  m.authorId === incomingMsg.authorId &&
+                  (m.body ?? "").trim() === (incomingMsg.body ?? "").trim(),
+              );
+
+              if (optIndex !== -1) {
+                const next = [...prev];
+                next[optIndex] = incomingMsg;
+                return next;
+              }
+
+              return [...prev, incomingMsg];
+            });
+
+            // Update sidebar room summary instantly
+            queryClient.setQueryData<RoomSummary[]>(["chat", "rooms"], (prev = []) => {
+              return prev.map((r) => {
+                if (r.id !== conversationId && r.slug !== slug) return r;
+                return {
+                  ...r,
+                  lastBody: incomingMsg.body,
+                  lastAuthor: incomingMsg.authorUsername,
+                  lastAt: new Date(incomingMsg.createdAt),
+                };
+              });
+            });
+          }
+
+          // Catch up in background to reconcile DB sequence and read status
+          void catchUp();
+        },
+      )
       .on("broadcast", { event: "reaction.changed" }, () => void reload())
       .subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, catchUp, reload]);
+  }, [conversationId, slug, catchUp, reload, queryClient]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [visible.length]);
+    scrollToBottom(false);
+  }, [messages.length, scrollToBottom]);
 
-  const lastRealId = messages.at(-1)?.id;
+  const lastRealId = messages.filter((m) => !m.id.startsWith("opt-")).at(-1)?.id;
   useEffect(() => {
     void markRoomRead(slug, lastRealId);
   }, [slug, lastRealId]);
 
   /**
-   * Day separators and bubble grouping are derived from the previous element
-   * rather than by mutating a variable mid-render, which would produce
-   * different output on a second render pass.
+   * Instant optimistic message send handler.
+   */
+  const handleSend = useCallback(
+    async (event?: React.FormEvent) => {
+      if (event) event.preventDefault();
+
+      const text = draft.trim();
+      if (!text || !canPost) return;
+
+      const replyTarget = replyingTo;
+      const tempId = `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+      const optimisticMessage: MessageRow = {
+        id: tempId,
+        body: text,
+        createdAt: new Date(),
+        editedAt: null,
+        authorId: meId,
+        authorUsername: meUsername,
+        authorAvatarUrl: meAvatarUrl ?? null,
+        readByAll: false,
+        replyToId: replyTarget?.id ?? null,
+        replyTo: replyTarget
+          ? {
+              id: replyTarget.id,
+              authorUsername: replyTarget.authorUsername,
+              body: replyTarget.body,
+            }
+          : null,
+        reactions: [],
+      };
+
+      // 1. Immediately inject optimistic message into chat messages
+      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => [
+        ...prev,
+        optimisticMessage,
+      ]);
+
+      // 2. Immediately update chat list preview & timestamp
+      queryClient.setQueryData<RoomSummary[]>(["chat", "rooms"], (prev = []) => {
+        const currentRoom = prev.find((r) => r.slug === slug);
+        const updatedRoom: RoomSummary = currentRoom
+          ? {
+              ...currentRoom,
+              lastBody: text,
+              lastAuthor: meUsername,
+              lastAt: new Date(),
+            }
+          : {
+              id: conversationId,
+              slug,
+              name,
+              topic: null,
+              type: "chat",
+              unread: 0,
+              avatarUrl,
+              lastBody: text,
+              lastAuthor: meUsername,
+              lastAt: new Date(),
+            };
+        return [updatedRoom, ...prev.filter((r) => r.slug !== slug)];
+      });
+
+      // 3. Clear draft and states instantly
+      setDraft("");
+      setReplyingTo(null);
+      setMention(null);
+      setSendError(null);
+
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+
+      // Auto scroll
+      requestAnimationFrame(() => scrollToBottom(true));
+
+      // 4. Send to server in background
+      try {
+        const result = await sendMessageAction(slug, text, replyTarget?.id ?? null);
+        if (result.ok && result.message) {
+          const settled = result.message;
+          queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
+            prev.map((m) => (m.id === tempId ? settled : m)),
+          );
+        } else if (!result.ok) {
+          // Revert optimistic message and show error
+          queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
+            prev.filter((m) => m.id !== tempId),
+          );
+          setSendError(result.error ?? "Failed to send message.");
+        }
+      } catch {
+        queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
+          prev.filter((m) => m.id !== tempId),
+        );
+        setSendError("Network error. Please try again.");
+      }
+    },
+    [
+      draft,
+      canPost,
+      replyingTo,
+      meId,
+      meUsername,
+      meAvatarUrl,
+      queryClient,
+      slug,
+      conversationId,
+      name,
+      avatarUrl,
+      scrollToBottom,
+    ],
+  );
+
+  /**
+   * Day separators and bubble grouping are derived cleanly from message stream.
    */
   const rendered = useMemo(
     () =>
-      visible.map((message, index) => {
-        const previous = index > 0 ? visible[index - 1] : null;
+      messages.map((message, index) => {
+        const previous = index > 0 ? messages[index - 1] : null;
 
         const showDay = !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
 
@@ -338,59 +505,71 @@ export function RoomView({
           previous.authorId !== message.authorId ||
           !withinWindow(previous, message);
 
-
         return { message, showDay, startsRun };
       }),
-    [visible],
+    [messages],
   );
 
   return (
-    <div className="flex min-h-0 flex-1">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-2.5">
-        {/* Back to the chat list, which is the only nav on a phone. */}
-        <Link
-          href="/chat"
-          aria-label="Back to chats"
-          className="-ml-1 rounded-full p-1.5 text-muted transition-colors hover:bg-raised hover:text-ink md:hidden"
-        >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-            <path
-              d="M15 5l-7 7 7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-            />
-          </svg>
-        </Link>
+    <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col bg-surface">
+        {/* Header Bar */}
+        <div className="flex items-center gap-3 border-b border-line bg-surface/90 px-4 py-2.5 backdrop-blur-md z-10">
+          {/* Back to chat list on mobile */}
+          <Link
+            href="/chat"
+            aria-label="Back to chats"
+            className="-ml-1 rounded-full p-2 text-muted transition-colors hover:bg-raised hover:text-ink active:scale-95 md:hidden"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+              <path
+                d="M15 5l-7 7 7 7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </Link>
 
-        <button
-          type="button"
-          onClick={() => setPanel({ kind: "group" })}
-          aria-label="Open group info"
-          className="flex min-w-0 flex-1 items-center gap-3 text-left transition-colors hover:opacity-90"
-        >
-          <Avatar src={avatarUrl} name={name || slug} size={40} />
-
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[15px] font-semibold text-ink">{name}</h1>
-            <p className="truncate text-[12px] text-muted">
-              {stats.total} {stats.total === 1 ? "member" : "members"}
-              {stats.active > 0 && ` · ${stats.active} online`}
-              {note ? ` · ${note}` : ""}
-            </p>
-          </div>
-
-          {/* Search replaces the menu: the menu had nothing behind it. */}
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              setPanel({ kind: "search" });
-            }}
+            onClick={() => setPanel({ kind: "group" })}
+            aria-label="Open group info"
+            className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-90 active:scale-[0.99]"
+          >
+            <div className="relative shrink-0">
+              <Avatar src={avatarUrl} name={name || slug} size={42} className="ring-1 ring-line/50" />
+              {stats.active > 0 && (
+                <span
+                  title={`${stats.active} online`}
+                  className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500 animate-pulse"
+                />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-[15px] font-bold text-ink tracking-tight">{name}</h1>
+              </div>
+              <p className="truncate text-[12px] text-muted font-medium">
+                {stats.total} {stats.total === 1 ? "member" : "members"}
+                {stats.active > 0 && (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    {` · ${stats.active} online`}
+                  </span>
+                )}
+                {note ? ` · ${note}` : ""}
+              </p>
+            </div>
+          </button>
+
+          {/* Search Button */}
+          <button
+            type="button"
+            onClick={() => setPanel({ kind: "search" })}
             aria-label="Search messages"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-raised hover:text-ink"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-all hover:bg-raised hover:text-ink active:scale-90"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
               <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -402,213 +581,263 @@ export function RoomView({
               />
             </svg>
           </button>
-        </button>
-      </div>
-      {pinned && (
-        <button
-          type="button"
-          onClick={() => jumpTo(pinned.id)}
-          className="flex w-full items-center gap-2 border-b border-line bg-surface px-4 py-2 text-left transition-colors hover:bg-raised"
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-accent" aria-hidden>
-            <path
-              d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-accent">
-              Pinned
-            </span>
-            <span className="block truncate text-[12.5px] text-muted">
-              @{pinned.authorUsername ?? "deleted"}: {pinned.body}
-            </span>
-          </span>
-        </button>
-      )}
-
-      <div className="chat-pattern flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-5xl flex-col px-3 py-4 sm:px-6">
-          {rendered.length === 0 && (
-            <p className="py-16 text-center text-sm text-bubble-meta">
-              No messages yet. Say something.
-            </p>
-          )}
-
-          {rendered.map(({ message, showDay, startsRun }) => {
-            const isMine = message.authorId === meId;
-            const isPending = message.id.startsWith("pending-");
-
-            return (
-              <div
-                key={message.id}
-                id={`msg-${message.id}`}
-                className={`rounded-lg ${startsRun ? "mt-2" : "mt-0.5"}`}
-              >
-                {showDay && (
-                  <div className="flex justify-center py-4">
-                    <span className="rounded-lg bg-bubble-in px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-bubble-meta shadow-sm">
-                      {dayLabel(message.createdAt)}
-                    </span>
-                  </div>
-                )}
-
-                <MessageBubble
-                  message={message}
-                  isMine={isMine}
-                  isPending={isPending}
-                  startsRun={startsRun}
-                  onReact={handleReact}
-                  onOpenProfile={(username) => setPanel({ kind: "member", username })}
-                  onReply={setReplyingTo}
-                  onJumpTo={jumpTo}
-                  onTogglePin={canPin ? togglePin : undefined}
-                  isPinned={pinned?.id === message.id}
-                />
-              </div>
-            );
-          })}
-          <div ref={bottomRef} />
         </div>
-      </div>
 
-      <div className="border-t border-line bg-surface">
-        <div className="mx-auto w-full max-w-5xl px-3 py-3 sm:px-6">
-          {canPost ? (
-            <form
-              ref={formRef}
-              action={(formData) => {
-                const body = String(formData.get("body") ?? "").trim();
-                if (!body) return;
-                addOptimistic(body);
-                setDraft("");
-                setReplyingTo(null);
-                setMention(null);
-                return action(formData);
-              }}
+        {/* Pinned Message Banner */}
+        {pinned && (
+          <div className="flex w-full items-center justify-between border-b border-line bg-surface/95 px-4 py-2 text-left backdrop-blur-sm transition-colors hover:bg-raised/60">
+            <button
+              type="button"
+              onClick={() => jumpTo(pinned.id)}
+              className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
-              <input type="hidden" name="slug" value={slug} />
-              <input type="hidden" name="replyToId" value={replyingTo?.id ?? ""} />
-
-              {replyingTo && (
-                <div className="mb-2 flex items-stretch gap-2 overflow-hidden rounded-lg bg-raised">
-                  <span
-                    aria-hidden
-                    className="w-1 shrink-0"
-                    style={{ backgroundColor: "var(--rv-accent)" }}
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+                  <path
+                    d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                  <span className="min-w-0 flex-1 py-1.5">
-                    <span className="block text-[12px] font-semibold text-accent">
-                      Replying to @{replyingTo.authorUsername ?? "deleted"}
-                    </span>
-                    <span className="block truncate text-[12.5px] text-muted">
-                      {replyingTo.body}
-                    </span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setReplyingTo(null)}
-                    aria-label="Cancel reply"
-                    className="px-3 text-muted transition-colors hover:text-ink"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-                      <path
-                        d="M6 6l12 12M18 6L6 18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              )}
+                </svg>
+              </div>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10.5px] font-bold uppercase tracking-wider text-accent">
+                  Pinned Message
+                </span>
+                <span className="block truncate text-[12.5px] text-muted">
+                  <span className="font-semibold text-ink">
+                    @{pinned.authorUsername ?? "deleted"}:
+                  </span>{" "}
+                  {pinned.body}
+                </span>
+              </span>
+            </button>
 
-              <div className="relative flex items-end gap-2">
-                {mention && (
-                  <MentionMenu
-                    slug={slug}
-                    query={mention.query}
-                    onPick={insertMention}
-                    onClose={() => setMention(null)}
+            {canPin && (
+              <button
+                type="button"
+                onClick={() => togglePin(pinned.id)}
+                title="Unpin message"
+                className="ml-2 rounded p-1 text-muted hover:bg-raised hover:text-ink"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
                   />
-                )}
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
 
-                {/* Attachments and emoji land with media support in Phase 2, so
-                    they are shown disabled rather than faked. */}
-                <span
-                  title="Attach — coming in Phase 2"
-                  aria-hidden
-                  className="mb-1 flex h-9 w-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-faint/60"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5.5 w-5.5" aria-hidden>
+        {/* Message Stream */}
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="chat-pattern relative flex-1 overflow-y-auto"
+        >
+          <div className="mx-auto flex w-full max-w-4xl flex-col px-3 py-4 sm:px-6">
+            {rendered.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-raised text-muted shadow-sm">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden>
                     <path
-                      d="M12 5v14M5 12h14"
+                      d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.8"
                       strokeLinecap="round"
                     />
                   </svg>
-                </span>
-
-                <textarea
-                  ref={textareaRef}
-                  name="body"
-                  rows={1}
-                  required
-                  maxLength={4000}
-                  value={draft}
-                  onChange={(event) => {
-                    setDraft(event.target.value);
-                    setMention(
-                      activeMentionQuery(event.target.value, event.target.selectionStart ?? 0),
-                    );
-                  }}
-                  onSelect={(event) => {
-                    const el = event.currentTarget;
-                    setMention(activeMentionQuery(el.value, el.selectionStart ?? 0));
-                  }}
-                  onBlur={() => setMention(null)}
-                  placeholder="Type a message"
-                  className="max-h-32 flex-1 resize-none rounded-lg bg-raised px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint"
-                  onKeyDown={(event) => {
-                    // The mention menu claims Enter while it is open, so a pick
-                    // does not also send the message.
-                    if (mention) return;
-
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      event.currentTarget.form?.requestSubmit();
-                    }
-                  }}
-                />
-
-                <button
-                  type="submit"
-                  disabled={pending || draft.trim().length === 0}
-                  aria-label="Send"
-                  className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-all hover:opacity-90 disabled:opacity-30"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-                    <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z" fill="currentColor" />
-                  </svg>
-                </button>
+                </div>
+                <p className="text-sm font-semibold text-ink">No messages yet</p>
+                <p className="mt-1 text-xs text-muted">
+                  Be the first one to say hello in this group!
+                </p>
               </div>
+            )}
 
-              {(state.error ?? reactError) && (
-                <p className="mt-2 px-1 text-xs text-danger">{state.error ?? reactError}</p>
-              )}
-            </form>
-          ) : (
-            <p className="py-2 text-center text-sm text-muted">{postDeniedReason}</p>
+            {rendered.map(({ message, showDay, startsRun }) => {
+              const isMine = message.authorId === meId;
+              const isPending = message.id.startsWith("opt-");
+
+              return (
+                <div
+                  key={message.id}
+                  id={`msg-${message.id}`}
+                  className={`rounded-xl transition-colors ${startsRun ? "mt-2.5" : "mt-0.5"}`}
+                >
+                  {showDay && (
+                    <div className="flex justify-center py-4">
+                      <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-bubble-meta shadow-sm border border-line/40">
+                        {dayLabel(message.createdAt)}
+                      </span>
+                    </div>
+                  )}
+
+                  <MessageBubble
+                    message={message}
+                    isMine={isMine}
+                    isPending={isPending}
+                    startsRun={startsRun}
+                    onReact={handleReact}
+                    onOpenProfile={(username) => setPanel({ kind: "member", username })}
+                    onReply={setReplyingTo}
+                    onJumpTo={jumpTo}
+                    onTogglePin={canPin ? togglePin : undefined}
+                    isPinned={pinned?.id === message.id}
+                  />
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Floating "Scroll to bottom" button */}
+          {showScrollBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom(true)}
+              aria-label="Scroll to latest messages"
+              className="absolute right-5 bottom-5 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink shadow-lg ring-1 ring-line hover:bg-raised active:scale-95 transition-all duration-150 animate-in fade-in zoom-in-95"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+                <path
+                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
           )}
         </div>
-      </div>
+
+        {/* Composer Bar */}
+        <div className="border-t border-line bg-surface/95 backdrop-blur-md">
+          <div className="mx-auto w-full max-w-4xl px-3 py-2.5 sm:px-6">
+            {canPost ? (
+              <form onSubmit={handleSend} className="relative">
+                {/* Replying-to Preview Bar */}
+                {replyingTo && (
+                  <div className="mb-2 flex items-center justify-between overflow-hidden rounded-xl bg-raised/80 px-3 py-2 border border-line/60 animate-in slide-in-from-bottom-2 duration-150">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span
+                        aria-hidden
+                        className="h-8 w-1 rounded-full shrink-0 bg-accent"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-[12px] font-bold text-accent">
+                          Replying to @{replyingTo.authorUsername ?? "deleted"}
+                        </span>
+                        <span className="block truncate text-[12.5px] text-muted">
+                          {replyingTo.body}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReplyingTo(null)}
+                      aria-label="Cancel reply"
+                      className="ml-2 rounded-full p-1 text-muted transition-colors hover:bg-surface hover:text-ink"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                        <path
+                          d="M6 6l12 12M18 6L6 18"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                <div className="relative flex items-end gap-2">
+                  {mention && (
+                    <MentionMenu
+                      slug={slug}
+                      query={mention.query}
+                      onPick={insertMention}
+                      onClose={() => setMention(null)}
+                    />
+                  )}
+
+                  <textarea
+                    ref={textareaRef}
+                    name="body"
+                    rows={1}
+                    required
+                    maxLength={4000}
+                    value={draft}
+                    onChange={(event) => {
+                      setDraft(event.target.value);
+                      setMention(
+                        activeMentionQuery(event.target.value, event.target.selectionStart ?? 0),
+                      );
+                      // Auto-resize
+                      event.target.style.height = "auto";
+                      event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`;
+                    }}
+                    onSelect={(event) => {
+                      const el = event.currentTarget;
+                      setMention(activeMentionQuery(el.value, el.selectionStart ?? 0));
+                    }}
+                    onBlur={() => {
+                      // Slight timeout so picking an item from mention menu isn't prevented
+                      window.setTimeout(() => setMention(null), 200);
+                    }}
+                    placeholder="Type a message… (Press Enter to send, Shift+Enter for new line)"
+                    className="max-h-36 flex-1 resize-none rounded-2xl bg-raised/80 px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint/80 border border-transparent focus:border-accent/40 focus:bg-surface transition-all"
+                    onKeyDown={(event) => {
+                      if (mention) return;
+
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void handleSend();
+                      } else if (event.key === "Escape" && replyingTo) {
+                        setReplyingTo(null);
+                      }
+                    }}
+                  />
+
+                  {/* Send Button */}
+                  <button
+                    type="submit"
+                    disabled={draft.trim().length === 0}
+                    aria-label="Send message"
+                    title="Send"
+                    className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink shadow-md transition-all duration-150 hover:brightness-105 active:scale-90 disabled:opacity-30 disabled:scale-100 disabled:shadow-none"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 translate-x-0.5" aria-hidden>
+                      <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z" fill="currentColor" />
+                    </svg>
+                  </button>
+                </div>
+
+                {(sendError ?? reactError) && (
+                  <p className="mt-2 px-1 text-xs font-semibold text-danger">
+                    {sendError ?? reactError}
+                  </p>
+                )}
+              </form>
+            ) : (
+              <div className="py-2.5 text-center text-xs font-medium text-muted bg-raised/50 rounded-xl">
+                {postDeniedReason}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {panel?.kind === "member" && (
