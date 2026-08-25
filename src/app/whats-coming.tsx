@@ -111,20 +111,18 @@ function ProfilePanel() {
 /**
  * Directions, not dates. Someone who finds one room needs to know more is
  * coming; someone who is promised a date and does not get it stops believing the
- * rest of the page. Only the thing actually being built next carries a badge.
+ * rest of the page.
  */
 const COMING: {
   title: string;
   body: string;
   tag: string;
-  badge?: string;
   panel: ReactNode;
 }[] = [
   {
     title: "Direct messages",
     body: "Reply to someone privately about a role without either of you swapping numbers first.",
     tag: "One to one",
-    badge: "Next",
     panel: <DirectPanel />,
   },
   {
@@ -149,19 +147,7 @@ export function WhatsComing() {
           key={item.title}
           className="wyg-card group flex flex-col rounded-md border border-line bg-surface p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
         >
-          {/*
-            Fixed height whether or not there is a badge, so the panels below
-            still line up across the row.
-          */}
-          <span className="flex h-5 items-center justify-end">
-            {item.badge && (
-              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-accent">
-                {item.badge}
-              </span>
-            )}
-          </span>
-
-          <div className="mt-3">{item.panel}</div>
+          {item.panel}
 
           <span className="mt-4 font-display text-[16px] font-semibold text-ink">
             {item.title}

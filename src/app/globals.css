@@ -46,12 +46,12 @@
   --rv-danger: #b42318;
 
   /*
-   * Gold, used only on the owner's avatar. Deeper than a true metallic yellow
-   * because it sits on cream here — a brighter gold reads as a highlighter pen
-   * against warm paper, and it needs to hold up as a 2px ring rather than a
-   * large fill.
+   * The verified badge blue, used only on the owner's avatar. Deliberately the
+   * blue everyone already reads as "verified" rather than a house colour — a
+   * green or gold tick would make a reader stop and work out what it means,
+   * which is the opposite of what a badge is for.
    */
-  --rv-gold: #b58a2b;
+  --rv-verified: #1d9bf0;
 
   /* Mentions read as links inside a bubble, on both bubble colours. */
   --rv-mention: #1d74c4;
@@ -90,8 +90,8 @@
     --rv-accent-soft: #17231d;
     --rv-danger: #fda29b;
 
-    /* Brighter here: on black the light-mode gold reads as mud, not metal. */
-    --rv-gold: #e9c46a;
+    /* A touch lighter, so it holds against black rather than sinking into it. */
+    --rv-verified: #3ba9f5;
 
     --rv-mention: #7cc4ff;
     --rv-mention-soft: rgba(124, 196, 255, 0.14);
@@ -119,7 +119,7 @@
   --color-accent-ink: var(--rv-accent-ink);
   --color-accent-soft: var(--rv-accent-soft);
   --color-danger: var(--rv-danger);
-  --color-gold: var(--rv-gold);
+  --color-verified: var(--rv-verified);
   --color-mention: var(--rv-mention);
   --color-bubble-out: var(--rv-bubble-out);
   --color-bubble-out-ink: var(--rv-bubble-out-ink);

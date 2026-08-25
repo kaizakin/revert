@@ -92,6 +92,17 @@ const SPONSOR_URL = "https://github.com/sponsors/minianon";
  */
 const PHOTO: string | null = "/avatars/me.jpeg";
 
+/**
+ * Kartik, who has been sending pull requests. Credited by name and face rather
+ * than in a commit log nobody reads.
+ *
+ * The photo is null until a file exists at public/avatars/, because a missing
+ * image 404s where Avatar's initials fallback looks deliberate. Drop one in and
+ * set this to its path.
+ */
+const CONTRIBUTOR_URL = "https://github.com/kaizakin";
+const CONTRIBUTOR_PHOTO: string | null = null;
+
 /** Size of the WhatsApp channel. Rounded down, because it moves. */
 const CHANNEL_SIZE = "2,000+";
 
@@ -688,37 +699,48 @@ export default async function LandingPage() {
               */}
               <div className="flex items-center gap-4">
                 {/*
-                  Gold ring and a crown, because this is the one person on the
-                  page who owns the place.
+                  A verified tick, because this is the one person on the page who
+                  owns the place — and because a reader already knows what a blue
+                  tick on an avatar means without being told. A crown made them
+                  stop and work out the metaphor.
 
-                  The crown is a badge punched out of the photo's edge rather
-                  than a loose glyph laid over it. Centred on top it read as
-                  perched on the head; sitting on the arc it read as dropped
-                  there. A filled disc with a ring in the section's own ground
-                  colour cuts a clean hole in the circle, which is the one
-                  arrangement that looks deliberate at this size.
+                  The ring around the photo is back to a neutral hairline. Gold
+                  ring plus blue badge put two unrelated accent colours on one
+                  72px element, and the badge is the part carrying the meaning.
+
+                  The badge is punched out of the photo's edge: a filled disc
+                  with a ring in the section's own ground colour cuts a clean
+                  hole in the circle, which is what makes it read as attached
+                  rather than dropped on top.
                 */}
                 <div className="relative shrink-0">
                   <Avatar
                     src={PHOTO}
                     name="minianon"
                     size={72}
-                    className="ring-2 ring-gold"
+                    className="ring-1 ring-line"
                   />
 
                   <span
                     aria-hidden
-                    className="absolute -right-0.5 -top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-gold ring-2 ring-canvas"
+                    className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-verified ring-2 ring-canvas"
                   >
+                    {/*
+                      White tick rather than a token: the convention is a white
+                      check on that blue in both themes, and any of our inks
+                      would flip with the theme and stop reading as a tick.
+                    */}
                     <svg
                       viewBox="0 0 24 24"
-                      className="h-3.5 w-3.5 text-canvas"
+                      className="h-3.5 w-3.5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       focusable="false"
                     >
-                      <path
-                        fill="currentColor"
-                        d="M3 9.5l3.5 2.6L12 5l5.5 7.1L21 9.5 19.4 18H4.6z"
-                      />
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
                     </svg>
                   </span>
                 </div>
@@ -797,6 +819,37 @@ export default async function LandingPage() {
                   </li>
                 ))}
               </ul>
+
+              {/*
+                A contributor credit, the way a repository does it: a face, a
+                name, and a link to the account. It sits under the projects
+                because this whole column is the meta column — the left side is
+                the person writing, this side is everything around them.
+              */}
+              <div className="mt-8">
+                <span className={MICRO_LABEL}>Thanks to</span>
+
+                <a
+                  href={CONTRIBUTOR_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group mt-3 flex w-fit items-center gap-2.5"
+                >
+                  <Avatar
+                    src={CONTRIBUTOR_PHOTO}
+                    name="Kartik"
+                    size={32}
+                    className="ring-1 ring-line"
+                  />
+
+                  <span className="flex flex-col">
+                    <span className="text-[14px] font-medium text-ink transition-colors group-hover:text-accent">
+                      Kartik
+                    </span>
+                    <span className="text-[12px] text-faint">@kaizakin · contributor</span>
+                  </span>
+                </a>
+              </div>
             </div>
           </div>
         </Section>
