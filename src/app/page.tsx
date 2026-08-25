@@ -818,7 +818,7 @@ export default async function LandingPage() {
           the prose nearly fills its column, and the same two cards come out
           about 380px each.
         */}
-        <Section>
+        <Section wide>
           <Eyebrow>Who runs this</Eyebrow>
           {/*
             The name is the link, marked the same way as the hero's promise. The
@@ -854,7 +854,13 @@ export default async function LandingPage() {
               className="shrink-0 ring-2 ring-gold"
             />
 
-            <div className="min-w-0">
+            {/*
+              Capped, now that the section runs the full width: without it the
+              copy would set at about 100 characters a line. Prose is allowed to
+              stop short of the right edge — the field below it is what makes the
+              section read as full width.
+            */}
+            <div className="min-w-0 max-w-2xl">
               {/*
                 The tick sits after the name, where every platform puts it, which
                 is most of why it is recognised without explanation.
@@ -895,89 +901,102 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-12">
-            <span className={MICRO_LABEL}>Also built</span>
+          {/*
+            Both groups on one row, across the full width.
 
-            {/*
-              The same bordered field the rest of the page uses for a set of
-              things, at full width — as a narrow stack in a side column these
-              read as two boxes floating on the ground rather than one field. The
-              hairlines are the grid's background showing through a 1px gap, so
-              the cells have to be opaque and match this section's canvas.
-            */}
-            <ul className="mt-3 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
-              {PROJECTS.map((project) => (
-                <li key={project.name} className="bg-canvas">
-                  <a
-                    href={project.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex h-full flex-col gap-1.5 p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
-                  >
-                    <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
-                      {/*
-                        Each project's own mark, copied into public/logos rather
-                        than hotlinked, so a card here does not go blank when
-                        another deployment is down.
+            Stacked, each one spanned the whole 1024px: that made two project
+            cards into 510px slabs and left the credit sitting by itself under a
+            rule. Side by side they come out around 330px each, the row reaches
+            the same right edge as every other section, and nothing is stranded.
+            The two groups are also close enough in height that neither leaves a
+            hole under it.
+          */}
+          <div className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-3">
+            <div className="sm:col-span-2">
+              <span className={MICRO_LABEL}>Also built</span>
 
-                        A plain img on purpose: at 18px the optimiser buys
-                        nothing, and putting an SVG through it would mean
-                        enabling dangerouslyAllowSVG for every image on the site,
-                        including the avatars members upload.
-                      */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={project.logo}
-                        alt=""
-                        width={18}
-                        height={18}
-                        className="h-[18px] w-[18px] shrink-0 rounded-sm"
-                      />
+              {/*
+                The hairlines are the grid's background showing through a 1px
+                gap, so the cells have to be opaque and match this section's
+                canvas.
+              */}
+              <ul className="mt-3 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
+                {PROJECTS.map((project) => (
+                  <li key={project.name} className="bg-canvas">
+                    <a
+                      href={project.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex h-full flex-col gap-1.5 p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+                    >
+                      <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                        {/*
+                          Each project's own mark, copied into public/logos
+                          rather than hotlinked, so a card here does not go blank
+                          when another deployment is down.
 
-                      {project.name}
+                          A plain img on purpose: at 18px the optimiser buys
+                          nothing, and putting an SVG through it would mean
+                          enabling dangerouslyAllowSVG for every image on the
+                          site, including the avatars members upload.
+                        */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={project.logo}
+                          alt=""
+                          width={18}
+                          height={18}
+                          className="h-[18px] w-[18px] shrink-0 rounded-sm"
+                        />
 
+                        {project.name}
+
+                        <ExternalArrow />
+                      </span>
+
+                      <span className="text-[14px] leading-[1.55] text-muted">
+                        {project.body}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <span className={MICRO_LABEL}>Thanks to</span>
+
+              {/*
+                A card again, and defensible now: as a lone box under a rule it
+                had no field to belong to, but as the third card in a row of
+                three it is one of a set.
+              */}
+              <div className="mt-3 overflow-hidden rounded-md border border-line">
+                <a
+                  href={CONTRIBUTOR_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex h-full items-center gap-3 p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+                >
+                  <Avatar
+                    src={CONTRIBUTOR_PHOTO}
+                    name="Kartik"
+                    size={36}
+                    className="shrink-0 ring-1 ring-line"
+                  />
+
+                  <span className="flex min-w-0 flex-col">
+                    <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
+                      Kartik
                       <ExternalArrow />
                     </span>
-
-                    <span className="text-[14px] leading-[1.55] text-muted">
-                      {project.body}
+                    <span className="truncate text-[12px] text-faint">
+                      @kaizakin · contributor
                     </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/*
-            A credit, not a card. One box on its own was the thing that looked
-            stranded — a single cell has no field to belong to, and at full width
-            it is mostly empty. A rule and a row says the same thing and settles
-            the section instead of leaving another rectangle hanging.
-          */}
-          <div className="mt-12 border-t border-line pt-6">
-            <span className={MICRO_LABEL}>Thanks to</span>
-
-            <a
-              href={CONTRIBUTOR_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group mt-3 flex w-fit items-center gap-3"
-            >
-              <Avatar
-                src={CONTRIBUTOR_PHOTO}
-                name="Kartik"
-                size={36}
-                className="shrink-0 ring-1 ring-line"
-              />
-
-              <span className="flex min-w-0 flex-col">
-                <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
-                  Kartik
-                  <ExternalArrow />
-                </span>
-                <span className="text-[12px] text-faint">@kaizakin · contributor</span>
-              </span>
-            </a>
+                  </span>
+                </a>
+              </div>
+            </div>
           </div>
         </Section>
 
@@ -1026,7 +1045,7 @@ export default async function LandingPage() {
           The first one is open, so the section does not look like a wall of
           closed doors — and it is the question everyone actually arrives with.
         */}
-        <Section id="faq">
+        <Section wide id="faq">
           <Eyebrow>Before you join</Eyebrow>
           <Heading>Questions people ask</Heading>
 
@@ -1057,7 +1076,15 @@ export default async function LandingPage() {
                   </svg>
                 </summary>
 
-                <p className="px-5 pb-5 text-[15px] leading-[1.7] text-muted">{item.a}</p>
+                {/*
+                  The row spans the section; the answer inside it does not. At
+                  the full width an answer would set at about 120 characters a
+                  line, so the box reaches the right edge and the text stops
+                  where it stays readable.
+                */}
+                <p className="max-w-3xl px-5 pb-5 text-[15px] leading-[1.7] text-muted">
+                  {item.a}
+                </p>
               </details>
             ))}
           </div>
