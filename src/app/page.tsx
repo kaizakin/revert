@@ -448,47 +448,49 @@ export default async function LandingPage() {
               <p className="mt-4 text-[13px] text-faint">
                 Takes about twenty seconds. Google or email — no phone number, ever.
               </p>
+
+              {/*
+                The two numbers, inline under the ask rather than in a band of
+                their own below the fold. As a full-width strip they were a
+                near-empty shelf between the hero and the first real section;
+                here they are what they always were — evidence for the button
+                directly above them.
+
+                The channel figure carries the trust, the room figure is
+                queried rather than claimed so it stays honest as it grows, and
+                zero hides rather than reading as broken.
+              */}
+              <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-6 text-[13px] text-muted">
+                <span className="flex items-center gap-2">
+                  <WhatsAppIcon className="h-4 w-4 shrink-0 text-[#25D366]" />
+                  <span>
+                    <span className="font-semibold text-ink">{CHANNEL_SIZE}</span> follow the{" "}
+                    <a
+                      href={CHANNEL_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-accent"
+                    >
+                      channel
+                    </a>
+                  </span>
+                </span>
+
+                {members > 0 && (
+                  <span className="flex items-center gap-2">
+                    <LogoMark size={16} />
+                    <span>
+                      <span className="font-semibold text-ink">
+                        {members.toLocaleString("en-IN")}
+                      </span>{" "}
+                      {members === 1 ? "is" : "are"} in the room
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
 
             <ChatPreview />
-          </div>
-        </section>
-
-        {/*
-          The WhatsApp figure is what carries the trust; the Revert figure is
-          queried rather than claimed, so it stays honest as it grows. A thin
-          band rather than a card — it is evidence for the hero above it, not a
-          section of its own.
-        */}
-        <section className="border-y border-line bg-canvas-alt px-6 py-5">
-          <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-8 gap-y-3">
-            <p className="flex items-center gap-2.5 text-[14px] text-muted">
-              <WhatsAppIcon className="h-5 w-5 shrink-0 text-[#25D366]" />
-              <span>
-                <span className="text-[17px] font-semibold text-ink">{CHANNEL_SIZE}</span>{" "}
-                following the{" "}
-                <a
-                  href={CHANNEL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={PROSE_LINK}
-                >
-                  WhatsApp channel
-                </a>
-              </span>
-            </p>
-
-            {members > 0 && (
-              <p className="flex items-center gap-2.5 text-[14px] text-muted">
-                <LogoMark size={20} />
-                <span>
-                  <span className="text-[17px] font-semibold text-ink">
-                    {members.toLocaleString("en-IN")}
-                  </span>{" "}
-                  {members === 1 ? "person is" : "people are"} already on Revert
-                </span>
-              </p>
-            )}
           </div>
         </section>
 
@@ -498,7 +500,7 @@ export default async function LandingPage() {
           before they get an argument about why they should — not knowing is
           what stops a signup, and no amount of side-by-side fixes that.
         */}
-        <Section wide id="how-it-works">
+        <Section alt wide id="how-it-works">
           <Eyebrow>Getting in</Eyebrow>
           <Heading>How it works</Heading>
 
@@ -512,7 +514,7 @@ export default async function LandingPage() {
           sm:hidden labels inside the cells, which keeps every value attributed
           without making the page scroll sideways.
         */}
-        <Section alt wide>
+        <Section wide>
           <Eyebrow>Side by side</Eyebrow>
           <Heading>The channel ends where your questions start.</Heading>
 
@@ -602,11 +604,17 @@ export default async function LandingPage() {
           The heading deliberately does not count the cards. It said "Four
           things" for exactly as long as it took to add a fifth.
         */}
-        <Section wide id="what-you-get">
+        <Section alt wide id="what-you-get">
           <Eyebrow>What you get</Eyebrow>
           <Heading>What a feed cannot do</Heading>
 
-          <WhatYouGet />
+          {/*
+            `alt` has to match this section's own ground. The hairlines are the
+            grid's background showing through a 1px gap, so the cells must be
+            opaque — and a cell painted the wrong shade would show as a panel
+            floating on the wrong colour rather than as a bordered field.
+          */}
+          <WhatYouGet alt />
         </Section>
 
         {/*
@@ -614,7 +622,7 @@ export default async function LandingPage() {
           reason anyone is on this page at all. Worth a face rather than a
           footer credit.
         */}
-        <Section alt>
+        <Section>
           <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:gap-8">
             <Avatar src={PHOTO} name="minianon" size={88} className="shrink-0 ring-1 ring-line" />
 
@@ -646,7 +654,7 @@ export default async function LandingPage() {
           </div>
         </Section>
 
-        <Section wide>
+        <Section alt wide>
           <Eyebrow>On the way</Eyebrow>
           <Heading>What is coming</Heading>
 
@@ -662,7 +670,7 @@ export default async function LandingPage() {
           */}
           <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-3">
             {COMING.map((item) => (
-              <li key={item.title} className="flex flex-col gap-3 bg-canvas p-6">
+              <li key={item.title} className="flex flex-col gap-3 bg-canvas-alt p-6">
                 <span className="flex items-start justify-between gap-3">
                   <IconTile>{item.icon}</IconTile>
 
@@ -673,7 +681,9 @@ export default async function LandingPage() {
                   )}
                 </span>
 
-                <span className="text-[16px] font-semibold text-ink">{item.title}</span>
+                <span className="font-display text-[16px] font-semibold text-ink">
+                  {item.title}
+                </span>
                 <span className="text-[15px] leading-[1.6] text-muted">{item.body}</span>
 
                 {/* mt-auto pins the tag to the bottom, so tags line up across the row. */}
@@ -718,19 +728,26 @@ export default async function LandingPage() {
           The first one is open, so the section does not look like a wall of
           closed doors — and it is the question everyone actually arrives with.
         */}
-        <Section alt id="faq">
+        <Section id="faq">
           <Eyebrow>Before you join</Eyebrow>
           <Heading>Questions people ask</Heading>
 
           <div className="mt-10 divide-y divide-line overflow-hidden rounded-md border border-line bg-canvas">
             {FAQ.map((item, index) => (
               <details key={item.q} open={index === 0} className="group">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-[16px] font-semibold text-ink transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden">
+                {/*
+                  No background change on hover. Filling the row with `raised`
+                  painted a grey band across the whole width, which read as a
+                  selected row rather than a hovered one. The chevron picking up
+                  the accent is enough of a signal, and it points at the thing
+                  that is about to move.
+                */}
+                <summary className="group/row flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-display text-[16px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
                   {item.q}
 
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-4 w-4 shrink-0 text-faint transition-transform duration-300 group-open:rotate-180 motion-reduce:transition-none"
+                    className="h-4 w-4 shrink-0 text-faint transition-[transform,color] duration-300 group-open:rotate-180 group-hover/row:text-accent motion-reduce:transition-none"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -756,7 +773,7 @@ export default async function LandingPage() {
           Set at hero scale rather than inside a card: it is the last thing on
           the page, so it gets to be a statement instead of a box.
         */}
-        <section className="border-t border-line px-6 py-24">
+        <section className="border-t border-line bg-canvas-alt px-6 py-24">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
             <h2 className="font-display text-[30px] font-normal leading-[1.15] tracking-[-0.02em] text-ink sm:text-[40px]">
               Revert is free,

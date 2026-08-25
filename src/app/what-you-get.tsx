@@ -282,14 +282,23 @@ const CARDS = [
   },
 ];
 
-export function WhatYouGet() {
+/**
+ * `alt` selects the cell background, and it has to match the ground of the
+ * section this sits in. The hairlines are the grid's own background showing
+ * through a 1px gap, which means the cells must be opaque — so this cannot just
+ * inherit, and a wrong value shows as panels floating on the wrong colour.
+ */
+export function WhatYouGet({ alt = false }: { alt?: boolean }) {
   return (
     <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2">
       {CARDS.map((card) => (
-        <li key={card.title} className="wyg-card group flex flex-col bg-canvas p-6">
+        <li
+          key={card.title}
+          className={`wyg-card group flex flex-col p-6 ${alt ? "bg-canvas-alt" : "bg-canvas"}`}
+        >
           {card.panel}
 
-          <h3 className="mt-5 text-[16px] font-semibold text-ink">{card.title}</h3>
+          <h3 className="mt-5 font-display text-[16px] font-semibold text-ink">{card.title}</h3>
           <p className="mt-2 text-[15px] leading-[1.6] text-muted">{card.body}</p>
         </li>
       ))}
