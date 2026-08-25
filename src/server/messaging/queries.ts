@@ -16,6 +16,22 @@ import { loadReactions } from "./reactions";
 
 export const MESSAGE_PAGE_SIZE = 50;
 
+/**
+ * How many people have actually signed up, for the landing page.
+ *
+ * Deliberately the only number exposed to signed-out visitors: a member count
+ * is social proof, while anything finer grained would be leaking who is here to
+ * anyone who loads the page.
+ */
+export async function publicMemberCount(): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(users)
+    .where(isNull(users.deletedAt));
+
+  return Number(row?.total ?? 0);
+}
+
 export type RoomSummary = {
   id: string;
   slug: string;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 
 import { Logo } from "@/components/logo";
+import { publicMemberCount } from "@/server/messaging/queries";
 
 import { ChatPreview } from "./chat-preview";
 
@@ -19,6 +20,54 @@ const GROUP_URL = "https://whatsapp.com/channel/0029Vb67tYF0rGiSuzXcHw2C";
 
 /** Booking goes straight to Topmate; the short link is the profile page. */
 const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
+
+/**
+ * A real address someone can write to. A community asking people to trust it
+ * with their job hunt needs a way to be reached that is not a form nobody
+ * answers — and recruiters wanting to post openings need somewhere to ask.
+ */
+const EMAIL = "tusharbhardwaj2617@gmail.com";
+
+/**
+ * Real quotes from real people only. The array is empty until there are some —
+ * an invented testimonial on a page whose entire promise is trust would be the
+ * worst possible thing to ship.
+ */
+const TESTIMONIALS: { quote: string; name: string; role: string }[] = [];
+
+const STEPS = [
+  {
+    title: "Pick a username",
+    body: "Sign in with Google or an email address. Choose the name people will know you by — that is the only identity anyone here sees.",
+  },
+  {
+    title: "You are already in",
+    body: "Mini Anon Hub opens straight away. No invite code, no approval queue, nobody vetting you before you can read anything.",
+  },
+  {
+    title: "Post, ask, or just read",
+    body: "Drop an opening, ask what to do about a rejected application, or lurk until something is worth replying to. All three are fine.",
+  },
+];
+
+const FAQ = [
+  {
+    q: "Is the WhatsApp group going away?",
+    a: "No. The group stays exactly where it is. Revert is where the openings stay searchable and where you can ask something without handing your number to two thousand people. Use both, or use whichever one you like — nothing is being taken away.",
+  },
+  {
+    q: "Does it cost anything?",
+    a: "No. Joining, posting, asking and answering are free. If something paid ever shows up it will be an extra on the side, not a gate in front of the group.",
+  },
+  {
+    q: "Who can see my details?",
+    a: "Other members see your username, and whatever you choose to put on your profile. They never see your email, and there is no phone number to see — we never ask for one.",
+  },
+  {
+    q: "What if I already have a job?",
+    a: "Plenty of people here do. They are the ones answering questions and passing on referrals, which is most of what makes the group worth being in.",
+  },
+];
 
 const POINTS = [
   {
@@ -65,6 +114,17 @@ const POINTS = [
 export default async function LandingPage() {
   const { userId } = await auth();
   const signedIn = Boolean(userId);
+
+  /**
+   * The landing page is the one route that must never fail — it is what a
+   * WhatsApp link opens. A member count is worth showing but not worth a 500,
+   * so a database that is down just costs the number.
+   *
+   * Hidden below a threshold too: "4 members" reads as abandoned, and an
+   * honest small number is still worse than no number at all this early.
+   */
+  const members = await publicMemberCount().catch(() => 0);
+  const showMembers = members >= 25;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -164,6 +224,7 @@ export default async function LandingPage() {
 
             <p className="text-xs text-faint">
               Takes about twenty seconds. Google or email — no phone number, ever.
+              {showMembers && ` ${members.toLocaleString("en-IN")} people have joined so far.`}
             </p>
           </div>
 
@@ -200,31 +261,96 @@ export default async function LandingPage() {
         </section>
 
         {/*
-          The one objection worth answering head on. Someone leaving a WhatsApp
-          group they have used for months wants to know what happens to it, and
-          an unanswered doubt is what stops a signup.
+          Someone whose only group chat has ever been WhatsApp does not know
+          what happens after they tap Join. Not knowing is what stops a signup,
+          so the three steps are spelled out plainly.
         */}
         <section className="border-t border-line py-14">
-          <div className="flex max-w-2xl flex-col gap-3">
+          <h2 className="text-lg font-semibold tracking-tight text-ink">How it works</h2>
+
+          <ol className="mt-7 grid gap-8 sm:grid-cols-3 sm:gap-6">
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="flex flex-col gap-2.5">
+                <span
+                  aria-hidden
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-[13px] font-semibold text-accent-ink"
+                >
+                  {index + 1}
+                </span>
+                <span className="text-[15px] font-semibold text-ink">{step.title}</span>
+                <span className="text-sm leading-relaxed text-muted">{step.body}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {TESTIMONIALS.length > 0 && (
+          <section className="border-t border-line py-14">
             <h2 className="text-lg font-semibold tracking-tight text-ink">
-              Is the WhatsApp group going away?
+              From the group
             </h2>
-            <p className="text-sm leading-relaxed text-muted">
-              No. The{" "}
-              <a
-                href={GROUP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-ink underline underline-offset-2 hover:text-accent"
-              >
-                WhatsApp group
-              </a>{" "}
-              stays exactly where it is. Revert is where the openings stay searchable
-              and where you can ask something without handing your number to two thousand
-              people. Use both, or use whichever one you like — nothing is being taken away.
-            </p>
+
+            <ul className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {TESTIMONIALS.map((item) => (
+                <li
+                  key={item.quote}
+                  className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-5"
+                >
+                  <blockquote className="text-sm leading-relaxed text-ink">
+                    &ldquo;{item.quote}&rdquo;
+                  </blockquote>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-semibold text-ink">{item.name}</span>
+                    <span className="text-[12px] text-muted">{item.role}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="border-t border-line py-14">
+          <h2 className="text-lg font-semibold tracking-tight text-ink">
+            Questions people ask
+          </h2>
+
+          <dl className="mt-7 grid gap-x-10 gap-y-7 sm:grid-cols-2">
+            {FAQ.map((item) => (
+              <div key={item.q} className="flex flex-col gap-1.5">
+                <dt className="text-[15px] font-semibold text-ink">{item.q}</dt>
+                <dd className="text-sm leading-relaxed text-muted">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {/*
+          Recruiters are the other half of a job community and arrive with a
+          different question than a job seeker does, so they get told where to
+          write rather than being pointed at a signup button.
+        */}
+        <section className="border-t border-line py-14">
+          <div className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-7 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            <div className="flex max-w-xl flex-col gap-2">
+              <h2 className="text-lg font-semibold tracking-tight text-ink">
+                Hiring? Send us the opening.
+              </h2>
+              <p className="text-sm leading-relaxed text-muted">
+                Roles that are real, open, and actually reachable for someone early in
+                their career. Mail the role, location and how to apply — no fees, and no
+                listing goes up without a way to apply directly.
+              </p>
+            </div>
+
+            <a
+              href={`mailto:${EMAIL}?subject=Job%20opening%20for%20Revert`}
+              className="w-fit shrink-0 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90"
+            >
+              Mail an opening
+            </a>
           </div>
         </section>
+
       </main>
 
       <footer className="border-t border-line bg-surface">
@@ -278,6 +404,30 @@ export default async function LandingPage() {
                   />
                 </svg>
                 Book time with minianon
+              </a>
+
+              <a
+                href={`mailto:${EMAIL}`}
+                className="flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                  <path
+                    d="M3.5 6.5h17v11h-17z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M3.5 7.5l8.5 6 8.5-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {EMAIL}
               </a>
 
               <Link
