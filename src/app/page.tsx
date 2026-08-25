@@ -27,10 +27,21 @@ import { WhatYouGet } from "./what-you-get";
  * 52px just reads as a template.
  */
 
-const TOPMATE_URL = "https://link.minianon.in/tusharbhardwaj";
 const CHANNEL_URL = "https://whatsapp.com/channel/0029Vb67tYF0rGiSuzXcHw2C";
 
-/** Booking goes straight to Topmate; the short link is the profile page. */
+/**
+ * minianon's own page, which is itself a MiniLink page — so the two constants
+ * below are the profile and the product it runs on.
+ *
+ * Previously called TOPMATE_URL, which it has never been: Topmate is the
+ * booking link underneath.
+ */
+const PROFILE_URL = "https://link.minianon.in/tusharbhardwaj";
+
+/** The other project. Mentioned where a person can mention it, not sold. */
+const MINILINK_URL = "https://link.minianon.in";
+
+/** Booking goes straight to Topmate. */
 const BOOKING_URL = "https://topmate.io/tusharbhardwaj";
 
 /**
@@ -650,6 +661,27 @@ export default async function LandingPage() {
                 </a>
                 . Otherwise I am in the room, same as everyone else.
               </p>
+
+              {/*
+                The other project goes here rather than anywhere above it. This
+                section is the one place on the page that is about a person, so a
+                second thing they built belongs in it — and mentioning it here
+                costs the Join button nothing, where a banner further up would
+                have split the one ask this page exists to make.
+              */}
+              <p className="mt-4 text-[15px] leading-[1.7] text-muted">
+                I also build{" "}
+                <a
+                  href={MINILINK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={PROSE_LINK}
+                >
+                  MiniLink
+                </a>
+                , a free and open source link-in-bio page — one link that holds all
+                your others. My own profile runs on it.
+              </p>
             </div>
           </div>
         </Section>
@@ -867,6 +899,32 @@ export default async function LandingPage() {
                 Job alerts channel
               </a>
 
+              {/* Persistent and cheap: a footer row costs the page nothing. */}
+              <a
+                href={MINILINK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={FOOTER_LINK}
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                  <path
+                    d="M10.5 13.5a3.5 3.5 0 005 0l3-3a3.5 3.5 0 00-5-5l-1 1"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M13.5 10.5a3.5 3.5 0 00-5 0l-3 3a3.5 3.5 0 005 5l1-1"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                MiniLink
+              </a>
+
               <a
                 href={BOOKING_URL}
                 target="_blank"
@@ -983,7 +1041,7 @@ export default async function LandingPage() {
             <p className="shrink-0 text-[12px] text-faint">
               © 2026 Revert · built by{" "}
               <a
-                href={TOPMATE_URL}
+                href={PROFILE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-ink"
