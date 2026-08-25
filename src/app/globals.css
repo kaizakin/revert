@@ -344,6 +344,148 @@ select:focus-visible {
  * equivalent because the cards hold no focusable elements — they are
  * illustration, and the copy beneath each one already says what it shows.
  */
+/**
+ * "How it works" — a demonstration that plays itself.
+ *
+ * Three panels, each showing its own step: a username being typed, the room
+ * opening, the three things you can do once you are in. They run on a loop and
+ * in sequence, so the section reads as a short demo rather than as a caption.
+ *
+ * The sequencing trick: every animated element shares one cycle length, so they
+ * all have the same period and cannot drift apart. A step's place in the
+ * sequence is a plain animation-delay set per panel (--hiw-offset), and a beat's
+ * place inside its step is a percentage window of the shared cycle. That keeps
+ * nine seconds of choreography in a handful of keyframes with no JavaScript
+ * clock to go out of step.
+ *
+ * fill-mode is `forwards`, not `both`, and that matters more than it looks. A
+ * backwards fill would apply the 0% frame during the delay, so the second panel
+ * would sit blank for three seconds after load and the third for six — which is
+ * exactly when someone scrolling quickly reaches them. With `forwards` the delay
+ * shows the element's own styles instead, so a panel waiting its turn reads as a
+ * finished illustration rather than an empty box.
+ *
+ * With `prefers-reduced-motion` nothing here applies at all, and the panels are
+ * static illustrations built from the same tokens as the room.
+ */
+:root {
+  --hiw-cycle: 9s;
+}
+
+/* Three beats inside a step. Motion happens early, then holds for the cycle. */
+@keyframes hiw-a {
+  0%,
+  2% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  10%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hiw-b {
+  0%,
+  8% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  16%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hiw-c {
+  0%,
+  14% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  22%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Typewriter. steps() bites only on the 3%-to-17% run; the rest is constant. */
+@keyframes hiw-type {
+  0%,
+  3% {
+    width: 0;
+  }
+  17%,
+  100% {
+    width: 5ch;
+  }
+}
+
+@keyframes hiw-caret {
+  0%,
+  17% {
+    opacity: 1;
+  }
+  19%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes hiw-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hiw-a,
+  .hiw-b,
+  .hiw-c {
+    animation-duration: var(--hiw-cycle);
+    animation-delay: var(--hiw-offset, 0s);
+    animation-iteration-count: infinite;
+    animation-fill-mode: forwards;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .hiw-a {
+    animation-name: hiw-a;
+  }
+
+  .hiw-b {
+    animation-name: hiw-b;
+  }
+
+  .hiw-c {
+    animation-name: hiw-c;
+  }
+
+  .hiw-type {
+    animation: hiw-type var(--hiw-cycle) steps(5, end) var(--hiw-offset, 0s) infinite forwards;
+  }
+
+  /*
+   * Two animations: one places the caret in the sequence and retires it when
+   * the word is finished, the other blinks it. The blink is deliberately not
+   * tied to the cycle — a cursor that blinked in phase with everything else
+   * would look mechanical.
+   */
+  .hiw-caret {
+    animation:
+      hiw-caret var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards,
+      hiw-blink 1.06s steps(1, end) infinite;
+  }
+}
+
 /*
  * Timing scale. One step is slow enough to actually read, and steps are spaced
  * about as far apart as they are long, so a panel of three resolves over four
