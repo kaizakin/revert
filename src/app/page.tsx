@@ -793,7 +793,15 @@ export default async function LandingPage() {
           Naming the projects here still costs the Join button nothing, which is
           why they are down here and not in a band further up.
         */}
-        <Section wide>
+        {/*
+          Not `wide`. At 1024px this section held a 672px measure of prose and
+          nothing else, so a third of every line's row sat empty — and a
+          two-column field across that width made each project a 510px slab
+          rather than a card. Narrowing the whole section fixes both at once:
+          the prose nearly fills its column, and the same two cards come out
+          about 380px each.
+        */}
+        <Section>
           <Eyebrow>Who runs this</Eyebrow>
           {/* Marked the same way as the hero's promise, not just coloured. */}
           <Heading>
