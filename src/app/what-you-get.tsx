@@ -294,7 +294,9 @@ export function WhatYouGet({ alt = false }: { alt?: boolean }) {
       {CARDS.map((card) => (
         <li
           key={card.title}
-          className={`wyg-card group flex flex-col p-6 ${alt ? "bg-canvas-alt" : "bg-canvas"}`}
+          className={`wyg-card group flex flex-col p-6 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none ${
+            alt ? "bg-canvas-alt" : "bg-canvas"
+          }`}
         >
           {card.panel}
 

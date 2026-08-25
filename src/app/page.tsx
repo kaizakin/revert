@@ -10,6 +10,7 @@ import { publicMemberCount } from "@/server/messaging/queries";
 import { ChatPreview } from "./chat-preview";
 import { HowItWorks } from "./how-it-works";
 import { WhatYouGet } from "./what-you-get";
+import { WhatsComing } from "./whats-coming";
 
 /**
  * Written for someone arriving from the WhatsApp channel.
@@ -100,57 +101,6 @@ const CHANNEL_SIZE = "2,000+";
  * worst possible thing to ship.
  */
 const TESTIMONIALS: { quote: string; name: string; role: string }[] = [];
-
-/**
- * Directions, not dates. Someone who finds one room needs to know more is
- * coming; someone who is promised a date and does not get it stops believing
- * the rest of the page.
- */
-const COMING: {
-  title: string;
-  body: string;
-  tag: string;
-  /** Only the thing actually being built next carries one. */
-  badge?: string;
-  icon: ReactNode;
-}[] = [
-  {
-    title: "Direct messages",
-    body: "Reply to someone privately about a role without either of you swapping numbers first.",
-    tag: "One to one",
-    badge: "Next",
-    icon: (
-      <>
-        <path d="M15.5 12.5a5.5 5.5 0 01-8 4.9L4 18.5l1.1-3.5a5.5 5.5 0 117-2.5z" />
-        <path d="M17 8.2A5.5 5.5 0 0120 18l1 3-3.4-1.1a5.5 5.5 0 01-4.6-.5" />
-      </>
-    ),
-  },
-  {
-    title: "Referral rooms",
-    body: "Company-wise rooms where people already inside can pass a profile along.",
-    tag: "Company by company",
-    icon: (
-      <>
-        <circle cx="8" cy="8.5" r="3" />
-        <path d="M3 19c0-2.8 2.2-5 5-5" />
-        <path d="M13 15.5h6M16.5 12.5l3 3-3 3" />
-      </>
-    ),
-  },
-  {
-    title: "Profiles worth reading",
-    body: "A page that shows what you have built and where you are trying to go, not a CV.",
-    tag: "Beyond a CV",
-    icon: (
-      <>
-        <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
-        <circle cx="9" cy="10.5" r="2" />
-        <path d="M5.8 16c.5-1.7 1.7-2.5 3.2-2.5s2.7.8 3.2 2.5M15 9.5h3.5M15 13h3.5" />
-      </>
-    ),
-  },
-];
 
 const STEPS = [
   {
@@ -409,28 +359,6 @@ function Heading({ children }: { children: ReactNode }) {
   );
 }
 
-/** Small line-art tile. One radius, one hairline, no shadow — same as the cards. */
-function IconTile({ children }: { children: ReactNode }) {
-  return (
-    <span
-      aria-hidden
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface text-accent"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-[18px] w-[18px]"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {children}
-      </svg>
-    </span>
-  );
-}
-
 const PRIMARY_BUTTON =
   "inline-flex h-11 items-center justify-center rounded-md bg-accent px-5 text-[14px] font-medium text-accent-ink transition-opacity hover:opacity-90";
 
@@ -500,7 +428,7 @@ export default async function LandingPage() {
         <section className="px-6 pt-14 pb-16 lg:pt-20 lg:pb-20">
           <div className="mx-auto grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-14">
             <div className="flex flex-col">
-              <Eyebrow>By minianon · for the job alerts channel</Eyebrow>
+              <Eyebrow>By minianon · for my community</Eyebrow>
 
               {/*
                 A line of continuity, then the difference, the difference in
@@ -518,7 +446,18 @@ export default async function LandingPage() {
               <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.01em] text-ink sm:text-[52px] sm:tracking-[-0.03em]">
                 Same alerts.
                 <br />
-                <span className="text-accent">Now you can reply.</span>
+                {/*
+                  The promise gets a highlighter bar as well as the accent. Colour
+                  alone was carrying it, and colour alone is the one emphasis a
+                  reader skimming past can miss.
+                */}
+                <span className="relative inline-block text-accent">
+                  Now you can reply.
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 -bottom-[0.04em] h-[0.09em] rounded-full bg-accent/40"
+                  />
+                </span>
               </h1>
 
               <p className="mt-6 max-w-lg text-[17px] leading-[1.6] text-muted">
@@ -752,7 +691,9 @@ export default async function LandingPage() {
                   Gold ring and a crown, because this is the one person on the
                   page who owns the place. The wrapper is what the crown hangs
                   off, so it must not clip: relative with no overflow rule, and
-                  the crown pulled above the top edge.
+                  the crown sitting on the upper-left arc. -left-1 -top-1 puts a
+                  24px crown centred on that arc rather than floating in the
+                  corner gap outside the circle.
                 */}
                 <div className="relative shrink-0">
                   <Avatar
@@ -764,7 +705,7 @@ export default async function LandingPage() {
 
                   <svg
                     viewBox="0 0 24 24"
-                    className="absolute -top-2.5 left-1/2 h-5 w-5 -translate-x-1/2 text-gold drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                    className="absolute -left-1 -top-1 h-6 w-6 -rotate-[20deg] text-gold drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
                     aria-hidden
                     focusable="false"
                   >
@@ -775,19 +716,14 @@ export default async function LandingPage() {
                   </svg>
                 </div>
 
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <a
-                    href={PROFILE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-fit font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
-                  >
-                    Tushar Bhardwaj
-                  </a>
-                  <span className="text-[13px] text-faint">
-                    Runs the job alerts channel
-                  </span>
-                </div>
+                <a
+                  href={PROFILE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-w-0 font-display text-[17px] font-semibold text-ink transition-colors hover:text-accent"
+                >
+                  Tushar Bhardwaj
+                </a>
               </div>
 
               <p className="mt-6 text-[15px] leading-[1.7] text-muted">
@@ -828,7 +764,7 @@ export default async function LandingPage() {
                       href={project.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex flex-col gap-1.5 p-4"
+                      className="group flex flex-col gap-1.5 p-4 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
                     >
                       <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
                         {project.name}
@@ -867,36 +803,7 @@ export default async function LandingPage() {
             ones. Next, in roughly this order:
           </p>
 
-          {/*
-            Same bordered field as the cards above: hairlines are the grid's own
-            background showing through a 1px gap, so every join meets exactly
-            and there are no nth-child border rules to keep in sync.
-          */}
-          <ul className="mt-10 grid gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-3">
-            {COMING.map((item) => (
-              <li key={item.title} className="flex flex-col gap-3 bg-canvas-alt p-6">
-                <span className="flex items-start justify-between gap-3">
-                  <IconTile>{item.icon}</IconTile>
-
-                  {item.badge && (
-                    <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-accent">
-                      {item.badge}
-                    </span>
-                  )}
-                </span>
-
-                <span className="font-display text-[16px] font-semibold text-ink">
-                  {item.title}
-                </span>
-                <span className="text-[15px] leading-[1.6] text-muted">{item.body}</span>
-
-                {/* mt-auto pins the tag to the bottom, so tags line up across the row. */}
-                <span className="mt-auto pt-1 text-[13px] font-medium text-accent">
-                  {item.tag}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <WhatsComing />
         </Section>
 
         {TESTIMONIALS.length > 0 && (
@@ -967,6 +874,20 @@ export default async function LandingPage() {
               </details>
             ))}
           </div>
+
+          {/*
+            An exit for the question that is not on the list. A closed FAQ with no
+            way out tells someone their question does not count — and the address
+            is already on the page, so this costs a line and answers the one thing
+            six answers cannot.
+          */}
+          <p className="mt-5 text-[14px] leading-[1.7] text-muted">
+            Not on the list?{" "}
+            <a href={`mailto:${EMAIL}`} className={PROSE_LINK}>
+              Write to me
+            </a>{" "}
+            and I will answer it.
+          </p>
         </Section>
 
         {/*
