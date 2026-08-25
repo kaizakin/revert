@@ -16,7 +16,7 @@ type Step = { title: string; body: string };
  * times, which read as an interface reporting on itself.
  *
  * Timing lives in globals.css. Every animated element shares one cycle length,
- * so nothing can drift; a panel's place in the sequence is its --hiw-offset, and
+ * so nothing can drift; a panel's place in the sequence comes from --hiw-index, and
  * a beat's place inside a panel is a percentage window of that cycle.
  *
  * There is no scroll trigger and no client JavaScript at all. An earlier version
@@ -31,8 +31,12 @@ type Step = { title: string; body: string };
  * nowhere to run that did not cross the copy.
  */
 
-/** Seconds between one panel starting its run and the next. */
-const STEP_OFFSET = 3;
+/*
+ * Which card this is, and nothing about when it plays. The delay is derived from
+ * --hiw-cycle in globals.css, so the schedule lives in one place — restating it
+ * here as a number of seconds is how the cards ended up overlapping when the
+ * cycle changed and this constant did not.
+ */
 
 /** Fixed-height frame, so the three panels align across the row. */
 function Frame({ children }: { children: ReactNode }) {
@@ -152,7 +156,7 @@ export function HowItWorks({ steps }: { steps: Step[] }) {
         <li
           key={step.title}
           className="relative flex flex-col overflow-hidden rounded-md border border-line bg-surface p-5"
-          style={{ "--hiw-offset": `${index * STEP_OFFSET}s` } as CSSProperties}
+          style={{ "--hiw-index": index } as CSSProperties}
         >
           {/*
             Progress along the card's top edge. The track is always there so the

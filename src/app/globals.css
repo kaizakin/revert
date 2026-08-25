@@ -353,7 +353,7 @@ select:focus-visible {
  *
  * The sequencing trick: every animated element shares one cycle length, so they
  * all have the same period and cannot drift apart. A step's place in the
- * sequence is a plain animation-delay set per panel (--hiw-offset), and a beat's
+ * sequence is a delay derived from its --hiw-index, and a beat's
  * place inside its step is a percentage window of the shared cycle. That keeps
  * nine seconds of choreography in a handful of keyframes with no JavaScript
  * clock to go out of step.
@@ -376,14 +376,35 @@ select:focus-visible {
    * clock and had to fit inside a shorter turn.
    */
   --hiw-cycle: 12s;
+
+  /*
+   * One card's turn. Derived from the cycle rather than restated in JavaScript:
+   * the component only says which card it is (--hiw-index), so changing the
+   * cycle cannot leave the offsets behind. It already did once — the cycle went
+   * 9s to 12s while a hardcoded 3s offset stayed put, which overlapped every
+   * card by a second and left a two second gap before the loop.
+   *
+   * The delay itself is spelled out at each usage site rather than stored in
+   * another property here. A custom property substitutes its var()s in the
+   * context where it is DECLARED, so a --hiw-delay defined on :root would read
+   * --hiw-index from :root, find nothing, take the fallback, and hand every card
+   * the same zero.
+   */
+  --hiw-turn: calc(var(--hiw-cycle) / 3);
 }
 
 /* Three beats inside a step. Motion happens early, then holds for the cycle. */
 /*
- * Wider windows than before, on top of the longer cycle. A beat runs 10% of the
- * cycle (1.2s at 12s) and the next starts 8% later (0.96s), so the three land
- * about a second apart and the panel has finished at 27% — comfortably inside
- * the 33.33% that is one card's turn.
+ * The beats fill the turn, and that is the whole point of these numbers.
+ *
+ * A card's turn is 33.33% of the cycle, which is exactly how long its progress
+ * bar takes to fill. So the last beat has to land at 33%, not before it: an
+ * earlier version finished the panel at 27% and left the bar creeping on for
+ * another second with nothing happening, which reads as the bar being broken
+ * rather than as a pause.
+ *
+ * Three beats, each 11% (1.32s at a 12s cycle), starting 10-11% apart. Change
+ * the cycle and all of this scales; change these and keep the last one at 33%.
  */
 @keyframes hiw-a {
   0%,
@@ -391,7 +412,7 @@ select:focus-visible {
     opacity: 0;
     transform: translateY(10px);
   }
-  11%,
+  12%,
   100% {
     opacity: 1;
     transform: none;
@@ -400,11 +421,11 @@ select:focus-visible {
 
 @keyframes hiw-b {
   0%,
-  9% {
+  11% {
     opacity: 0;
     transform: translateY(10px);
   }
-  19%,
+  22%,
   100% {
     opacity: 1;
     transform: none;
@@ -413,24 +434,28 @@ select:focus-visible {
 
 @keyframes hiw-c {
   0%,
-  17% {
+  22% {
     opacity: 0;
     transform: translateY(10px);
   }
-  27%,
+  33%,
   100% {
     opacity: 1;
     transform: none;
   }
 }
 
-/* Typewriter. steps() bites only on the 2%-to-16% run; the rest is constant. */
+/*
+ * Typing waits for the field to land at 12% and is done by 22%, so the name
+ * appears inside a box that already exists and "available" answers it straight
+ * after. steps() bites only on that run; the rest is constant.
+ */
 @keyframes hiw-type {
   0%,
-  2% {
+  12% {
     width: 0;
   }
-  16%,
+  22%,
   100% {
     width: 5ch;
   }
@@ -438,10 +463,10 @@ select:focus-visible {
 
 @keyframes hiw-caret {
   0%,
-  16% {
+  22% {
     opacity: 1;
   }
-  18%,
+  24%,
   100% {
     opacity: 0;
   }
@@ -499,7 +524,7 @@ select:focus-visible {
   .hiw-b,
   .hiw-c {
     animation-duration: var(--hiw-cycle);
-    animation-delay: var(--hiw-offset, 0s);
+    animation-delay: calc(var(--hiw-turn) * var(--hiw-index, 0));
     animation-iteration-count: infinite;
     animation-fill-mode: forwards;
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -518,7 +543,7 @@ select:focus-visible {
   }
 
   .hiw-type {
-    animation: hiw-type var(--hiw-cycle) steps(5, end) var(--hiw-offset, 0s) infinite forwards;
+    animation: hiw-type var(--hiw-cycle) steps(5, end) calc(var(--hiw-turn) * var(--hiw-index, 0)) infinite forwards;
   }
 
   /*
@@ -529,7 +554,7 @@ select:focus-visible {
    */
   .hiw-caret {
     animation:
-      hiw-caret var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards,
+      hiw-caret var(--hiw-cycle) linear calc(var(--hiw-turn) * var(--hiw-index, 0)) infinite forwards,
       hiw-blink 1.06s steps(1, end) infinite;
   }
 
@@ -538,7 +563,7 @@ select:focus-visible {
    * time was left, which is the one thing it exists to say.
    */
   .hiw-progress {
-    animation: hiw-progress var(--hiw-cycle) linear var(--hiw-offset, 0s) infinite forwards;
+    animation: hiw-progress var(--hiw-cycle) linear calc(var(--hiw-turn) * var(--hiw-index, 0)) infinite forwards;
   }
 
 }
