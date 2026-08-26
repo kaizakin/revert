@@ -93,7 +93,13 @@ const FEATURES = [
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-surface px-12 py-10 lg:flex lg:w-[46%]">
+      {/*
+        46% keeps the headline on two lines at 1024px, where the column is at
+        its narrowest — "Now you can reply." needs 342px and gets 375px there,
+        so the percentage cannot come down. Past about 1300px that same 46% is
+        just empty column, hence the ceiling.
+      */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-surface px-12 py-10 lg:flex lg:w-[46%] lg:max-w-[32rem]">
         {/* Soft glow, purely decorative. */}
         <div
           aria-hidden
@@ -106,7 +112,13 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <span className="text-lg font-semibold tracking-tight text-ink">Revert</span>
         </Link>
 
-        <div className="relative flex flex-col gap-10">
+        {/*
+          One measure for the eyebrow, the headline and the list, so they read
+          as a column rather than three things stretched to whatever width the
+          window happens to give them. 24rem is the floor the content sets: the
+          eyebrow runs 375px on one line and the headline 342px.
+        */}
+        <div className="relative flex max-w-sm flex-col gap-10">
           <div className="flex flex-col gap-5">
             {/* The accent eyebrow the landing page puts above every heading. */}
             <p className="text-[13px] font-medium uppercase tracking-[0.07em] text-accent">
@@ -119,7 +131,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
               >
                 minianon
               </a>{" "}
-              · for my community 💚
+              · for my community ❤️
             </p>
 
             {/*
