@@ -113,10 +113,16 @@ export async function toggleReaction(
   }
 
 
-export type ReactorGroup = {
-  emoji: string;
-  people: { username: string; displayName: string | null; avatarUrl: string | null }[];
+export type Reactor = {
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  /** Marked here rather than compared in the client, which would need the
+      viewer's name passed down through every bubble to find one row. */
+  isYou: boolean;
 };
+
+export type ReactorGroup = { emoji: string; people: Reactor[] };
 
 /**
  * Who reacted to one message, grouped by what they picked.
@@ -154,6 +160,7 @@ export async function listReactors(
       username: users.username,
       displayName: users.displayName,
       avatarUrl: users.avatarUrl,
+      userId: reactions.userId,
       reactedAt: reactions.createdAt,
     })
     .from(reactions)
@@ -170,6 +177,7 @@ export async function listReactors(
       username: row.username,
       displayName: row.displayName,
       avatarUrl: row.avatarUrl,
+      isYou: row.userId === viewerId,
     });
     groups.set(row.emoji, group);
   }

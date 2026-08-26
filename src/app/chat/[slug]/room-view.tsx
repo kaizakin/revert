@@ -32,7 +32,6 @@ import {
 import { GroupPanel } from "./group-panel";
 import { MemberPanel } from "./member-panel";
 import { MentionMenu, activeMentionQuery } from "./mention-menu";
-import { ReactorsPanel } from "./reactors-panel";
 import { SearchPanel } from "./search-panel";
 import { MessageBubble } from "./message-bubble";
 
@@ -154,9 +153,9 @@ export function RoomView({
     void typingChannel.current?.send({
       type: "broadcast",
       event: "typing",
-      payload: { username: meUsername },
+      payload: { username: meUsername, avatarUrl: meAvatarUrl },
     });
-  }, [meUsername]);
+  }, [meUsername, meAvatarUrl]);
 
   /** Guards against a second fetch while one is in flight. */
   const loadingOlder = useRef(false);
@@ -179,7 +178,9 @@ export function RoomView({
    * tab or losing signal never sends one, and their name would sit in the header
    * forever. Nothing arriving for TYPING_TTL is what ends it.
    */
-  const [typing, setTyping] = useState<{ username: string; until: number }[]>([]);
+  const [typing, setTyping] = useState<
+    { username: string; avatarUrl: string | null; until: number }[]
+  >([]);
   /** When we last told the room, so a fast typist sends one ping a second. */
   const lastTypingPing = useRef(0);
 
@@ -202,7 +203,6 @@ export function RoomView({
     | { kind: "member"; username: string }
     | { kind: "group" }
     | { kind: "search" }
-    | { kind: "reactions"; messageId: string }
     | null
   >(null);
 
@@ -461,14 +461,18 @@ export function RoomView({
       .on(
         "broadcast",
         { event: "typing" },
-        (payload: { payload?: { username?: string } }) => {
+        (payload: { payload?: { username?: string; avatarUrl?: string | null } }) => {
           const who = payload?.payload?.username;
           /* Own keystrokes come back on the same channel. */
           if (!who || who === meUsername) return;
 
           setTyping((current) => [
             ...current.filter((t) => t.username !== who),
-            { username: who, until: Date.now() + TYPING_TTL },
+            {
+              username: who,
+              avatarUrl: payload.payload?.avatarUrl ?? null,
+              until: Date.now() + TYPING_TTL,
+            },
           ]);
         },
       )
@@ -916,13 +920,53 @@ export function RoomView({
                     onOpenProfile={(username) => setPanel({ kind: "member", username })}
                     onReply={setReplyingTo}
                     onJumpTo={jumpTo}
-                    onOpenReactions={(id) => setPanel({ kind: "reactions", messageId: id })}
                     onTogglePin={canPin ? togglePin : undefined}
                     isPinned={pinned?.id === message.id}
                   />
                 </div>
               );
             })}
+            {/*
+              One bubble however many people are typing, with the faces stacked
+              beside it. A bubble each would be right for a two-person chat and
+              wrong here: a room this size can have a dozen people mid-sentence,
+              and a dozen rows of dots would push the conversation off screen.
+              The header names them; this says somebody is there.
+            */}
+            {typing.length > 0 && (
+              <div className="mt-2 flex items-center gap-2 px-1">
+                <span className="flex -space-x-2">
+                  {typing.slice(0, 3).map((person) => (
+                    <Avatar
+                      key={person.username}
+                      src={person.avatarUrl}
+                      name={person.username}
+                      size={26}
+                      className="ring-2 ring-surface"
+                    />
+                  ))}
+                </span>
+
+                {typing.length > 3 && (
+                  <span className="text-[11px] font-medium text-muted">
+                    +{typing.length - 3}
+                  </span>
+                )}
+
+                <span
+                  aria-hidden
+                  className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-bubble-in px-3 py-2.5 shadow-sm"
+                >
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
+                </span>
+
+                {/* The animation is decorative; this is what a screen reader gets. */}
+                <span className="sr-only">{typingLabel}</span>
+              </div>
+            )}
+
             <div ref={bottomRef} />
           </div>
 
@@ -1079,15 +1123,6 @@ export function RoomView({
 
       {panel?.kind === "search" && (
         <SearchPanel slug={slug} onClose={() => setPanel(null)} onJumpTo={jumpTo} />
-      )}
-
-      {panel?.kind === "reactions" && (
-        <ReactorsPanel
-          key={panel.messageId}
-          messageId={panel.messageId}
-          onClose={() => setPanel(null)}
-          onOpenMember={(username) => setPanel({ kind: "member", username })}
-        />
       )}
 
       {panel?.kind === "group" && (

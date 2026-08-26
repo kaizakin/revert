@@ -8,6 +8,8 @@ import { Avatar } from "@/components/avatar";
 import type { MessageRow } from "@/server/messaging/queries";
 import { REACTION_EMOJI } from "@/lib/reactions";
 
+import { ReactionSheet } from "./reaction-sheet";
+
 type Props = {
   message: MessageRow;
   isMine: boolean;
@@ -17,8 +19,6 @@ type Props = {
   onOpenProfile: (username: string) => void;
   onReply: (message: MessageRow) => void;
   onJumpTo: (messageId: string) => void;
-  /** Opens the list of who reacted. The picker stays on the hover bar. */
-  onOpenReactions: (messageId: string) => void;
   /** Undefined for anyone without permission, so the button simply is not shown. */
   onTogglePin?: (messageId: string) => void;
   isPinned?: boolean;
@@ -57,11 +57,11 @@ export function MessageBubble({
   onOpenProfile,
   onReply,
   onJumpTo,
-  onOpenReactions,
   onTogglePin,
   isPinned,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   /**
    * Collapsed to what a pill can hold: the three most-used emoji and a total.
@@ -214,7 +214,7 @@ export function MessageBubble({
           >
             <button
               type="button"
-              onClick={() => onOpenReactions(message.id)}
+              onClick={() => setSheetOpen((open) => !open)}
               aria-label={`${reactionSummary.total} ${
                 reactionSummary.total === 1 ? "reaction" : "reactions"
               }. See who reacted`}
@@ -242,6 +242,20 @@ export function MessageBubble({
                 </span>
               )}
             </button>
+
+            {sheetOpen && (
+              <ReactionSheet
+                messageId={message.id}
+                summary={message.reactions}
+                isMine={isMine}
+                onReact={onReact}
+                onClose={() => setSheetOpen(false)}
+                onOpenProfile={(username) => {
+                  setSheetOpen(false);
+                  onOpenProfile(username);
+                }}
+              />
+            )}
           </div>
         )}
       </div>

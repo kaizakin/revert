@@ -1001,3 +1001,42 @@ svg [class^="ac-"] {
     animation: rv-mark-lean 0.55s var(--wyg-ease);
   }
 }
+
+/*
+ * Someone typing, in the chat itself.
+ *
+ * Three dots on one loop, offset so the bounce travels left to right rather
+ * than the three of them pulsing together. The stagger is the whole effect.
+ */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.1s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Still reads as "someone is there", without the movement. */
+  .typing-dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}

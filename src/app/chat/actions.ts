@@ -25,6 +25,7 @@ import {
   listReactors,
   toggleReaction,
   type ReactorGroup,
+  type Reactor,
 } from "@/server/messaging/reactions";
 import { sendMessage } from "@/server/messaging/send";
 import {
@@ -137,7 +138,7 @@ export async function refetchMessages(slug: string): Promise<MessageRow[]> {
   return listMessages(room.id, me.id);
 }
 
-export type { ReactorGroup };
+export type { Reactor, ReactorGroup };
 
 /** Who reacted to one message, for the sheet that opens on the pill. */
 export async function fetchReactors(messageId: string): Promise<ReactorGroup[]> {
