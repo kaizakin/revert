@@ -1,14 +1,20 @@
+import {
+  MARK_PATHS,
+  MARK_RADIUS,
+  MARK_STROKE,
+  MARK_VIEWBOX,
+} from "@/lib/mark";
+
 /**
- * The Revert mark.
+ * The Revert mark on its tile.
  *
- * A return arrow: it goes out, turns, and comes back. That is what the word
- * means in every sense the product uses it — a reply in chat, a reply from a
- * recruiter, and the undo glyph everyone already reads as "back".
+ * Geometry lives in @/lib/mark, which the favicon and the touch icon are also
+ * generated from — the drawing exists once.
  *
  * The tile uses the accent token and the arrow uses accent-ink, so the mark
- * follows the theme without a second asset for dark mode.
+ * follows the theme without a second asset for dark mode. It inverts on the way
+ * through: white on deep green in light, dark ink on mint in dark.
  */
-
 export function LogoMark({
   size = 32,
   className = "",
@@ -18,24 +24,28 @@ export function LogoMark({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center rounded-[28%] bg-accent text-accent-ink ${className}`}
-      style={{ width: size, height: size }}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden bg-accent text-accent-ink ${className}`}
+      style={{ width: size, height: size, borderRadius: size * MARK_RADIUS }}
       aria-hidden
     >
+      {/*
+        Sized to the whole tile rather than a fraction of it, so the stroke
+        resolves to size/16 device pixels. The padding that keeps the mark off
+        the corners is drawn into the path data instead — see MARK_STROKE.
+      */}
       <svg
-        viewBox="0 0 32 32"
-        width={size * 0.62}
-        height={size * 0.62}
+        viewBox={`0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`}
+        width={size}
+        height={size}
         fill="none"
         stroke="currentColor"
-        strokeWidth={2.6}
+        strokeWidth={MARK_STROKE}
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {/* Out to the right, around, and back — the return itself. */}
-        <path d="M11 12h7a4.5 4.5 0 0 1 0 9h-3.5" />
-        {/* Head pointing back the way it came. */}
-        <path d="M13.8 8.8 10.4 12l3.4 3.2" />
+        {MARK_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </svg>
     </span>
   );

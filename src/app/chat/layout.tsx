@@ -71,7 +71,7 @@ export default async function ChatLayout({ children }: LayoutProps<"/chat">) {
             aria-label="Revert home"
             className="mb-3 transition-transform hover:scale-105 active:scale-95"
           >
-            <LogoMark size={30} />
+            <LogoMark size={32} />
           </Link>
 
           <div className="flex flex-col items-center gap-1.5">

@@ -13,7 +13,8 @@
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx src/server/db/seed.ts",
-    "invite": "tsx src/server/invites/create.ts"
+    "invite": "tsx src/server/invites/create.ts",
+    "icons": "tsx scripts/build-icons.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.8.0",
