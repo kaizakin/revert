@@ -829,6 +829,63 @@ svg [class^="ac-"] {
   100% { transform: none; }
 }
 
+/* A whole mark turning once. */
+@keyframes ac-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* The dot hopping off its stem and landing back on it, with a second smaller
+   bounce — one hop alone reads as a twitch. */
+@keyframes ac-jump {
+  0% { transform: none; }
+  28% { transform: translateY(-3.5px); }
+  52% { transform: none; }
+  68% { transform: translateY(-1.5px); }
+  100% { transform: none; }
+}
+
+/*
+ * A globe turning on its axis. Compressing the width reads as a sphere rolling
+ * away from you; a flat rotate would be a wheel, which is a different object.
+ */
+@keyframes ac-turn {
+  0% { transform: none; }
+  50% { transform: scaleX(0.15); }
+  100% { transform: none; }
+}
+
+/* A flick, the way you send something off. */
+@keyframes ac-flick {
+  0% { transform: none; }
+  35% { transform: rotate(-18deg); }
+  100% { transform: none; }
+}
+
+/* A button being pressed, which is what a play button is for. */
+@keyframes ac-press {
+  0% { transform: none; }
+  40% { transform: scale(0.84); }
+  100% { transform: none; }
+}
+
+/* A nod. Only the head moves, or it is a bow. */
+@keyframes ac-nod {
+  0% { transform: none; }
+  35% { transform: translateY(1.6px); }
+  70% { transform: translateY(-0.5px); }
+  100% { transform: none; }
+}
+
+/* Two beats, because one is a twitch and a heart does not twitch. */
+@keyframes ac-beat {
+  0% { transform: none; }
+  22% { transform: scale(1.28); }
+  44% { transform: none; }
+  62% { transform: scale(1.14); }
+  100% { transform: none; }
+}
+
 /* Two halves of a chain closing on each other, then settling. */
 @keyframes ac-connect-a {
   0% { transform: none; }
@@ -879,6 +936,34 @@ svg [class^="ac-"] {
   .rv-motion:hover .ac-flap {
     transform-origin: top center;
     animation: ac-flap 0.5s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-spin {
+    animation: ac-spin 0.7s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-jump {
+    animation: ac-jump 0.6s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-turn {
+    animation: ac-turn 0.75s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-flick {
+    animation: ac-flick 0.5s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-press {
+    animation: ac-press 0.4s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-nod {
+    animation: ac-nod 0.5s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-beat {
+    animation: ac-beat 0.7s var(--wyg-ease);
   }
 
   .rv-motion:hover .ac-connect-a {

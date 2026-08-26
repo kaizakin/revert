@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { Avatar } from "@/components/avatar";
 import { Logo, LogoMark } from "@/components/logo";
+import { HeartIcon } from "@/components/heart-icon";
 import { Highlighted } from "@/components/highlighted";
 import { SocialIcon } from "@/components/social-icon";
 import { publicMemberCount } from "@/server/messaging/queries";
@@ -202,7 +203,7 @@ function ExternalArrow() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+      className="h-3 w-3 shrink-0 -translate-x-0.5 translate-y-0.5 opacity-0 transition-all group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100 motion-reduce:transition-none"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
@@ -211,33 +212,6 @@ function ExternalArrow() {
       aria-hidden
     >
       <path d="M7 17L17 7M10 7h7v7" />
-    </svg>
-  );
-}
-
-/**
- * A heart, drawn rather than typed.
- *
- * The emoji was the problem, not the sentiment. Emoji ignore letter-spacing, so
- * it broke the eyebrow's tracking, and its own multicolour palette fought a
- * label that is otherwise a single accent colour. A path takes exactly the size
- * and baseline offset it is given.
- *
- * Red as a literal, like the tick's white check: a heart is red in both themes,
- * and the one red token here means "danger".
- */
-function HeartIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="ml-1.5 inline-block h-[11px] w-[11px] align-[-0.05em] text-[#e0245e]"
-      aria-hidden
-      focusable="false"
-    >
-      <path
-        fill="currentColor"
-        d="M12 21C12 21 3 14.6 3 8.9 3 6.2 5.1 4 7.7 4c1.7 0 3.3.9 4.3 2.3C13 4.9 14.6 4 16.3 4 18.9 4 21 6.2 21 8.9 21 14.6 12 21 12 21z"
-      />
     </svg>
   );
 }
@@ -290,27 +264,27 @@ const SOCIALS = [
   {
     label: "minianon.in",
     href: "https://www.minianon.in/",
-    icon: <SocialIcon provider="website" className="ac-pop h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="website" className="ac-turn h-4 w-4 shrink-0" />,
   },
   {
     label: "GitHub",
     href: "https://github.com/minianon",
-    icon: <SocialIcon provider="github" className="ac-pop h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="github" className="ac-spin h-4 w-4 shrink-0" />,
   },
   {
     label: "LinkedIn",
     href: "https://www.linkedin.com/in/minianon",
-    icon: <SocialIcon provider="linkedin" className="ac-pop h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="linkedin" className="h-4 w-4 shrink-0" />,
   },
   {
     label: "X",
     href: "https://x.com/minianondev",
-    icon: <SocialIcon provider="x" className="ac-pop h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="x" className="ac-flick h-4 w-4 shrink-0" />,
   },
   {
     label: "YouTube",
     href: "https://www.youtube.com/channel/UCqq8kNn9yKvsl95MeiFPIeg",
-    icon: <YouTubeIcon className="ac-pop h-4 w-4 shrink-0" />,
+    icon: <YouTubeIcon className="ac-press h-4 w-4 shrink-0" />,
   },
 ];
 
@@ -595,7 +569,7 @@ export default async function LandingPage() {
                   the "why believe this" block, so it belongs with the counts
                   rather than in front of the claim.
                 */}
-                <span>
+                <span className="rv-motion">
                   By{" "}
                   <a
                     href={PROFILE_URL}
@@ -1230,16 +1204,22 @@ export default async function LandingPage() {
                 className={FOOTER_LINK}
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 overflow-visible" aria-hidden>
-                  <g className="ac-pop">
-                    <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" strokeWidth="1.7" />
+                  <circle
+                    className="ac-nod"
+                    cx="12"
+                    cy="8.5"
+                    r="3.6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  />
                     <path
                       d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
-                      strokeLinecap="round"
-                    />
-                  </g>
+                    strokeLinecap="round"
+                  />
                 </svg>
                 Book a call
               </a>
@@ -1344,7 +1324,7 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <SocialIcon provider="github" className="ac-pop h-4 w-4 shrink-0" />
+                <SocialIcon provider="github" className="ac-spin h-4 w-4 shrink-0" />
                 Sponsor
               </a>
             </nav>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AuthCard } from "@/components/auth-card";
+import { HeartIcon } from "@/components/heart-icon";
 import { Highlighted } from "@/components/highlighted";
 import { LogoMark } from "@/components/logo";
 import { BackButton } from "@/components/back-button";
@@ -137,7 +138,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <div className="flex flex-col gap-10">
             <div className="flex flex-col gap-5">
               {/* The accent eyebrow the landing page puts above every heading. */}
-              <p className="text-[13px] font-medium uppercase tracking-[0.07em] text-accent">
+              <p className="rv-motion text-[13px] font-medium uppercase tracking-[0.07em] text-accent">
                 By{" "}
                 <a
                   href="https://link.minianon.in/tusharbhardwaj"
@@ -147,7 +148,8 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
                 >
                   minianon
                 </a>{" "}
-                · for my community ❤️
+                · for my community
+                <HeartIcon />
               </p>
 
               {/*

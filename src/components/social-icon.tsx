@@ -18,6 +18,20 @@ const PATHS: Record<SocialKey, string> = {
     "M12 2a10 10 0 100 20 10 10 0 000-20zm0 2c1.3 0 2.5 1.9 3.1 4.7H8.9C9.5 5.9 10.7 4 12 4zM7.9 8.7A13 13 0 019 5.2 8 8 0 004.6 8.7h3.3zm7.2-3.5a13 13 0 011.1 3.5h3.2a8 8 0 00-4.3-3.5zM4.1 10.7a8.2 8.2 0 000 2.6h3.4a20 20 0 010-2.6H4.1zm5.4 0a18 18 0 000 2.6h5a18 18 0 000-2.6h-5zm7 0a20 20 0 010 2.6h3.4a8.2 8.2 0 000-2.6H16.5zm-8.6 4.6H4.6A8 8 0 009 18.8a13 13 0 01-1.1-3.5zm2.1 0c.6 2.8 1.8 4.7 3.1 4.7s2.5-1.9 3.1-4.7H8.9zm7.3 0a13 13 0 01-1.1 3.5 8 8 0 004.3-3.5h-3.2z",
 };
 
+/**
+ * LinkedIn's mark, split at the dot over the i.
+ *
+ * Split here rather than at the call site because the whole point is that the
+ * dot is a separate piece of the drawing, and the seam is in the path data. It
+ * carries `ac-jump` unconditionally: that class does nothing outside an
+ * `rv-motion` hover scope, so a profile link is unaffected and the footer gets
+ * a dot that hops without a second copy of this path existing anywhere.
+ *
+ * The remainder starts with an absolute M, so the two halves draw exactly where
+ * the single path did.
+ */
+const LINKEDIN_DOT = "M4.98 3.5a2.5 2.5 0 11-.02 5 2.5 2.5 0 01.02-5z";
+
 export function SocialIcon({
   provider,
   className = "h-4 w-4",
@@ -27,7 +41,13 @@ export function SocialIcon({
 }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden focusable="false">
-      <path d={PATHS[provider]} fill="currentColor" />
+      {provider === "linkedin" && (
+        <path className="ac-jump" d={LINKEDIN_DOT} fill="currentColor" />
+      )}
+      <path
+        d={provider === "linkedin" ? PATHS.linkedin.slice(LINKEDIN_DOT.length) : PATHS[provider]}
+        fill="currentColor"
+      />
     </svg>
   );
 }
