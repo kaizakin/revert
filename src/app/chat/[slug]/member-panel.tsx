@@ -104,6 +104,7 @@ export function MemberPanel({
                 <AvatarLightbox
                   url={profile.avatarUrl}
                   username={profile.username}
+                  displayName={profile.displayName}
                   size={96}
                 />
                 {isOnline && (
