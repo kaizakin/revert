@@ -2,6 +2,7 @@ import {
   MARK_COLOURS,
   MARK_PATHS,
   MARK_RADIUS,
+  MARK_SCALE,
   MARK_STROKE,
   MARK_VIEWBOX,
 } from "@/lib/mark";
@@ -34,15 +35,12 @@ export function LogoMark({
       }}
       aria-hidden
     >
-      {/*
-        Sized to the whole tile rather than a fraction of it, so the stroke
-        resolves to size/16 device pixels. The padding that keeps the mark off
-        the corners is drawn into the path data instead — see MARK_STROKE.
-      */}
+      {/* Sized to a fraction of the tile, which is where the breathing room around
+          the arrow comes from — see MARK_SCALE. */}
       <svg
         viewBox={`0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`}
-        width={size}
-        height={size}
+        width={size * MARK_SCALE}
+        height={size * MARK_SCALE}
         fill="none"
         stroke="currentColor"
         strokeWidth={MARK_STROKE}

@@ -19,6 +19,7 @@ import {
   MARK_COLOURS,
   MARK_PATHS,
   MARK_RADIUS,
+  MARK_SCALE,
   MARK_STROKE,
   MARK_VIEWBOX,
 } from "../src/lib/mark";
@@ -26,7 +27,18 @@ import {
 const root = process.cwd();
 const size = MARK_VIEWBOX;
 const radius = +(size * MARK_RADIUS).toFixed(2);
-const glyph = MARK_PATHS.map((d) => `    <path d="${d}"/>`).join("\n");
+/*
+ * The component sizes its svg to a fraction of the tile; a standalone file has
+ * no outer element to shrink, so the same inset is a transform. Scaling the
+ * group scales the stroke with it, which is what keeps the two identical — the
+ * old favicon skipped this and drew the arrow a size larger than the header did.
+ */
+const inset = +((MARK_VIEWBOX * (1 - MARK_SCALE)) / 2).toFixed(3);
+const glyph = [
+  `    <g transform="translate(${inset} ${inset}) scale(${MARK_SCALE})">`,
+  ...MARK_PATHS.map((d) => `      <path d="${d}"/>`),
+  "    </g>",
+].join("\n");
 
 const strokeAttrs = `stroke-width="${MARK_STROKE}" stroke-linecap="round" stroke-linejoin="round"`;
 

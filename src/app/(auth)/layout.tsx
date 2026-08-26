@@ -125,7 +125,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
       */}
         <div className="relative mx-auto flex w-full max-w-sm flex-col justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <LogoMark size={32} />
+            <LogoMark size={36} />
             <span className="text-lg font-semibold tracking-tight text-ink">
               Revert
             </span>

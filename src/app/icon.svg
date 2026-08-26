@@ -4,8 +4,10 @@
     @media (prefers-color-scheme: dark) { .tile { fill: #35cf93 } }
   </style>
   <rect class="tile" width="32" height="32" rx="8.96"/>
-  <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M8.25 12.25 H18.25 a6.5 6.5 0 0 1 0 13 H12.25"/>
-    <path d="M12.75 6.75 L7.25 12.25 L12.75 17.75"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(6.08 6.08) scale(0.62)">
+      <path d="M11 12h7a4.5 4.5 0 0 1 0 9h-3.5"/>
+      <path d="M13.8 8.8 10.4 12l3.4 3.2"/>
+    </g>
   </g>
 </svg>
