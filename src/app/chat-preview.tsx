@@ -133,10 +133,31 @@ const SCENES: Line[][] = [
 ];
 
 /**
- * Long enough to actually read the scene. The last bubble finishes arriving
- * around 3.5s in, leaving roughly seven seconds before the next one.
+ * Scene timing, derived rather than picked.
+ *
+ * It used to be a flat 11s with no relationship to the animation it was waiting
+ * on: the second bubble lands at 2.3s, so the panel then sat still for nearly
+ * nine seconds. Most of every scene was dead air, which is what made a short
+ * animation feel like a long wait.
+ *
+ * Now the scene is exactly as long as the conversation takes to arrive plus a
+ * dwell to read it, so changing the stagger cannot silently reopen that gap.
  */
-const SCENE_MS = 11000;
+const FIRST_DELAY_MS = 150;
+
+/** Between one bubble and the next. This spacing is what makes it read as talk. */
+const LINE_STAGGER_MS = 1250;
+
+/** Must match the .chat-line duration in globals.css. */
+const ENTRY_MS = 900;
+
+/** Reading time once the last bubble has landed. These are two short messages. */
+const DWELL_MS = 3200;
+
+const LONGEST_SCENE = Math.max(...SCENES.map((lines) => lines.length));
+
+const SCENE_MS =
+  FIRST_DELAY_MS + (LONGEST_SCENE - 1) * LINE_STAGGER_MS + ENTRY_MS + DWELL_MS;
 
 function JobCard({ job }: { job: NonNullable<Line["job"]> }) {
   return (
@@ -242,8 +263,11 @@ function ScenePanel({
 
         The height is fixed and the lines sit at the bottom, which is what lets
         the panel hold still: every scene is two lines, but even if one were not,
-        the room would not resize under the reader. The 1.25s between lines is
-        what makes it read as a conversation rather than a list appearing.
+        the room would not resize under the reader.
+
+        The delays come from the same constants the scene length is derived
+        from, so the wait between scenes always ends a fixed dwell after the last
+        bubble rather than whenever a hardcoded number said so.
       */}
       <div
         key={turn}
@@ -253,7 +277,9 @@ function ScenePanel({
           <div
             key={index}
             className="chat-line"
-            style={{ animationDelay: `${0.15 + index * 1.25}s` }}
+            style={{
+              animationDelay: `${FIRST_DELAY_MS + index * LINE_STAGGER_MS}ms`,
+            }}
           >
             <Bubble line={line} />
           </div>
