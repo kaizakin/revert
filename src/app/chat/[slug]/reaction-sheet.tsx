@@ -1,45 +1,12 @@
 "use client";
 
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { Avatar } from "@/components/avatar";
 import { REACTION_EMOJI, type ReactionSummary } from "@/lib/reactions";
 
-import { fetchReactors, type ReactorGroup } from "../actions";
-
-/**
- * The same move applied to the list of names.
- *
- * Without this the chips updated on tap and the list below them did not, so
- * changing your reaction from inside this sheet meant closing it to see what
- * you had done.
- */
-function moveOwnReactor(
-  groups: ReactorGroup[],
-  emoji: string,
-  me: { username: string; avatarUrl: string | null },
-): ReactorGroup[] {
-  const mineNow = groups.find((g) => g.people.some((p) => p.isYou));
-  const clearing = mineNow?.emoji === emoji;
-
-  const withoutMe = groups
-    .map((g) => ({ ...g, people: g.people.filter((p) => !p.isYou) }))
-    .filter((g) => g.people.length > 0);
-
-  if (clearing) return withoutMe;
-
-  const row = {
-    username: me.username,
-    displayName: null,
-    avatarUrl: me.avatarUrl,
-    isYou: true,
-  };
-
-  return withoutMe.some((g) => g.emoji === emoji)
-    ? withoutMe.map((g) => (g.emoji === emoji ? { ...g, people: [...g.people, row] } : g))
-    : [...withoutMe, { emoji, people: [row] }];
-}
+import { fetchReactors } from "../actions";
 
 /**
  * Who reacted, shown under the message it belongs to.
@@ -57,13 +24,11 @@ export function ReactionSheet({
   messageId,
   summary,
   isMine,
-  me,
   onReact,
   onClose,
   onOpenProfile,
 }: {
   messageId: string;
-  me: { username: string; avatarUrl: string | null };
   /** Drawn from what the bubble already knows, so the chips are there instantly. */
   summary: ReactionSummary[];
   isMine: boolean;
@@ -77,18 +42,8 @@ export function ReactionSheet({
     staleTime: 1000 * 20,
   });
 
-  const queryClient = useQueryClient();
-
   const total = summary.reduce((sum, r) => sum + r.count, 0);
   const mine = summary.find((r) => r.mine);
-
-  /* Applied here as well as in the room, so both halves of this sheet move. */
-  const react = (emoji: string) => {
-    queryClient.setQueryData<ReactorGroup[]>(["chat", "reactors", messageId], (prev) =>
-      prev ? moveOwnReactor(prev, emoji, me) : prev,
-    );
-    onReact(messageId, emoji);
-  };
 
   /**
    * Your own reaction leads, then the rest by how many picked them. Hunting for
@@ -161,7 +116,7 @@ export function ReactionSheet({
               <button
                 key={emoji}
                 type="button"
-                onClick={() => react(emoji)}
+                onClick={() => onReact(messageId, emoji)}
                 aria-pressed={isOwn}
                 aria-label={isOwn ? `Remove ${emoji}` : `React with ${emoji}`}
                 className={`flex items-center gap-1 rounded-full px-2 py-1 text-[13px] leading-none transition-all active:scale-95 ${
@@ -194,7 +149,7 @@ export function ReactionSheet({
                 key={`${group.emoji}-${person.username}`}
                 type="button"
                 onClick={() =>
-                  person.isYou ? react(group.emoji) : onOpenProfile(person.username)
+                  person.isYou ? onReact(messageId, group.emoji) : onOpenProfile(person.username)
                 }
                 className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors hover:bg-raised"
               >

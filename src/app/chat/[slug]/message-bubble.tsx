@@ -18,8 +18,6 @@ type Props = {
   onReact: (messageId: string, emoji: string) => void;
   onOpenProfile: (username: string) => void;
   onReply: (message: MessageRow) => void;
-  /** Identity for the reaction sheet, so it can add your row without a lookup. */
-  me: { username: string; avatarUrl: string | null };
   onJumpTo: (messageId: string) => void;
   /** Undefined for anyone without permission, so the button simply is not shown. */
   onTogglePin?: (messageId: string) => void;
@@ -58,7 +56,6 @@ export function MessageBubble({
   onReact,
   onOpenProfile,
   onReply,
-  me,
   onJumpTo,
   onTogglePin,
   isPinned,
@@ -250,7 +247,6 @@ export function MessageBubble({
               <ReactionSheet
                 messageId={message.id}
                 summary={message.reactions}
-                me={me}
                 isMine={isMine}
                 onReact={onReact}
                 onClose={() => setSheetOpen(false)}

@@ -451,6 +451,68 @@ export async function roomStats(conversationId: string): Promise<RoomStats> {
   return { total: Number(row?.total ?? 0), active: Number(row?.active ?? 0) };
 }
 
+export type UnreadMarker = {
+  /** How many messages arrived since this person last read the room. */
+  unread: number;
+  /** The first of them, which is where the divider goes. */
+  firstUnreadId: string | null;
+  /** The first unread one that named them, which is where the room opens. */
+  firstMentionId: string | null;
+};
+
+/**
+ * Where to open the room, and where the "new messages" line belongs.
+ *
+ * One round trip: the count, the first unread message and the first unread
+ * mention all come out of the same scan. Asking three times would be three
+ * crossings for one question.
+ *
+ * Read once when the page renders and then held, so the line stays put while
+ * you read. Recomputing it would clear the divider the moment the room is
+ * marked read, which is a second after it appears.
+ */
+export async function unreadMarker(
+  conversationId: string,
+  userId: string,
+): Promise<UnreadMarker> {
+  const result = await db.execute<{
+    unread: number;
+    first_unread_id: string | null;
+    first_mention_id: string | null;
+  }>(sql`
+    with unread as (
+      select
+        m.id,
+        m.created_at,
+        exists (
+          select 1 from mentions x
+          where x.message_id = m.id and x.user_id = ${userId}::uuid
+        ) as mentioned
+      from messages m
+      left join message_reads r
+        on r.conversation_id = m.conversation_id and r.user_id = ${userId}::uuid
+      where m.conversation_id = ${conversationId}::uuid
+        and m.deleted_at is null
+        and m.author_id is distinct from ${userId}::uuid
+        and (r.last_read_at is null or m.created_at > r.last_read_at)
+    )
+    select
+      (select count(*) from unread)::int as unread,
+      (select id from unread order by created_at asc limit 1) as first_unread_id,
+      (select id from unread where mentioned order by created_at asc limit 1)
+        as first_mention_id
+  `);
+
+  /* postgres.js returns the rows themselves, not a wrapper around them. */
+  const row = result[0];
+
+  return {
+    unread: Number(row?.unread ?? 0),
+    firstUnreadId: row?.first_unread_id ?? null,
+    firstMentionId: row?.first_mention_id ?? null,
+  };
+}
+
 export type RoomMember = {
   id: string;
   username: string;

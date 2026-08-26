@@ -52,3 +52,46 @@ export function applyOwnReaction(
   /* An emoji nobody is left holding should not linger at zero. */
   return next.filter((r) => r.count > 0);
 }
+
+export type Reactor = {
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  isYou: boolean;
+};
+
+export type ReactorGroup = { emoji: string; people: Reactor[] };
+
+/**
+ * The same move, applied to the list of names behind the pill.
+ *
+ * Lives beside applyOwnReaction because the two have to agree: the summary and
+ * the list are two views of one fact. Keeping this next to the sheet meant only
+ * the sheet's own buttons updated it, so reacting from the hover picker left
+ * the wrong emoji beside your name until you changed it from the list instead.
+ */
+export function moveOwnReactor(
+  groups: ReactorGroup[],
+  emoji: string,
+  me: { username: string; avatarUrl: string | null },
+): ReactorGroup[] {
+  const mineNow = groups.find((g) => g.people.some((p) => p.isYou));
+  const clearing = mineNow?.emoji === emoji;
+
+  const withoutMe = groups
+    .map((g) => ({ ...g, people: g.people.filter((p) => !p.isYou) }))
+    .filter((g) => g.people.length > 0);
+
+  if (clearing) return withoutMe;
+
+  const row: Reactor = {
+    username: me.username,
+    displayName: null,
+    avatarUrl: me.avatarUrl,
+    isYou: true,
+  };
+
+  return withoutMe.some((g) => g.emoji === emoji)
+    ? withoutMe.map((g) => (g.emoji === emoji ? { ...g, people: [...g.people, row] } : g))
+    : [...withoutMe, { emoji, people: [row] }];
+}

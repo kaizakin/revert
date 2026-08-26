@@ -1,6 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 
-import { getRoomForUser, listMessages, roomStats } from "@/server/messaging/queries";
+import {
+  getRoomForUser,
+  listMessages,
+  roomStats,
+  unreadMarker,
+} from "@/server/messaging/queries";
 import { ensureDbUser } from "@/server/users/sync";
 
 import { RoomView } from "./room-view";
@@ -24,9 +29,15 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
   const room = await getRoomForUser(me.id, slug);
   if (!room) notFound();
 
-  const [messages, stats] = await Promise.all([
+  /*
+   * Read before the page marks the room read, and passed down as a fixed value:
+   * the divider has to survive the read receipt that lands a second later, or it
+   * disappears while you are still looking at it.
+   */
+  const [messages, stats, marker] = await Promise.all([
     listMessages(room.id, me.id, { showReadReceipts: me.showReadReceipts }),
     roomStats(room.id),
+    unreadMarker(room.id, me.id),
   ]);
 
   const canPost = room.type !== "announce" || me.isAdmin;
@@ -48,6 +59,7 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
       meAvatarUrl={me.avatarUrl}
       postDeniedReason="Only mods post in this room."
       initialMessages={messages}
+      marker={marker}
     />
   );
 }

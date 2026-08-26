@@ -15,8 +15,17 @@ import { Avatar } from "@/components/avatar";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import type { MessageRow, PinnedMessage, RoomSummary } from "@/server/messaging/queries";
-import { applyOwnReaction } from "@/lib/reactions";
+import type {
+  MessageRow,
+  PinnedMessage,
+  RoomSummary,
+  UnreadMarker,
+} from "@/server/messaging/queries";
+import {
+  applyOwnReaction,
+  moveOwnReactor,
+  type ReactorGroup,
+} from "@/lib/reactions";
 
 import {
   syncPresence,
@@ -50,6 +59,8 @@ type Props = {
   canPin: boolean;
   postDeniedReason?: string;
   initialMessages: MessageRow[];
+  /** Where the room opens and where the new-messages line goes. */
+  marker: UnreadMarker;
 };
 
 /**
@@ -97,6 +108,7 @@ export function RoomView({
   canPin,
   postDeniedReason,
   initialMessages,
+  marker,
 }: Props) {
   const queryClient = useQueryClient();
 
@@ -159,6 +171,12 @@ export function RoomView({
       payload: { username: meUsername, avatarUrl: meAvatarUrl },
     });
   }, [meUsername, meAvatarUrl]);
+
+  /** Stable, so every bubble is not re-rendered by a fresh object each time. */
+  const meProfile = useMemo(
+    () => ({ username: meUsername, avatarUrl: meAvatarUrl ?? null }),
+    [meUsername, meAvatarUrl],
+  );
 
   /** Guards against a second fetch while one is in flight. */
   const loadingOlder = useRef(false);
@@ -383,6 +401,16 @@ export function RoomView({
         ),
       );
 
+      /*
+       * The names behind the pill are a second view of the same fact, so they
+       * move here rather than in the sheet. Patching it there meant only the
+       * sheet's own buttons updated it, and reacting from the hover picker left
+       * the old emoji beside your name.
+       */
+      queryClient.setQueryData<ReactorGroup[]>(["chat", "reactors", messageId], (prev) =>
+        prev ? moveOwnReactor(prev, emoji, meProfile) : prev,
+      );
+
       /* History is held outside that cache, so it needs the same edit. */
       setLoaded((current) => ({
         ...current,
@@ -401,7 +429,7 @@ export function RoomView({
         setReactError(null);
       }
     },
-    [slug, queryClient, reload],
+    [slug, queryClient, reload, meProfile],
   );
 
   /**
@@ -686,12 +714,6 @@ export function RoomView({
     } are typing…`;
   }, [typing]);
 
-  /** Stable, so every bubble is not re-rendered by a fresh object each time. */
-  const meProfile = useMemo(
-    () => ({ username: meUsername, avatarUrl: meAvatarUrl ?? null }),
-    [meUsername, meAvatarUrl],
-  );
-
   /** Everything paged in, then the live page. */
   const timeline = useMemo(() => {
     if (history.rows.length === 0) return messages;
@@ -723,10 +745,43 @@ export function RoomView({
           previous.authorId !== message.authorId ||
           !withinWindow(previous, message);
 
-        return { message, showDay, startsRun };
+        return {
+          message,
+          showDay,
+          startsRun,
+          /* The first message they have not read. */
+          startsUnread: message.id === marker.firstUnreadId,
+        };
       }),
-    [timeline],
+    [timeline, marker.firstUnreadId],
   );
+
+  /**
+   * Where the room opens, decided once.
+   *
+   * A mention wins over the plain unread line: if somebody named you, that is
+   * the thing you came back for, and it can be well above the first message you
+   * had not read. Failing both, the bottom — which is where a room with nothing
+   * waiting should always land.
+   *
+   * Layout effect, so the position is set before the first paint rather than
+   * shown at the bottom and then jumped — and keyed on the room, so it runs once
+   * on arrival rather than every time a message lands.
+   */
+  useLayoutEffect(() => {
+    const anchorId = marker.firstMentionId ?? marker.firstUnreadId;
+    /* Named apart from the prepend anchor ref above, which is a different thing. */
+    const target = anchorId ? document.getElementById(`msg-${anchorId}`) : null;
+
+    if (target) {
+      target.scrollIntoView({ block: "center" });
+      return;
+    }
+
+    scrollToBottom(false);
+    /* Deliberately only the room: this decides where you arrive, once. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -914,7 +969,7 @@ export function RoomView({
               </div>
             )}
 
-            {rendered.map(({ message, showDay, startsRun }) => {
+            {rendered.map(({ message, showDay, startsRun, startsUnread }) => {
               const isMine = message.authorId === meId;
               const isPending = message.id.startsWith("opt-");
 
@@ -924,6 +979,21 @@ export function RoomView({
                   id={`msg-${message.id}`}
                   className={`rounded-xl transition-colors ${startsRun ? "mt-2.5" : "mt-0.5"}`}
                 >
+                  {/*
+                    Sits above the day separator when both fall here, because
+                    the day is a fact about the message and this is a fact about
+                    the reader — the outer frame belongs on the outside.
+                  */}
+                  {startsUnread && (
+                    <div className="flex items-center gap-3 py-3">
+                      <span className="h-px flex-1 bg-accent/35" />
+                      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                        {marker.unread} new {marker.unread === 1 ? "message" : "messages"}
+                      </span>
+                      <span className="h-px flex-1 bg-accent/35" />
+                    </div>
+                  )}
+
                   {showDay && (
                     <div className="flex justify-center py-4">
                       <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-bubble-meta shadow-sm border border-line/40">
@@ -940,7 +1010,6 @@ export function RoomView({
                     onReact={handleReact}
                     onOpenProfile={(username) => setPanel({ kind: "member", username })}
                     onReply={setReplyingTo}
-                    me={meProfile}
                     onJumpTo={jumpTo}
                     onTogglePin={canPin ? togglePin : undefined}
                     isPinned={pinned?.id === message.id}
