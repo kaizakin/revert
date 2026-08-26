@@ -194,6 +194,9 @@ export function RoomView({
    */
   const [pinStep, setPinStep] = useState(0);
 
+  /** Pinned messages currently on screen, so the bar can skip past them. */
+  const [visiblePins, setVisiblePins] = useState<string[]>([]);
+
   /** Guards against a second fetch while one is in flight. */
   const loadingOlder = useRef(false);
   /** The same fact as the ref, for rendering. A ref alone would not repaint. */
@@ -772,9 +775,32 @@ export function RoomView({
     } are typing…`;
   }, [typing]);
 
-  /** Newest first, so the bar opens on the most recent pin and steps back. */
-  const pinIndex = pins.length > 0 ? pinStep % pins.length : 0;
-  const shownPin = pins[pinIndex] ?? null;
+  /**
+   * Which pin the bar carries.
+   *
+   * Two things move it and they pull the same way. The tap moves the cursor,
+   * and scrolling to a pin makes the bar skip past it — because a bar pointing
+   * at a message already on your screen is telling you about something you can
+   * see. Walking forward from the cursor rather than resetting it means the two
+   * compose instead of arguing: a tap jumps to the pin and scrolling there
+   * hands the bar to the next one, which is the same motion either way.
+   *
+   * If every pin is on screen it holds the cursor's own pin — there is nothing
+   * to skip to, and a bar that empties itself as you scroll is worse than one
+   * pointing at something visible.
+   */
+  const shownPin = useMemo(() => {
+    if (pins.length === 0) return null;
+
+    for (let offset = 0; offset < pins.length; offset++) {
+      const candidate = pins[(pinStep + offset) % pins.length];
+      if (!visiblePins.includes(candidate.id)) return candidate;
+    }
+
+    return pins[pinStep % pins.length];
+  }, [pins, pinStep, visiblePins]);
+
+  const pinIndex = shownPin ? pins.indexOf(shownPin) : 0;
 
   /** Everything paged in, then the live page. */
   const timeline = useMemo(() => {
@@ -819,6 +845,47 @@ export function RoomView({
       }),
     [timeline, marker.firstUnreadId],
   );
+
+  /**
+   * Watches the pinned messages that are actually rendered.
+   *
+   * Rebuilt when the pins or the loaded messages change: an observer only ever
+   * watches the elements it was handed, so a pin added afterwards — or one that
+   * only appeared once history was paged in — would never be seen, and the bar
+   * would keep offering something already on screen.
+   */
+  useEffect(() => {
+    if (pins.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisiblePins((current) => {
+          const next = new Set(current);
+
+          for (const entry of entries) {
+            const id = entry.target.id.replace("msg-", "");
+            if (entry.isIntersecting) next.add(id);
+            else next.delete(id);
+          }
+
+          const list = [...next];
+          /* Same members means the same array, so the memo does not rerun. */
+          return list.length === current.length && list.every((id) => current.includes(id))
+            ? current
+            : list;
+        });
+      },
+      /* Two fifths on screen counts as seen — a sliver at the edge does not. */
+      { threshold: 0.4 },
+    );
+
+    for (const pin of pins) {
+      const el = document.getElementById(`msg-${pin.id}`);
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [pins, timeline]);
 
   /**
    * Where the room opens, decided once.
