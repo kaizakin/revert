@@ -51,7 +51,23 @@ export const clerkAppearance: Appearance = {
     formButtonPrimary:
       "rounded-lg py-2.5 font-semibold normal-case shadow-none after:hidden bg-linear-to-b from-accent to-[color-mix(in_srgb,var(--rv-accent)_86%,black)]",
 
-    otpCodeFieldInput: "rounded-lg",
+    /**
+     * The code boxes need a border they can actually be seen by.
+     *
+     * With only a radius set they inherited Clerk's border from
+     * --clerk-color-border, which is our `line` token: 1.24:1 against the card
+     * on dark. Six small empty boxes at that contrast simply are not there —
+     * only the focused one showed, because the accent focus ring was the one
+     * edge with any contrast.
+     *
+     * `faint` rather than `line-strong` because the ramp has a gap exactly
+     * where this needs a value: line-strong reaches 1.72:1, still under the 3:1
+     * that WCAG asks of a control's boundary, and the next step up is faint at
+     * 5.43:1 dark and 4.93:1 light. It is nominally a text token, but it is the
+     * only one that clears the bar, and an input you have to find is precisely
+     * the case that rule exists for.
+     */
+    otpCodeFieldInput: "rounded-lg border border-faint bg-canvas",
 
     /**
      * Explicit padding, because the hidden footerItem below was what provided
