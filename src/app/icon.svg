@@ -1,5 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="8.96" fill="#17784f"/>
+  <style>
+    .tile { fill: #17784f }
+    @media (prefers-color-scheme: dark) { .tile { fill: #35cf93 } }
+  </style>
+  <rect class="tile" width="32" height="32" rx="8.96"/>
   <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M8.25 12.25 H18.25 a6.5 6.5 0 0 1 0 13 H12.25"/>
     <path d="M12.75 6.75 L7.25 12.25 L12.75 17.75"/>

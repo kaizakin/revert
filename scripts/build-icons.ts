@@ -28,16 +28,34 @@ const size = MARK_VIEWBOX;
 const radius = +(size * MARK_RADIUS).toFixed(2);
 const glyph = MARK_PATHS.map((d) => `    <path d="${d}"/>`).join("\n");
 
-/**
- * No media query any more. The mark is one colour pairing in both themes, so the
- * favicon is the same drawing as the header rather than a themed variant of it.
- */
-function markSvg(px: number) {
-  const { tile, glyph: stroke } = MARK_COLOURS;
+const strokeAttrs = `stroke-width="${MARK_STROKE}" stroke-linecap="round" stroke-linejoin="round"`;
 
+/**
+ * The favicon's tile follows the browser theme the way the app's does. Chrome
+ * and Firefox honour a media query inside an SVG icon; Safari ignores SVG icons
+ * entirely and takes the PNG, which is why that one commits to a tile.
+ */
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+  <style>
+    .tile { fill: ${MARK_COLOURS.tile.light} }
+    @media (prefers-color-scheme: dark) { .tile { fill: ${MARK_COLOURS.tile.dark} } }
+  </style>
+  <rect class="tile" width="${size}" height="${size}" rx="${radius}"/>
+  <g fill="none" stroke="${MARK_COLOURS.glyph}" ${strokeAttrs}>
+${glyph}
+  </g>
+</svg>
+`;
+
+/**
+ * A homescreen tile has no theme to follow and sits on someone's own wallpaper,
+ * so it takes the deeper green: white holds its shape against a photograph there
+ * in a way it does not on the mint.
+ */
+function flatSvg(px: number) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${px}" height="${px}">
-  <rect width="${size}" height="${size}" rx="${radius}" fill="${tile}"/>
-  <g fill="none" stroke="${stroke}" stroke-width="${MARK_STROKE}" stroke-linecap="round" stroke-linejoin="round">
+  <rect width="${size}" height="${size}" rx="${radius}" fill="${MARK_COLOURS.tile.light}"/>
+  <g fill="none" stroke="${MARK_COLOURS.glyph}" ${strokeAttrs}>
 ${glyph}
   </g>
 </svg>`;
@@ -45,13 +63,12 @@ ${glyph}
 
 async function main() {
   const iconPath = path.join(root, "src", "app", "icon.svg");
-  await writeFile(iconPath, `${markSvg(size)}
-`, "utf8");
+  await writeFile(iconPath, faviconSvg, "utf8");
 
   /* 180 is what iOS asks for; anything smaller gets upscaled on a retina phone. */
   const applePath = path.join(root, "src", "app", "apple-icon.png");
   await mkdir(path.dirname(applePath), { recursive: true });
-  await sharp(Buffer.from(markSvg(180))).png().toFile(applePath);
+  await sharp(Buffer.from(flatSvg(180))).png().toFile(applePath);
 
   console.log("wrote src/app/icon.svg");
   console.log("wrote src/app/apple-icon.png (180x180)");

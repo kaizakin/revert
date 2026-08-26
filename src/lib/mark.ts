@@ -43,19 +43,19 @@ export const MARK_STROKE = 2;
 export const MARK_RADIUS = 0.28;
 
 /**
- * One mark, the same in both themes.
+ * The arrow is white on both tiles.
  *
- * It used to follow the accent token, which meant it inverted: white on deep
- * green in light, near-black on mint in dark. A white arrow is the one people
- * picture when they picture this logo, and white on the mint measures 2.0:1 —
- * under the 3:1 floor for a graphical object, and at a 1px stroke it washes out
- * exactly the way the old sub-pixel stroke did. On the deep green it is 5.5:1.
+ * The tile still follows the accent, so it deepens in light and brightens in
+ * dark, but the glyph no longer inverts with it — it used to turn near-black on
+ * the mint, and white is the arrow this mark is meant to have.
  *
- * So the tile stops following the accent. That is normal for a logo and it buys
- * three things: one drawing instead of two, a favicon that needs no media query,
- * and a homescreen tile that finally matches the header.
+ * Worth knowing rather than worth changing: white on the mint measures 2.0:1
+ * against 5.5:1 on the deep green. Chosen deliberately for how it looks on a
+ * dark screen. If the arrow ever reads thin at 16px, the fix is a darker tile in
+ * dark mode, not a heavier stroke.
  */
 export const MARK_COLOURS = {
-  tile: "#17784f",
   glyph: "#ffffff",
+  /* Matches --rv-accent in each theme, for the icon files, which cannot read tokens. */
+  tile: { light: "#17784f", dark: "#35cf93" },
 } as const;

@@ -12,9 +12,9 @@ import {
  * Geometry lives in @/lib/mark, which the favicon and the touch icon are also
  * generated from — the drawing exists once.
  *
- * Its colours are fixed rather than taken from the accent token. Following the
- * accent meant the arrow turned near-black in dark mode, and a logo that is a
- * different colour depending on the reader's OS is two logos.
+ * The tile follows the accent token, so it deepens in light and brightens in
+ * dark without a second asset. The arrow does not follow it: accent-ink turns
+ * near-black on the mint, and this mark takes a white arrow on both.
  */
 export function LogoMark({
   size = 32,
@@ -25,12 +25,11 @@ export function LogoMark({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden bg-accent ${className}`}
       style={{
         width: size,
         height: size,
         borderRadius: size * MARK_RADIUS,
-        backgroundColor: MARK_COLOURS.tile,
         color: MARK_COLOURS.glyph,
       }}
       aria-hidden
