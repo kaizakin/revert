@@ -797,4 +797,13 @@ export async function updateRoom(conversationId: string, patch: RoomEdit): Promi
   if (Object.keys(set).length === 0) return;
 
   await db.update(conversations).set(set).where(eq(conversations.id, conversationId));
+
+  /*
+   * The name and picture are on everybody's header, and the header is rendered
+   * on the server — so without this a rename only existed for the person who
+   * typed it, and everyone else kept the old one until they happened to reload.
+   */
+  void transport
+    .publish({ type: "room.changed", conversationId })
+    .catch((err: unknown) => console.error("[realtime] room publish error", err));
 }

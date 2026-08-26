@@ -19,7 +19,9 @@ export type RealtimeEvent =
    * because the client compares it against the name it already knows, and an id
    * would have to be looked up to be useful to anyone.
    */
-  | { type: "member.changed"; conversationId: string; username: string };
+  | { type: "member.changed"; conversationId: string; username: string }
+  /** The room's own name, description or picture changed. */
+  | { type: "room.changed"; conversationId: string };
 
 export interface RealtimeTransport {
   /** Fan out an event to everyone subscribed to a conversation. Server-side only. */

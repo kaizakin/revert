@@ -205,6 +205,19 @@ export function RoomView({
    */
   const [pinStep, setPinStep] = useState(0);
 
+  /**
+   * Whether the "new messages" line has served its purpose.
+   *
+   * It exists to say where you left off, and it stops meaning anything the
+   * moment you have read to the end — leaving it up then is the room telling
+   * you something is new while you are looking straight at it.
+   *
+   * Not cleared on open, which was the other option: the line is what the room
+   * scrolled you to, and removing it as you arrive takes away the explanation
+   * for where you are.
+   */
+  const [caughtUp, setCaughtUp] = useState(false);
+
   /** Pinned messages currently on screen, so the bar can skip past them. */
   const [visiblePins, setVisiblePins] = useState<string[]>([]);
 
@@ -311,6 +324,9 @@ export function RoomView({
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollBottom(distanceFromBottom > 250);
+
+    /* Reaching the end is what retires the line. */
+    if (distanceFromBottom < 120) setCaughtUp(true);
 
     /*
      * Fetches before the top is actually reached, so the next page is usually
@@ -604,6 +620,12 @@ export function RoomView({
           if (who.toLowerCase() === meUsername.toLowerCase()) router.refresh();
         },
       )
+      .on("broadcast", { event: "room.changed" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
+        void queryClient.invalidateQueries({ queryKey: ["chat", "rooms"] });
+        /* Header name and picture are server props, so only a re-render moves them. */
+        router.refresh();
+      })
       .on("broadcast", { event: "pin.changed" }, () => {
         void queryClient.invalidateQueries({
           queryKey: ["chat", "pins", slug],
@@ -769,6 +791,7 @@ export function RoomView({
 
       // 3. Clear draft and states instantly
       setDraft("");
+      setCaughtUp(true);
       setReplyingTo(null);
       setMention(null);
       setSendError(null);
@@ -917,10 +940,10 @@ export function RoomView({
           showDay,
           startsRun,
           /* The first message they have not read. */
-          startsUnread: message.id === marker.firstUnreadId,
+          startsUnread: !caughtUp && message.id === marker.firstUnreadId,
         };
       }),
-    [timeline, marker.firstUnreadId],
+    [timeline, marker.firstUnreadId, caughtUp],
   );
 
   /**
@@ -1476,15 +1499,17 @@ export function RoomView({
                       window.setTimeout(() => setMention(null), 200);
                     }}
                     /*
-                      Names where the words are going, which is the useful thing
-                      a placeholder can say and the thing that will matter more
-                      once there is more than one room. The keyboard hint is
-                      gone: Enter sends in every chat anybody has used, and a
-                      placeholder is not the place to teach it — it was the
-                      longest string on the screen, teaching the one thing
-                      nobody needed telling.
+                      Means both "make a bold move" and "take your chance", and
+                      asking a stranger for a referral is exactly both — so the
+                      joke is about the thing the room is for rather than
+                      decoration on top of it.
+
+                      The keyboard hint that used to live here is gone. Enter
+                      sends in every chat anybody has used, and it was the
+                      longest string on the screen teaching the one thing nobody
+                      needed telling.
                     */
-                    placeholder={`Message ${name}`}
+                    placeholder="Shoot your shot"
                     className="max-h-36 flex-1 resize-none overflow-y-hidden rounded-2xl bg-raised/80 px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint/80 border border-transparent focus:border-accent/40 focus:bg-surface transition-all"
                     onKeyDown={(event) => {
                       if (mention) return;
