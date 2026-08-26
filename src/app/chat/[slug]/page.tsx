@@ -13,7 +13,7 @@ import { ensureDbUser } from "@/server/users/sync";
 import { RoomView } from "./room-view";
 
 const TYPE_NOTE: Partial<Record<string, string>> = {
-  announce: "Only mods post here",
+  announce: "Only mods can send messages here",
   ama: "Quiet — only the host and mentions notify you",
 };
 
@@ -61,7 +61,7 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
       canManageRoles={isAdmin(me.role)}
       avatarUrl={room.avatarUrl}
       meAvatarUrl={me.avatarUrl}
-      postDeniedReason="Only mods post in this room."
+      postDeniedReason="Only mods can send messages in this room."
       initialMessages={messages}
       marker={marker}
     />

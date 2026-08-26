@@ -589,7 +589,9 @@ export function RoomView({
           if (!who) return;
 
           /* Everybody's copy of the member list and that profile is now wrong. */
-          void queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
+          void queryClient.invalidateQueries({
+            queryKey: ["chat", "room-info", slug],
+          });
           void queryClient.invalidateQueries({
             queryKey: ["chat", "member-profile", who],
           });
@@ -1288,12 +1290,16 @@ export function RoomView({
                         onReply={setReplyingTo}
                         onJumpTo={jumpTo}
                         onDelete={canModerate ? removeMessage : undefined}
-                      onModerateAuthor={
-                        canModerate
-                          ? (username) =>
-                              setPanel({ kind: "member", username, moderate: true })
-                          : undefined
-                      }
+                        onModerateAuthor={
+                          canModerate
+                            ? (username) =>
+                                setPanel({
+                                  kind: "member",
+                                  username,
+                                  moderate: true,
+                                })
+                            : undefined
+                        }
                         onPin={canPin ? pinFor : undefined}
                         onUnpin={canPin ? unpin : undefined}
                         isPinned={pins.some((pin) => pin.id === message.id)}
@@ -1469,7 +1475,16 @@ export function RoomView({
                       // Slight timeout so picking an item from mention menu isn't prevented
                       window.setTimeout(() => setMention(null), 200);
                     }}
-                    placeholder="Type a message… (Press Enter to send, Shift+Enter for new line)"
+                    /*
+                      Names where the words are going, which is the useful thing
+                      a placeholder can say and the thing that will matter more
+                      once there is more than one room. The keyboard hint is
+                      gone: Enter sends in every chat anybody has used, and a
+                      placeholder is not the place to teach it — it was the
+                      longest string on the screen, teaching the one thing
+                      nobody needed telling.
+                    */
+                    placeholder={`Message ${name}`}
                     className="max-h-36 flex-1 resize-none overflow-y-hidden rounded-2xl bg-raised/80 px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint/80 border border-transparent focus:border-accent/40 focus:bg-surface transition-all"
                     onKeyDown={(event) => {
                       if (mention) return;

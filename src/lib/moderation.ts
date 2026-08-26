@@ -45,7 +45,7 @@ export function isPermanentBan(until: Date | string | null | undefined): boolean
   return new Date(until).getUTCFullYear() >= 9999;
 }
 
-/** Null when they are free to post. */
+/** Null when they are free to send messages. */
 export function banExpiry(duration: BanDuration): Date {
   if (duration === "forever") return PERMANENT_BAN_UNTIL;
   return new Date(Date.now() + BAN_MINUTES[duration] * 60 * 1000);
@@ -84,7 +84,7 @@ export const canModerate = (role: MemberRole) => role === "admin" || role === "m
 export const isAdmin = (role: MemberRole) => role === "admin";
 
 /**
- * How long is left, as a phrase that finishes "you can post again in ___".
+ * How long is left, as a phrase that finishes "you can send messages again in ___".
  *
  * Rounded up, because rounding down promises a moment that has not arrived —
  * somebody told "1 minute" who tries in fifty seconds is refused again and
@@ -123,7 +123,7 @@ export function fallbackSystemText(meta: SystemMeta): string {
         ? `${who} was muted for ${remainingBan(meta.until)} ${by}`
         : `${who} was banned ${by}`;
     case "unban":
-      return `${who} can post again ${by}`;
+      return `${who} was unmuted ${by}`;
     case "promote":
       return `${who} was made a moderator ${by}`;
     case "demote":
@@ -154,10 +154,10 @@ export function systemText(meta: SystemMeta, viewerUsername: string): string {
     switch (meta.action) {
       case "ban":
         return meta.until
-          ? `${who} muted you. You can post again in ${remainingBan(meta.until)}.`
+          ? `${who} muted you. You can send messages again in ${remainingBan(meta.until)}.`
           : `${who} banned you from sending messages.`;
       case "unban":
-        return `${who} lifted your mute. You can post again.`;
+        return `${who} unmuted you. You can send messages again.`;
       case "promote":
         return `${who} made you a moderator.`;
       case "demote":

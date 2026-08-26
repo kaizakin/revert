@@ -94,13 +94,13 @@ export function ModerationMenu({
                   onClick={onUnban}
                   className="flex w-full items-center px-3 py-2.5 text-left text-[13px] text-ink transition-colors hover:bg-raised disabled:opacity-50"
                 >
-                  Let them post again
+                  Unmute
                 </button>
               </>
             ) : (
               <>
                 <p className="px-3 pt-2.5 pb-1 text-[10.5px] font-bold uppercase tracking-wider text-faint">
-                  Stop them posting for
+                  Mute for
                 </p>
                 <div className="flex flex-wrap gap-1.5 px-3 pb-3">
                   {BAN_OPTIONS.map((option) => (

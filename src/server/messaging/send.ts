@@ -61,15 +61,16 @@ export async function sendMessage(
 
   if (author.bannedUntil && author.bannedUntil > new Date()) {
     /*
-     * Say what happened and when it ends. "You cannot post right now" reads
-     * like a fault in the app, so the first thing somebody does is try again,
-     * then reload, then assume it is broken.
+     * Say what happened and when it ends. "You cannot post right now" read like
+     * a fault in the app, so the first thing anybody did was try again, then
+     * reload, then assume it was broken — and "post" is a noticeboard word in a
+     * product where the thing people do is send a message.
      */
     return {
       ok: false,
       error: isPermanentBan(author.bannedUntil)
-        ? "You are banned from sending messages in this room."
-        : `You are banned from sending messages. You can post again in ${remainingBan(
+        ? "You have been banned from this room and cannot send messages."
+        : `You are muted. You can send messages again in ${remainingBan(
             author.bannedUntil,
           )}.`,
     };
@@ -97,7 +98,7 @@ export async function sendMessage(
   if (!room) return { ok: false, error: "You are not in this room." };
 
   if (room.type === "announce" && !isAdmin(author.role)) {
-    return { ok: false, error: "Only mods post in this room." };
+    return { ok: false, error: "Only mods can send messages in this room." };
   }
 
   if (!limit.allowed) {
