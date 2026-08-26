@@ -612,7 +612,15 @@ export async function listPins(conversationId: string): Promise<PinnedMessage[]>
         sql`(${messages.pinnedUntil} is null or ${messages.pinnedUntil} > now())`,
       ),
     )
-    .orderBy(desc(messages.pinnedAt))
+    /*
+     * Newest pin first — that is the one the banner leads with, and the order it
+     * steps back through as you reach each one.
+     *
+     * createdAt breaks ties. Two pins made in the same millisecond otherwise
+     * come back in whatever order the planner feels like, which is a sequence
+     * that can differ between two people looking at the same room.
+     */
+    .orderBy(desc(messages.pinnedAt), desc(messages.createdAt))
     .limit(MAX_PINS);
 }
 
@@ -646,7 +654,8 @@ export async function pinMessage(
           sql`(${messages.pinnedUntil} is null or ${messages.pinnedUntil} > now())`,
         ),
       )
-      .orderBy(desc(messages.pinnedAt));
+      /* Same order as listPins, so "the oldest" means the same thing in both. */
+      .orderBy(desc(messages.pinnedAt), desc(messages.createdAt));
 
     /* Re-pinning something already up is a change of duration, not a fourth pin. */
     const already = live.some((row) => row.id === messageId);

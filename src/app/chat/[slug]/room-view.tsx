@@ -124,7 +124,10 @@ export function RoomView({
     refetchIntervalInBackground: false,
   });
 
-  const { data: stats = initialStats } = useQuery<{ total: number; active: number }>({
+  const { data: stats = initialStats } = useQuery<{
+    total: number;
+    active: number;
+  }>({
     queryKey: ["chat", "presence", slug],
     queryFn: async () => {
       const next = await syncPresence(slug);
@@ -158,7 +161,8 @@ export function RoomView({
     reachedStart: boolean;
   }>({ slug, rows: [], reachedStart: false });
 
-  const history = loaded.slug === slug ? loaded : { slug, rows: [], reachedStart: false };
+  const history =
+    loaded.slug === slug ? loaded : { slug, rows: [], reachedStart: false };
 
   /** The live channel, for telling the room this person is typing. */
   const typingChannel = useRef<RealtimeChannel | null>(null);
@@ -221,7 +225,10 @@ export function RoomView({
   const [sendError, setSendError] = useState<string | null>(null);
   const [reactError, setReactError] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<MessageRow | null>(null);
-  const [mention, setMention] = useState<{ query: string; start: number } | null>(null);
+  const [mention, setMention] = useState<{
+    query: string;
+    start: number;
+  } | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -261,11 +268,16 @@ export function RoomView({
     if (el) anchor.current = el.scrollHeight;
 
     try {
-      const page = await fetchOlderMessages(slug, new Date(oldest.createdAt).toISOString());
+      const page = await fetchOlderMessages(
+        slug,
+        new Date(oldest.createdAt).toISOString(),
+      );
 
       setLoaded((current) => {
         const base =
-          current.slug === slug ? current : { slug, rows: [], reachedStart: false };
+          current.slug === slug
+            ? current
+            : { slug, rows: [], reachedStart: false };
         const seen = new Set(base.rows.map((m) => m.id));
 
         return {
@@ -313,8 +325,9 @@ export function RoomView({
     async (messageId: string) => {
       /* Taken off the banner first: an unpin that waits for the round trip
          leaves the thing you just removed sitting at the top of the room. */
-      queryClient.setQueryData<PinnedMessage[]>(["chat", "pins", slug], (prev = []) =>
-        prev.filter((pin) => pin.id !== messageId),
+      queryClient.setQueryData<PinnedMessage[]>(
+        ["chat", "pins", slug],
+        (prev = []) => prev.filter((pin) => pin.id !== messageId),
       );
 
       const result = await unpinMessageAction(slug, messageId);
@@ -364,7 +377,8 @@ export function RoomView({
 
   const catchUp = useCallback(async () => {
     const current =
-      queryClient.getQueryData<MessageRow[]>(["chat", "messages", slug]) ?? messages;
+      queryClient.getQueryData<MessageRow[]>(["chat", "messages", slug]) ??
+      messages;
     const settledMessages = current.filter((m) => !m.id.startsWith("opt-"));
     const last = settledMessages.at(-1)?.createdAt;
     const since = last
@@ -374,23 +388,26 @@ export function RoomView({
     const fresh = await fetchNewMessages(slug, since);
     if (!fresh.length) return;
 
-    queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = current) => {
-      const seenIds = new Set(prev.map((m) => m.id));
-      const newItems = fresh.filter((m) => !seenIds.has(m.id));
-      if (!newItems.length) return prev;
+    queryClient.setQueryData<MessageRow[]>(
+      ["chat", "messages", slug],
+      (prev = current) => {
+        const seenIds = new Set(prev.map((m) => m.id));
+        const newItems = fresh.filter((m) => !seenIds.has(m.id));
+        if (!newItems.length) return prev;
 
-      // Reconcile and remove matching optimistic items
-      const newKeys = new Set(
-        newItems.map((m) => `${m.authorId}-${(m.body ?? "").trim()}`),
-      );
-      const filteredPrev = prev.filter((m) => {
-        if (!m.id.startsWith("opt-")) return true;
-        const key = `${m.authorId}-${(m.body ?? "").trim()}`;
-        return !newKeys.has(key);
-      });
+        // Reconcile and remove matching optimistic items
+        const newKeys = new Set(
+          newItems.map((m) => `${m.authorId}-${(m.body ?? "").trim()}`),
+        );
+        const filteredPrev = prev.filter((m) => {
+          if (!m.id.startsWith("opt-")) return true;
+          const key = `${m.authorId}-${(m.body ?? "").trim()}`;
+          return !newKeys.has(key);
+        });
 
-      return [...filteredPrev, ...newItems];
-    });
+        return [...filteredPrev, ...newItems];
+      },
+    );
   }, [slug, messages, queryClient]);
 
   const reload = useCallback(async () => {
@@ -406,12 +423,14 @@ export function RoomView({
        * Applied in one pass so the swap never shows two reactions from the same
        * person — see applyOwnReaction, which is the rule the server follows.
        */
-      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
-        prev.map((msg) =>
-          msg.id === messageId
-            ? { ...msg, reactions: applyOwnReaction(msg.reactions, emoji) }
-            : msg,
-        ),
+      queryClient.setQueryData<MessageRow[]>(
+        ["chat", "messages", slug],
+        (prev = []) =>
+          prev.map((msg) =>
+            msg.id === messageId
+              ? { ...msg, reactions: applyOwnReaction(msg.reactions, emoji) }
+              : msg,
+          ),
       );
 
       /*
@@ -420,8 +439,9 @@ export function RoomView({
        * sheet's own buttons updated it, and reacting from the hover picker left
        * the old emoji beside your name.
        */
-      queryClient.setQueryData<ReactorGroup[]>(["chat", "reactors", messageId], (prev) =>
-        prev ? moveOwnReactor(prev, emoji, meProfile) : prev,
+      queryClient.setQueryData<ReactorGroup[]>(
+        ["chat", "reactors", messageId],
+        (prev) => (prev ? moveOwnReactor(prev, emoji, meProfile) : prev),
       );
 
       /* History is held outside that cache, so it needs the same edit. */
@@ -460,41 +480,47 @@ export function RoomView({
         (payload: { payload?: { message?: MessageRow } }) => {
           const incomingMsg = payload?.payload?.message;
           if (incomingMsg) {
-            queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => {
-              // Avoid duplicate insertion
-              if (prev.some((m) => m.id === incomingMsg.id)) {
-                return prev;
-              }
+            queryClient.setQueryData<MessageRow[]>(
+              ["chat", "messages", slug],
+              (prev = []) => {
+                // Avoid duplicate insertion
+                if (prev.some((m) => m.id === incomingMsg.id)) {
+                  return prev;
+                }
 
-              // Reconcile if this replaces an optimistic message by this author
-              const optIndex = prev.findIndex(
-                (m) =>
-                  m.id.startsWith("opt-") &&
-                  m.authorId === incomingMsg.authorId &&
-                  (m.body ?? "").trim() === (incomingMsg.body ?? "").trim(),
-              );
+                // Reconcile if this replaces an optimistic message by this author
+                const optIndex = prev.findIndex(
+                  (m) =>
+                    m.id.startsWith("opt-") &&
+                    m.authorId === incomingMsg.authorId &&
+                    (m.body ?? "").trim() === (incomingMsg.body ?? "").trim(),
+                );
 
-              if (optIndex !== -1) {
-                const next = [...prev];
-                next[optIndex] = incomingMsg;
-                return next;
-              }
+                if (optIndex !== -1) {
+                  const next = [...prev];
+                  next[optIndex] = incomingMsg;
+                  return next;
+                }
 
-              return [...prev, incomingMsg];
-            });
+                return [...prev, incomingMsg];
+              },
+            );
 
             // Update sidebar room summary instantly
-            queryClient.setQueryData<RoomSummary[]>(["chat", "rooms"], (prev = []) => {
-              return prev.map((r) => {
-                if (r.id !== conversationId && r.slug !== slug) return r;
-                return {
-                  ...r,
-                  lastBody: incomingMsg.body,
-                  lastAuthor: incomingMsg.authorUsername,
-                  lastAt: new Date(incomingMsg.createdAt),
-                };
-              });
-            });
+            queryClient.setQueryData<RoomSummary[]>(
+              ["chat", "rooms"],
+              (prev = []) => {
+                return prev.map((r) => {
+                  if (r.id !== conversationId && r.slug !== slug) return r;
+                  return {
+                    ...r,
+                    lastBody: incomingMsg.body,
+                    lastAuthor: incomingMsg.authorUsername,
+                    lastAt: new Date(incomingMsg.createdAt),
+                  };
+                });
+              },
+            );
           }
 
           // Catch up in background to reconcile DB sequence and read status
@@ -505,7 +531,9 @@ export function RoomView({
       .on(
         "broadcast",
         { event: "typing" },
-        (payload: { payload?: { username?: string; avatarUrl?: string | null } }) => {
+        (payload: {
+          payload?: { username?: string; avatarUrl?: string | null };
+        }) => {
           const who = payload?.payload?.username;
           /* Own keystrokes come back on the same channel. */
           if (!who || who === meUsername) return;
@@ -541,7 +569,9 @@ export function RoomView({
     const timer = window.setInterval(() => {
       const now = Date.now();
       setTyping((current) =>
-        current.some((t) => t.until <= now) ? current.filter((t) => t.until > now) : current,
+        current.some((t) => t.until <= now)
+          ? current.filter((t) => t.until > now)
+          : current,
       );
     }, 700);
 
@@ -578,7 +608,9 @@ export function RoomView({
     scrollToBottom(false);
   }, [messages.length, scrollToBottom]);
 
-  const lastRealId = messages.filter((m) => !m.id.startsWith("opt-")).at(-1)?.id;
+  const lastRealId = messages
+    .filter((m) => !m.id.startsWith("opt-"))
+    .at(-1)?.id;
   useEffect(() => {
     void markRoomRead(slug, lastRealId);
   }, [slug, lastRealId]);
@@ -617,37 +649,40 @@ export function RoomView({
       };
 
       // 1. Immediately inject optimistic message into chat messages
-      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => [
-        ...prev,
-        optimisticMessage,
-      ]);
+      queryClient.setQueryData<MessageRow[]>(
+        ["chat", "messages", slug],
+        (prev = []) => [...prev, optimisticMessage],
+      );
 
       // 2. Immediately update chat list preview & timestamp
-      queryClient.setQueryData<RoomSummary[]>(["chat", "rooms"], (prev = []) => {
-        const currentRoom = prev.find((r) => r.slug === slug);
-        const updatedRoom: RoomSummary = currentRoom
-          ? {
-              ...currentRoom,
-              lastBody: text,
-              lastAuthor: meUsername,
-              lastAt: new Date(),
-            }
-          : {
-              id: conversationId,
-              slug,
-              name,
-              topic: null,
-              type: "chat",
-              unread: 0,
-              /* Your own message cannot mention you. */
-              mentions: 0,
-              avatarUrl,
-              lastBody: text,
-              lastAuthor: meUsername,
-              lastAt: new Date(),
-            };
-        return [updatedRoom, ...prev.filter((r) => r.slug !== slug)];
-      });
+      queryClient.setQueryData<RoomSummary[]>(
+        ["chat", "rooms"],
+        (prev = []) => {
+          const currentRoom = prev.find((r) => r.slug === slug);
+          const updatedRoom: RoomSummary = currentRoom
+            ? {
+                ...currentRoom,
+                lastBody: text,
+                lastAuthor: meUsername,
+                lastAt: new Date(),
+              }
+            : {
+                id: conversationId,
+                slug,
+                name,
+                topic: null,
+                type: "chat",
+                unread: 0,
+                /* Your own message cannot mention you. */
+                mentions: 0,
+                avatarUrl,
+                lastBody: text,
+                lastAuthor: meUsername,
+                lastAt: new Date(),
+              };
+          return [updatedRoom, ...prev.filter((r) => r.slug !== slug)];
+        },
+      );
 
       // 3. Clear draft and states instantly
       setDraft("");
@@ -675,22 +710,29 @@ export function RoomView({
 
       // 4. Send to server in background
       try {
-        const result = await sendMessageAction(slug, text, replyTarget?.id ?? null);
+        const result = await sendMessageAction(
+          slug,
+          text,
+          replyTarget?.id ?? null,
+        );
         if (result.ok && result.message) {
           const settled = result.message;
-          queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
-            prev.map((m) => (m.id === tempId ? settled : m)),
+          queryClient.setQueryData<MessageRow[]>(
+            ["chat", "messages", slug],
+            (prev = []) => prev.map((m) => (m.id === tempId ? settled : m)),
           );
         } else if (!result.ok) {
           // Revert optimistic message and show error
-          queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
-            prev.filter((m) => m.id !== tempId),
+          queryClient.setQueryData<MessageRow[]>(
+            ["chat", "messages", slug],
+            (prev = []) => prev.filter((m) => m.id !== tempId),
           );
           setSendError(result.error ?? "Failed to send message.");
         }
       } catch {
-        queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
-          prev.filter((m) => m.id !== tempId),
+        queryClient.setQueryData<MessageRow[]>(
+          ["chat", "messages", slug],
+          (prev = []) => prev.filter((m) => m.id !== tempId),
         );
         setSendError("Network error. Please try again.");
       }
@@ -756,11 +798,13 @@ export function RoomView({
       timeline.map((message, index) => {
         const previous = index > 0 ? timeline[index - 1] : null;
 
-        const showDay = !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
+        const showDay =
+          !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
 
         const withinWindow = (a: MessageRow, b: MessageRow) =>
-          Math.abs(new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) <
-          GROUP_WINDOW_MS;
+          Math.abs(
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          ) < GROUP_WINDOW_MS;
 
         const startsRun =
           showDay ||
@@ -805,7 +849,8 @@ export function RoomView({
 
           const list = [...next];
           /* Same members means same array, so the memo below does not rerun. */
-          return list.length === current.length && list.every((id) => current.includes(id))
+          return list.length === current.length &&
+            list.every((id) => current.includes(id))
             ? current
             : list;
         });
@@ -877,7 +922,12 @@ export function RoomView({
             className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-90 active:scale-[0.99]"
           >
             <div className="relative shrink-0">
-              <Avatar src={avatarUrl} name={name || slug} size={42} className="ring-1 ring-line/50" />
+              <Avatar
+                src={avatarUrl}
+                name={name || slug}
+                size={42}
+                className="ring-1 ring-line/50"
+              />
               {stats.active > 0 && (
                 <span
                   title={`${stats.active} online`}
@@ -888,7 +938,9 @@ export function RoomView({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h1 className="truncate text-[15px] font-bold text-ink tracking-tight">{name}</h1>
+                <h1 className="truncate text-[15px] font-bold text-ink tracking-tight">
+                  {name}
+                </h1>
               </div>
               {/*
                 Typing replaces the counts rather than sitting beside them. The
@@ -896,7 +948,9 @@ export function RoomView({
                 the more useful thing for it to say.
               */}
               {typingLabel ? (
-                <p className="truncate text-[12px] font-medium text-accent">{typingLabel}</p>
+                <p className="truncate text-[12px] font-medium text-accent">
+                  {typingLabel}
+                </p>
               ) : (
                 <p className="truncate text-[12px] text-muted font-medium">
                   {stats.total} {stats.total === 1 ? "member" : "members"}
@@ -919,7 +973,14 @@ export function RoomView({
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition-all hover:bg-raised hover:text-ink active:scale-90"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-              <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <circle
+                cx="11"
+                cy="11"
+                r="7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
               <path
                 d="M16.5 16.5L21 21"
                 stroke="currentColor"
@@ -992,152 +1053,168 @@ export function RoomView({
           </div>
         )}
 
-        {/* Message Stream */}
-        <div
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="chat-pattern relative flex-1 overflow-y-auto"
-        >
-          <div className="mx-auto flex w-full max-w-4xl flex-col px-3 py-4 sm:px-6">
-            {rendered.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-raised text-muted shadow-sm">
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden>
-                    <path
-                      d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+        {/*
+          The stream and anything floating over it.
+          
+          This wrapper is what the jump button is positioned against. Inside the
+          scroller, `bottom` measures from the end of the whole conversation
+          rather than from the bottom of the view — so the button sat below the
+          last message and scrolled away exactly when it was needed, which is
+          the moment you scroll up.
+        */}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="chat-pattern flex-1 overflow-y-auto"
+          >
+            <div className="mx-auto flex w-full max-w-4xl flex-col px-3 py-4 sm:px-6">
+              {rendered.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-raised text-muted shadow-sm">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden>
+                      <path
+                        d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-ink">
+                    No messages yet
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Be the first one to say hello in this group!
+                  </p>
                 </div>
-                <p className="text-sm font-semibold text-ink">No messages yet</p>
-                <p className="mt-1 text-xs text-muted">
-                  Be the first one to say hello in this group!
-                </p>
-              </div>
-            )}
+              )}
 
-            {/*
+              {/*
               Only speaks when there is something to say. In the common case the
               next page has already arrived before the top is reached, and a
               spinner that flashes on every page is worse than no spinner.
             */}
-            {rendered.length > 0 && (fetchingOlder || history.reachedStart) && (
-              <div className="flex justify-center py-4">
-                {fetchingOlder ? (
-                  <span className="flex items-center gap-2 text-[11px] text-muted">
-                    <span
-                      aria-hidden
-                      className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-line-strong border-t-accent motion-reduce:animate-none"
-                    />
-                    Loading earlier messages
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-medium text-bubble-meta shadow-sm border border-line/40">
-                    The beginning of {name}
-                  </span>
+              {rendered.length > 0 &&
+                (fetchingOlder || history.reachedStart) && (
+                  <div className="flex justify-center py-4">
+                    {fetchingOlder ? (
+                      <span className="flex items-center gap-2 text-[11px] text-muted">
+                        <span
+                          aria-hidden
+                          className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-line-strong border-t-accent motion-reduce:animate-none"
+                        />
+                        Loading earlier messages
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-medium text-bubble-meta shadow-sm border border-line/40">
+                        The beginning of {name}
+                      </span>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {rendered.map(({ message, showDay, startsRun, startsUnread }) => {
-              const isMine = message.authorId === meId;
-              const isPending = message.id.startsWith("opt-");
+              {rendered.map(({ message, showDay, startsRun, startsUnread }) => {
+                const isMine = message.authorId === meId;
+                const isPending = message.id.startsWith("opt-");
 
-              return (
-                <div
-                  key={message.id}
-                  id={`msg-${message.id}`}
-                  className={`rounded-xl transition-colors ${startsRun ? "mt-2.5" : "mt-0.5"}`}
-                >
-                  {/*
+                return (
+                  <div
+                    key={message.id}
+                    id={`msg-${message.id}`}
+                    className={`rounded-xl transition-colors ${startsRun ? "mt-2.5" : "mt-0.5"}`}
+                  >
+                    {/*
                     Sits above the day separator when both fall here, because
                     the day is a fact about the message and this is a fact about
                     the reader — the outer frame belongs on the outside.
                   */}
-                  {startsUnread && (
-                    <div className="flex items-center gap-3 py-3">
-                      <span className="h-px flex-1 bg-accent/35" />
-                      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                        {marker.unread} new {marker.unread === 1 ? "message" : "messages"}
-                      </span>
-                      <span className="h-px flex-1 bg-accent/35" />
-                    </div>
-                  )}
+                    {startsUnread && (
+                      <div className="flex items-center gap-3 py-3">
+                        <span className="h-px flex-1 bg-accent/35" />
+                        <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                          {marker.unread} new{" "}
+                          {marker.unread === 1 ? "message" : "messages"}
+                        </span>
+                        <span className="h-px flex-1 bg-accent/35" />
+                      </div>
+                    )}
 
-                  {showDay && (
-                    <div className="flex justify-center py-4">
-                      <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-bubble-meta shadow-sm border border-line/40">
-                        {dayLabel(message.createdAt)}
-                      </span>
-                    </div>
-                  )}
+                    {showDay && (
+                      <div className="flex justify-center py-4">
+                        <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-bubble-meta shadow-sm border border-line/40">
+                          {dayLabel(message.createdAt)}
+                        </span>
+                      </div>
+                    )}
 
-                  <MessageBubble
-                    message={message}
-                    isMine={isMine}
-                    isPending={isPending}
-                    startsRun={startsRun}
-                    onReact={handleReact}
-                    onOpenProfile={(username) => setPanel({ kind: "member", username })}
-                    onReply={setReplyingTo}
-                    onJumpTo={jumpTo}
-                    onPin={canPin ? pinFor : undefined}
-                    onUnpin={canPin ? unpin : undefined}
-                    isPinned={pins.some((pin) => pin.id === message.id)}
-                    pinsAtCapacity={pins.length >= MAX_PINS}
-                    oldestPinBody={pins.at(-1)?.body ?? null}
-                  />
-                </div>
-              );
-            })}
-            {/*
+                    <MessageBubble
+                      message={message}
+                      isMine={isMine}
+                      isPending={isPending}
+                      startsRun={startsRun}
+                      onReact={handleReact}
+                      onOpenProfile={(username) =>
+                        setPanel({ kind: "member", username })
+                      }
+                      onReply={setReplyingTo}
+                      onJumpTo={jumpTo}
+                      onPin={canPin ? pinFor : undefined}
+                      onUnpin={canPin ? unpin : undefined}
+                      isPinned={pins.some((pin) => pin.id === message.id)}
+                      pinsAtCapacity={pins.length >= MAX_PINS}
+                      oldestPinBody={pins.at(-1)?.body ?? null}
+                    />
+                  </div>
+                );
+              })}
+              {/*
               One bubble however many people are typing, with the faces stacked
               beside it. A bubble each would be right for a two-person chat and
               wrong here: a room this size can have a dozen people mid-sentence,
               and a dozen rows of dots would push the conversation off screen.
               The header names them; this says somebody is there.
             */}
-            {typing.length > 0 && (
-              <div className="mt-2 flex items-center gap-2 px-1">
-                <span className="flex -space-x-2">
-                  {typing.slice(0, 3).map((person) => (
-                    <Avatar
-                      key={person.username}
-                      src={person.avatarUrl}
-                      name={person.username}
-                      size={26}
-                      className="ring-2 ring-surface"
-                    />
-                  ))}
-                </span>
-
-                {typing.length > 3 && (
-                  <span className="text-[11px] font-medium text-muted">
-                    +{typing.length - 3}
+              {typing.length > 0 && (
+                <div className="mt-2 flex items-center gap-2 px-1">
+                  <span className="flex -space-x-2">
+                    {typing.slice(0, 3).map((person) => (
+                      <Avatar
+                        key={person.username}
+                        src={person.avatarUrl}
+                        name={person.username}
+                        size={26}
+                        className="ring-2 ring-surface"
+                      />
+                    ))}
                   </span>
-                )}
 
-                <span
-                  aria-hidden
-                  className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-bubble-in px-3 py-2.5 shadow-sm"
-                >
-                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
-                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
-                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
-                </span>
+                  {typing.length > 3 && (
+                    <span className="text-[11px] font-medium text-muted">
+                      +{typing.length - 3}
+                    </span>
+                  )}
 
-                {/* The animation is decorative; this is what a screen reader gets. */}
-                <span className="sr-only">{typingLabel}</span>
-              </div>
-            )}
+                  <span
+                    aria-hidden
+                    className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-bubble-in px-3 py-2.5 shadow-sm"
+                  >
+                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
+                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
+                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#ef4444]" />
+                  </span>
 
-            <div ref={bottomRef} />
+                  {/* The animation is decorative; this is what a screen reader gets. */}
+                  <span className="sr-only">{typingLabel}</span>
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+            </div>
           </div>
 
-          {/* Floating "Scroll to bottom" button */}
+          {/* Sits above the composer, over the stream rather than inside it. */}
           {showScrollBottom && (
             <button
               type="button"
@@ -1223,7 +1300,10 @@ export function RoomView({
                          is not typing, and neither is tabbing through it. */
                       if (event.target.value.trim()) pingTyping();
                       setMention(
-                        activeMentionQuery(event.target.value, event.target.selectionStart ?? 0),
+                        activeMentionQuery(
+                          event.target.value,
+                          event.target.selectionStart ?? 0,
+                        ),
                       );
 
                       /*
@@ -1241,11 +1321,14 @@ export function RoomView({
                       box.style.height = "auto";
                       const wanted = box.scrollHeight;
                       box.style.height = `${Math.min(wanted, COMPOSER_MAX_HEIGHT)}px`;
-                      box.style.overflowY = wanted > COMPOSER_MAX_HEIGHT ? "auto" : "hidden";
+                      box.style.overflowY =
+                        wanted > COMPOSER_MAX_HEIGHT ? "auto" : "hidden";
                     }}
                     onSelect={(event) => {
                       const el = event.currentTarget;
-                      setMention(activeMentionQuery(el.value, el.selectionStart ?? 0));
+                      setMention(
+                        activeMentionQuery(el.value, el.selectionStart ?? 0),
+                      );
                     }}
                     onBlur={() => {
                       // Slight timeout so picking an item from mention menu isn't prevented
@@ -1273,8 +1356,15 @@ export function RoomView({
                     title="Send"
                     className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink shadow-md transition-all duration-150 hover:brightness-105 active:scale-90 disabled:opacity-30 disabled:scale-100 disabled:shadow-none"
                   >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 translate-x-0.5" aria-hidden>
-                      <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z" fill="currentColor" />
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5 translate-x-0.5"
+                      aria-hidden
+                    >
+                      <path
+                        d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z"
+                        fill="currentColor"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -1303,7 +1393,11 @@ export function RoomView({
       )}
 
       {panel?.kind === "search" && (
-        <SearchPanel slug={slug} onClose={() => setPanel(null)} onJumpTo={jumpTo} />
+        <SearchPanel
+          slug={slug}
+          onClose={() => setPanel(null)}
+          onJumpTo={jumpTo}
+        />
       )}
 
       {panel?.kind === "group" && (
