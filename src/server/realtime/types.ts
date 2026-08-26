@@ -11,7 +11,9 @@ export type RealtimeEvent =
   | { type: "message.new"; conversationId: string; messageId: string; message?: MessageRow }
   | { type: "message.edited"; conversationId: string; messageId: string }
   | { type: "message.deleted"; conversationId: string; messageId: string }
-  | { type: "reaction.changed"; conversationId: string; messageId: string };
+  | { type: "reaction.changed"; conversationId: string; messageId: string }
+  /** A pin was added, replaced or taken down. Everyone's banner has to follow. */
+  | { type: "pin.changed"; conversationId: string; messageId: string };
 
 export interface RealtimeTransport {
   /** Fan out an event to everyone subscribed to a conversation. Server-side only. */

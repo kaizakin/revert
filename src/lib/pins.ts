@@ -10,4 +10,4 @@
 /** Three is what a banner can cycle through without becoming a list. */
 export const MAX_PINS = 3;
 
-export type PinDuration = "24h" | "7d" | "forever";
+export type PinDuration = "24h" | "7d" | "30d" | "forever";

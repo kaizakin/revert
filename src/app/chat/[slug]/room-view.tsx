@@ -186,13 +186,13 @@ export function RoomView({
   );
 
   /**
-   * Which pinned messages are on screen.
+   * Which pin the bar is showing, as a step rather than an index.
    *
-   * The banner points at the pin you cannot see. Once you have scrolled to the
-   * newest one, continuing to advertise it is telling you about something you
-   * are already looking at — so it steps back to the one behind it.
+   * Counts up forever and is taken modulo the pin count at read time, so a pin
+   * being removed cannot leave it pointing past the end — there is no state to
+   * correct, and nothing to reset when the room changes.
    */
-  const [visiblePins, setVisiblePins] = useState<string[]>([]);
+  const [pinStep, setPinStep] = useState(0);
 
   /** Guards against a second fetch while one is in flight. */
   const loadingOlder = useRef(false);
@@ -528,6 +528,9 @@ export function RoomView({
         },
       )
       .on("broadcast", { event: "reaction.changed" }, () => void reload())
+      .on("broadcast", { event: "pin.changed" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["chat", "pins", slug] });
+      })
       .on(
         "broadcast",
         { event: "typing" },
@@ -769,15 +772,9 @@ export function RoomView({
     } are typing…`;
   }, [typing]);
 
-  /**
-   * The pin worth showing: the newest one not currently on screen. If they are
-   * all in view the newest stays up, because a bar that vanishes as you scroll
-   * is worse than one pointing at something already visible.
-   */
-  const shownPin = useMemo(
-    () => pins.find((pin) => !visiblePins.includes(pin.id)) ?? pins[0] ?? null,
-    [pins, visiblePins],
-  );
+  /** Newest first, so the bar opens on the most recent pin and steps back. */
+  const pinIndex = pins.length > 0 ? pinStep % pins.length : 0;
+  const shownPin = pins[pinIndex] ?? null;
 
   /** Everything paged in, then the live page. */
   const timeline = useMemo(() => {
@@ -822,49 +819,6 @@ export function RoomView({
       }),
     [timeline, marker.firstUnreadId],
   );
-
-  /**
-   * Watches the pinned messages that are actually rendered, so the banner knows
-   * which one the reader can already see.
-   *
-   * Re-created whenever the set of pins changes, because an observer holds the
-   * elements it was given — a pin added after it was set up would never be
-   * watched, and the bar would keep pointing at something on screen.
-   */
-  useEffect(() => {
-    /* Nothing to watch. Whatever ids are left over cannot matter: the banner
-       only ever looks them up against the current pins. */
-    if (pins.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        setVisiblePins((current) => {
-          const next = new Set(current);
-
-          for (const entry of entries) {
-            const id = entry.target.id.replace("msg-", "");
-            if (entry.isIntersecting) next.add(id);
-            else next.delete(id);
-          }
-
-          const list = [...next];
-          /* Same members means same array, so the memo below does not rerun. */
-          return list.length === current.length &&
-            list.every((id) => current.includes(id))
-            ? current
-            : list;
-        });
-      },
-      { threshold: 0.4 },
-    );
-
-    for (const pin of pins) {
-      const el = document.getElementById(`msg-${pin.id}`);
-      if (el) observer.observe(el);
-    }
-
-    return () => observer.disconnect();
-  }, [pins, timeline]);
 
   /**
    * Where the room opens, decided once.
@@ -992,35 +946,45 @@ export function RoomView({
         </div>
 
         {/*
-          One pin on the bar, never three. A room with three notices at the top
-          has no room left for the conversation — so the bar carries the one you
-          cannot currently see and says how many there are behind it.
+          One bar, whichever pin you are on.
+          
+          Tapping jumps to that message and steps to the next, so repeated taps
+          walk c, b, a and round again — which is the whole interaction, and why
+          there is no separate control for it. The segments down the left say
+          how many there are and which one this is, the way a stack of stories
+          does; a count in words would be another thing to read on a bar that is
+          already carrying a message.
         */}
         {shownPin && (
           <div className="flex w-full items-center justify-between border-b border-line bg-surface/95 px-4 py-2 text-left backdrop-blur-sm transition-colors hover:bg-raised/60">
             <button
               type="button"
-              onClick={() => jumpTo(shownPin.id)}
+              onClick={() => {
+                jumpTo(shownPin.id);
+                setPinStep((step) => step + 1);
+              }}
+              aria-label={
+                pins.length > 1
+                  ? `Pinned message ${pinIndex + 1} of ${pins.length}. Go to it, then show the next.`
+                  : "Go to pinned message"
+              }
               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
-                  <path
-                    d="M9 4h6l-1 6 3 3v2H7v-2l3-3-1-6zM12 15v5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+              {/* One segment per pin, lit for the one on the bar. */}
+              <span aria-hidden className="flex h-7 shrink-0 flex-col justify-center gap-0.5">
+                {pins.map((pin, index) => (
+                  <span
+                    key={pin.id}
+                    className={`w-0.5 flex-1 rounded-full transition-colors ${
+                      index === pinIndex ? "bg-accent" : "bg-line-strong"
+                    }`}
                   />
-                </svg>
-              </div>
+                ))}
+              </span>
 
               <span className="min-w-0 flex-1">
                 <span className="block text-[10.5px] font-bold uppercase tracking-wider text-accent">
-                  Pinned
-                  {pins.length > 1 &&
-                    ` · ${pins.indexOf(shownPin) + 1} of ${pins.length}`}
+                  Pinned message
                 </span>
                 <span className="block truncate text-[12.5px] text-muted">
                   <span className="font-semibold text-ink">

@@ -5,6 +5,7 @@ import type { PinDuration } from "@/lib/pins";
 const OPTIONS: { value: PinDuration; label: string }[] = [
   { value: "24h", label: "24 hours" },
   { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
   { value: "forever", label: "Until removed" },
 ];
 

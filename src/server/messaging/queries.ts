@@ -12,6 +12,7 @@ import {
   users,
 } from "@/server/db/schema";
 import { MAX_PINS, type PinDuration } from "@/lib/pins";
+import { transport } from "@/server/realtime";
 import { DEFAULT_SPACE_SLUG } from "@/server/users/onboard";
 
 import { loadReactions } from "./reactions";
@@ -576,11 +577,16 @@ export type PinnedMessage = {
 
 
 /** Now plus the chosen span, or null for a pin nobody has to remember to remove. */
+const PIN_HOURS: Record<Exclude<PinDuration, "forever">, number> = {
+  "24h": 24,
+  "7d": 24 * 7,
+  "30d": 24 * 30,
+};
+
 function pinExpiry(duration: PinDuration): Date | null {
   if (duration === "forever") return null;
 
-  const hours = duration === "24h" ? 24 : 24 * 7;
-  return new Date(Date.now() + hours * 60 * 60 * 1000);
+  return new Date(Date.now() + PIN_HOURS[duration] * 60 * 60 * 1000);
 }
 
 /**
@@ -677,6 +683,28 @@ export async function pinMessage(
   });
 }
 
+export async function pinMessageAndAnnounce(
+  conversationId: string,
+  messageId: string,
+  actorId: string,
+  duration: PinDuration,
+): Promise<PinResult> {
+  const result = await pinMessage(conversationId, messageId, actorId, duration);
+  announcePins(conversationId, messageId);
+  return result;
+}
+
+/**
+ * Everyone in the room has the pins cached, so a change has to be announced.
+ * Without this only the mod who made it saw it — everybody else kept the old
+ * banner until their own query happened to go stale, which is minutes.
+ */
+function announcePins(conversationId: string, messageId: string) {
+  void transport
+    .publish({ type: "pin.changed", conversationId, messageId })
+    .catch((err: unknown) => console.error("[realtime] pin publish error", err));
+}
+
 export async function unpinMessage(
   conversationId: string,
   messageId: string,
@@ -685,6 +713,8 @@ export async function unpinMessage(
     .update(messages)
     .set({ pinnedAt: null, pinnedBy: null, pinnedUntil: null })
     .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)));
+
+  announcePins(conversationId, messageId);
 }
 
 

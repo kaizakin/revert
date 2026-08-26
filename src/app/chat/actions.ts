@@ -11,7 +11,7 @@ import {
   markRead,
   roomStats,
   searchMessages,
-  pinMessage,
+  pinMessageAndAnnounce,
   unpinMessage,
   type PinDuration,
   updateRoom,
@@ -278,7 +278,7 @@ export async function pinMessageAction(
   const room = await getRoomForUser(me.id, slug);
   if (!room) return { error: "You are not in this room." };
 
-  const result = await pinMessage(room.id, messageId, me.id, duration);
+  const result = await pinMessageAndAnnounce(room.id, messageId, me.id, duration);
   return { replacedBody: result.replaced?.body ?? null };
 }
 
