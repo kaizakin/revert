@@ -57,6 +57,9 @@ type Props = {
  * between pings, so an ordinary pause between words does not flicker the name
  * off and back on.
  */
+/** Where the composer stops growing and starts scrolling. Matches max-h-36. */
+const COMPOSER_MAX_HEIGHT = 144;
+
 const TYPING_TTL = 4000;
 const TYPING_PING_EVERY = 1000;
 
@@ -595,6 +598,8 @@ export function RoomView({
               topic: null,
               type: "chat",
               unread: 0,
+              /* Your own message cannot mention you. */
+              mentions: 0,
               avatarUrl,
               lastBody: text,
               lastAuthor: meUsername,
@@ -608,6 +613,16 @@ export function RoomView({
       setReplyingTo(null);
       setMention(null);
       setSendError(null);
+
+      /*
+       * The grown height is an inline style, so clearing the text does not undo
+       * it — without this the composer keeps the height of the longest message
+       * sent in the session and never comes back down.
+       */
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.overflowY = "hidden";
+      }
 
       // Reset textarea height
       if (textareaRef.current) {
@@ -670,6 +685,12 @@ export function RoomView({
       names.length - 2 === 1 ? "" : "s"
     } are typing…`;
   }, [typing]);
+
+  /** Stable, so every bubble is not re-rendered by a fresh object each time. */
+  const meProfile = useMemo(
+    () => ({ username: meUsername, avatarUrl: meAvatarUrl ?? null }),
+    [meUsername, meAvatarUrl],
+  );
 
   /** Everything paged in, then the live page. */
   const timeline = useMemo(() => {
@@ -919,6 +940,7 @@ export function RoomView({
                     onReact={handleReact}
                     onOpenProfile={(username) => setPanel({ kind: "member", username })}
                     onReply={setReplyingTo}
+                    me={meProfile}
                     onJumpTo={jumpTo}
                     onTogglePin={canPin ? togglePin : undefined}
                     isPinned={pinned?.id === message.id}
@@ -1058,9 +1080,23 @@ export function RoomView({
                       setMention(
                         activeMentionQuery(event.target.value, event.target.selectionStart ?? 0),
                       );
-                      // Auto-resize
-                      event.target.style.height = "auto";
-                      event.target.style.height = `${Math.min(event.target.scrollHeight, 140)}px`;
+
+                      /*
+                       * Grow to fit, then scroll only once it cannot grow any
+                       * more. A scrollbar in a box that is still getting taller
+                       * is reporting a limit that has not been reached — and on
+                       * a one-line composer it just makes an empty field look
+                       * busy.
+                       *
+                       * Height is cleared first because scrollHeight cannot
+                       * shrink below the height already set on the element, so
+                       * without it the box grows and never comes back down.
+                       */
+                      const box = event.target;
+                      box.style.height = "auto";
+                      const wanted = box.scrollHeight;
+                      box.style.height = `${Math.min(wanted, COMPOSER_MAX_HEIGHT)}px`;
+                      box.style.overflowY = wanted > COMPOSER_MAX_HEIGHT ? "auto" : "hidden";
                     }}
                     onSelect={(event) => {
                       const el = event.currentTarget;
@@ -1071,7 +1107,7 @@ export function RoomView({
                       window.setTimeout(() => setMention(null), 200);
                     }}
                     placeholder="Type a message… (Press Enter to send, Shift+Enter for new line)"
-                    className="max-h-36 flex-1 resize-none rounded-2xl bg-raised/80 px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint/80 border border-transparent focus:border-accent/40 focus:bg-surface transition-all"
+                    className="max-h-36 flex-1 resize-none overflow-y-hidden rounded-2xl bg-raised/80 px-4 py-2.5 text-[14.5px] text-ink outline-none placeholder:text-faint/80 border border-transparent focus:border-accent/40 focus:bg-surface transition-all"
                     onKeyDown={(event) => {
                       if (mention) return;
 

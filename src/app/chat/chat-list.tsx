@@ -233,6 +233,26 @@ export function ChatList({ rooms }: { rooms: RoomSummary[] }) {
                     )}
                   </span>
 
+                  {/*
+                    An @ beside the count when something unread named you, which
+                    is the one thing worth opening a busy room for. Its own mark
+                    rather than a differently-coloured count: the number still
+                    has to say how much is waiting.
+                  */}
+                  {room.mentions > 0 && (
+                    <span
+                      title={`${room.mentions} ${
+                        room.mentions === 1 ? "mention" : "mentions"
+                      }`}
+                      aria-label={`${room.mentions} ${
+                        room.mentions === 1 ? "mention" : "mentions"
+                      }`}
+                      className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-ink shadow-xs"
+                    >
+                      @
+                    </span>
+                  )}
+
                   {isUnread && (
                     <span className="flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-full bg-accent px-1.5 text-[10.5px] font-bold text-accent-ink shadow-xs">
                       {room.unread > 99 ? "99+" : room.unread}

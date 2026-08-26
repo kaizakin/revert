@@ -5,6 +5,7 @@ import { db } from "@/server/db";
 import {
   conversationMembers,
   conversations,
+  mentions,
   messageReads,
   messages,
   spaces,
@@ -39,6 +40,8 @@ export type RoomSummary = {
   topic: string | null;
   type: "chat" | "announce" | "ama";
   unread: number;
+  /** Unread messages that named this person, for the badge WhatsApp shows. */
+  mentions: number;
   avatarUrl: string | null;
   lastBody: string | null;
   lastAuthor: string | null;
@@ -61,6 +64,10 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .innerJoin(conversations, eq(conversations.id, conversationMembers.conversationId))
     .innerJoin(spaces, eq(spaces.id, conversations.spaceId))
     .leftJoin(
+      mentions,
+      and(eq(mentions.messageId, messages.id), eq(mentions.userId, userId)),
+    )
+    .leftJoin(
       messageReads,
       and(
         eq(messageReads.conversationId, conversations.id),
@@ -81,6 +88,12 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .select({
       conversationId: messages.conversationId,
       unread: sql<number>`count(*)::int`,
+      /*
+       * Counted in the same pass rather than a second query. The unique index on
+       * (message_id, user_id) is what makes the join safe — at most one mention
+       * row per message per person, so nothing is double counted.
+       */
+      mentions: sql<number>`count(${mentions.id})::int`,
     })
     .from(messages)
     .innerJoin(
@@ -107,6 +120,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .groupBy(messages.conversationId);
 
   const unreadBy = new Map(counts.map((c) => [c.conversationId, Number(c.unread)]));
+  const mentionsBy = new Map(counts.map((c) => [c.conversationId, Number(c.mentions)]));
 
   /**
    * Latest message per room for the list preview.
@@ -151,6 +165,7 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
       type: r.type,
       avatarUrl: r.avatarUrl,
       unread: unreadBy.get(r.id) ?? 0,
+      mentions: mentionsBy.get(r.id) ?? 0,
       lastBody: preview?.body ?? null,
       lastAuthor: preview?.username ?? null,
       lastAt: preview?.createdAt ?? null,
