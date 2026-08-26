@@ -32,15 +32,15 @@ const FEATURES = [
   {
     ...CLAIMS.findable,
     icon: (
-      <>
+      <g className="ac-search">
         <circle cx="11" cy="11" r="6.5" />
         <path d="M16 16l4.5 4.5" />
-      </>
+      </g>
     ),
   },
   {
     ...CLAIMS.answered,
-    icon: <path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z" />,
+    icon: <path className="ac-pop" d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z" />,
   },
   {
     ...CLAIMS.referral,
@@ -48,7 +48,7 @@ const FEATURES = [
       <>
         <circle cx="8" cy="8.5" r="3" />
         <path d="M3 19c0-2.8 2.2-5 5-5" />
-        <path d="M13 15.5h6M16.5 12.5l3 3-3 3" />
+        <path className="ac-travel" d="M13 15.5h6M16.5 12.5l3 3-3 3" />
       </>
     ),
   },
@@ -58,17 +58,18 @@ const FEATURES = [
       <>
         <circle cx="9" cy="9" r="3.2" />
         <path d="M3.5 19c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5" />
-        <path d="M16 6.8a3.2 3.2 0 010 5.9M20.5 19c0-2.2-.9-4.2-2.4-5.4" />
+        {/* The one who turns up is the one behind, so only that half moves. */}
+        <path className="ac-arrive" d="M16 6.8a3.2 3.2 0 010 5.9M20.5 19c0-2.2-.9-4.2-2.4-5.4" />
       </>
     ),
   },
   {
     ...CLAIMS.notifications,
     icon: (
-      <>
+      <g className="ac-ring">
         <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
         <path d="M10 19a2 2 0 004 0" />
-      </>
+      </g>
     ),
   },
   {
@@ -76,7 +77,7 @@ const FEATURES = [
     icon: (
       <>
         <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
-        <path d="M9.5 12.5l1.8 1.8 3.4-3.6" />
+        <path className="ac-draw" d="M9.5 12.5l1.8 1.8 3.4-3.6" />
       </>
     ),
   },
@@ -159,7 +160,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
             {FEATURES.map((feature) => (
               <li
                 key={feature.title}
-                className="group flex items-center gap-3 bg-surface px-5 py-3.5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+                className="auth-claim group flex items-center gap-3 bg-surface px-5 py-3.5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
               >
                 {/*
                   Same tile as a landing panel, down to the border lifting on
@@ -172,7 +173,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
                 >
                   <svg
                     viewBox="0 0 24 24"
-                    className="h-4 w-4"
+                    className="ac-icon h-4 w-4 overflow-visible"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.7"

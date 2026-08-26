@@ -745,3 +745,105 @@ select:focus-visible {
     animation: wyg-arrow 1.2s var(--wyg-ease) calc(var(--wyg-gap) * 2) both;
   }
 }
+
+/*
+ * The six claim icons on the auth column.
+ *
+ * Each one moves the way the thing it stands for moves: the glass sweeps, a
+ * reply pops, the referral arrow travels, the second person arrives, the bell
+ * rings, the shield's check draws itself. The landing page argues these six
+ * claims with a whole panel each; this column has room for an icon, so the icon
+ * has to do that work.
+ *
+ * Every animation ends where the icon already rests, so nothing is hidden until
+ * hover — this column is desktop-only, but the rule is the same one the panels
+ * follow, and it means an interrupted hover cannot strand an icon mid-move.
+ *
+ * SVG children need transform-box: fill-box to rotate or scale about their own
+ * centre; without it the origin is the viewport and a 12deg rotation throws the
+ * glyph out of its tile.
+ */
+.ac-icon [class^="ac-"],
+.ac-icon > g {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes ac-search {
+  0% { transform: none; }
+  30% { transform: translate(2px, -1.5px); }
+  60% { transform: translate(-1.5px, 1.5px); }
+  100% { transform: none; }
+}
+
+@keyframes ac-pop {
+  0% { transform: none; }
+  40% { transform: scale(1.14); }
+  100% { transform: none; }
+}
+
+@keyframes ac-travel {
+  0% { transform: none; }
+  45% { transform: translateX(3px); }
+  100% { transform: none; }
+}
+
+@keyframes ac-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ac-ring {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(-13deg); }
+  40% { transform: rotate(10deg); }
+  60% { transform: rotate(-6deg); }
+  80% { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* 10 comfortably exceeds the check's ~7.5 user units, so it starts fully off. */
+@keyframes ac-draw {
+  from { stroke-dashoffset: 10; }
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Searching: a small sweep, the way you move a glass over a page. */
+  .auth-claim:hover .ac-search {
+    animation: ac-search 0.7s var(--wyg-ease);
+  }
+
+  /* A reply landing. */
+  .auth-claim:hover .ac-pop {
+    animation: ac-pop 0.5s var(--wyg-ease);
+  }
+
+  /* The hand-off, in miniature: the arrow goes across and comes back. */
+  .auth-claim:hover .ac-travel {
+    animation: ac-travel 0.6s var(--wyg-ease);
+  }
+
+  /* Somebody else turning up. */
+  .auth-claim:hover .ac-arrive {
+    animation: ac-arrive 0.5s var(--wyg-ease);
+  }
+
+  /* The bell, from the top where a bell actually swings. */
+  .auth-claim:hover .ac-ring {
+    transform-origin: top center;
+    animation: ac-ring 0.7s ease-in-out;
+  }
+
+  /* The check writes itself onto the shield. */
+  .auth-claim:hover .ac-draw {
+    stroke-dasharray: 10;
+    animation: ac-draw 0.5s var(--wyg-ease);
+  }
+}
