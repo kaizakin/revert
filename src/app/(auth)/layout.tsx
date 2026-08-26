@@ -175,7 +175,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
               {FEATURES.map((feature) => (
                 <li
                   key={feature.title}
-                  className="auth-claim group flex items-center gap-3 bg-surface px-5 py-3.5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+                  className="rv-motion group flex items-center gap-3 bg-surface px-5 py-3.5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
                 >
                   {/*
                   Same tile as a landing panel, down to the border lifting on
@@ -188,7 +188,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className="ac-icon h-4 w-4 overflow-visible"
+                      className="h-4 w-4 overflow-visible"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"

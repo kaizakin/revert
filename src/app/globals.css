@@ -747,24 +747,29 @@ select:focus-visible {
 }
 
 /*
- * The six claim icons on the auth column.
+ * Icons that move when you hover the row they sit in.
  *
- * Each one moves the way the thing it stands for moves: the glass sweeps, a
- * reply pops, the referral arrow travels, the second person arrives, the bell
- * rings, the shield's check draws itself. The landing page argues these six
- * claims with a whole panel each; this column has room for an icon, so the icon
- * has to do that work.
+ * Each one moves the way the thing it stands for moves: a glass sweeps, a reply
+ * pops, an arrow travels, a bell rings, a check draws itself. The landing page
+ * argues its claims with a whole panel each; the auth column and the footer have
+ * room for an icon, so the icon has to do that work.
+ *
+ * Put `rv-motion` on whatever the pointer lands on — a row, a card, a footer
+ * link — and an `ac-*` class on the glyph inside that should move. A glyph can
+ * be the whole <svg> for a brand mark, or one path inside it when only part of
+ * the drawing is the subject.
  *
  * Every animation ends where the icon already rests, so nothing is hidden until
- * hover — this column is desktop-only, but the rule is the same one the panels
- * follow, and it means an interrupted hover cannot strand an icon mid-move.
+ * hover — the same rule the landing panels follow, and it means an interrupted
+ * hover cannot strand a glyph mid-move.
  *
- * SVG children need transform-box: fill-box to rotate or scale about their own
- * centre; without it the origin is the viewport and a 12deg rotation throws the
- * glyph out of its tile.
+ * Elements *inside* an svg need transform-box: fill-box to turn or scale about
+ * their own centre; without it the origin is the viewport and a 13deg rotation
+ * throws the glyph out of its tile. An outer <svg> in HTML flow already behaves,
+ * so the rule deliberately only reaches descendants. It matches on the class
+ * prefix, so an `ac-` class has to come first in the attribute.
  */
-.ac-icon [class^="ac-"],
-.ac-icon > g {
+svg [class^="ac-"] {
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -808,43 +813,80 @@ select:focus-visible {
   100% { transform: rotate(0deg); }
 }
 
-/* 10 comfortably exceeds the check's ~7.5 user units, so it starts fully off. */
+/*
+ * 12 exceeds every drawn glyph: the shield's check measures 7.5 user units and
+ * the document's two rules 10, so both start fully off the page.
+ */
 @keyframes ac-draw {
-  from { stroke-dashoffset: 10; }
+  from { stroke-dashoffset: 12; }
   to { stroke-dashoffset: 0; }
+}
+
+/* An envelope opening: only the flap moves, folding down from its own top. */
+@keyframes ac-flap {
+  0% { transform: none; }
+  45% { transform: scaleY(0.5); }
+  100% { transform: none; }
+}
+
+/* Two halves of a chain closing on each other, then settling. */
+@keyframes ac-connect-a {
+  0% { transform: none; }
+  45% { transform: translate(-1.5px, 1.5px); }
+  100% { transform: none; }
+}
+
+@keyframes ac-connect-b {
+  0% { transform: none; }
+  45% { transform: translate(1.5px, -1.5px); }
+  100% { transform: none; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   /* Searching: a small sweep, the way you move a glass over a page. */
-  .auth-claim:hover .ac-search {
+  .rv-motion:hover .ac-search {
     animation: ac-search 0.7s var(--wyg-ease);
   }
 
   /* A reply landing. */
-  .auth-claim:hover .ac-pop {
+  .rv-motion:hover .ac-pop {
     animation: ac-pop 0.5s var(--wyg-ease);
   }
 
   /* The hand-off, in miniature: the arrow goes across and comes back. */
-  .auth-claim:hover .ac-travel {
+  .rv-motion:hover .ac-travel {
     animation: ac-travel 0.6s var(--wyg-ease);
   }
 
   /* Somebody else turning up. */
-  .auth-claim:hover .ac-arrive {
+  .rv-motion:hover .ac-arrive {
     animation: ac-arrive 0.5s var(--wyg-ease);
   }
 
   /* The bell, from the top where a bell actually swings. */
-  .auth-claim:hover .ac-ring {
+  .rv-motion:hover .ac-ring {
     transform-origin: top center;
     animation: ac-ring 0.7s ease-in-out;
   }
 
   /* The check writes itself onto the shield. */
-  .auth-claim:hover .ac-draw {
-    stroke-dasharray: 10;
+  .rv-motion:hover .ac-draw {
+    stroke-dasharray: 12;
     animation: ac-draw 0.5s var(--wyg-ease);
+  }
+
+  /* The flap folds from the top, where an envelope is actually hinged. */
+  .rv-motion:hover .ac-flap {
+    transform-origin: top center;
+    animation: ac-flap 0.5s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-connect-a {
+    animation: ac-connect-a 0.55s var(--wyg-ease);
+  }
+
+  .rv-motion:hover .ac-connect-b {
+    animation: ac-connect-b 0.55s var(--wyg-ease);
   }
 }
 

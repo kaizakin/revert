@@ -290,27 +290,27 @@ const SOCIALS = [
   {
     label: "minianon.in",
     href: "https://www.minianon.in/",
-    icon: <SocialIcon provider="website" className="h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="website" className="ac-pop h-4 w-4 shrink-0" />,
   },
   {
     label: "GitHub",
     href: "https://github.com/minianon",
-    icon: <SocialIcon provider="github" className="h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="github" className="ac-pop h-4 w-4 shrink-0" />,
   },
   {
     label: "LinkedIn",
     href: "https://www.linkedin.com/in/minianon",
-    icon: <SocialIcon provider="linkedin" className="h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="linkedin" className="ac-pop h-4 w-4 shrink-0" />,
   },
   {
     label: "X",
     href: "https://x.com/minianondev",
-    icon: <SocialIcon provider="x" className="h-4 w-4 shrink-0" />,
+    icon: <SocialIcon provider="x" className="ac-pop h-4 w-4 shrink-0" />,
   },
   {
     label: "YouTube",
     href: "https://www.youtube.com/channel/UCqq8kNn9yKvsl95MeiFPIeg",
-    icon: <YouTubeIcon />,
+    icon: <YouTubeIcon className="ac-pop h-4 w-4 shrink-0" />,
   },
 ];
 
@@ -475,7 +475,7 @@ const PROSE_LINK =
 const MICRO_LABEL = "text-[11px] font-semibold uppercase tracking-[0.12em] text-faint";
 
 const FOOTER_LINK =
-  "flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink";
+  "rv-motion flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink";
 
 export default async function LandingPage() {
   const { userId } = await auth();
@@ -1155,7 +1155,7 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <WhatsAppIcon />
+                <WhatsAppIcon className="ac-pop h-4 w-4" />
                 Job alerts channel
               </a>
 
@@ -1166,8 +1166,9 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 overflow-visible" aria-hidden>
                   <path
+                    className="ac-connect-b"
                     d="M10.5 13.5a3.5 3.5 0 005 0l3-3a3.5 3.5 0 00-5-5l-1 1"
                     fill="none"
                     stroke="currentColor"
@@ -1175,6 +1176,7 @@ export default async function LandingPage() {
                     strokeLinecap="round"
                   />
                   <path
+                    className="ac-connect-a"
                     d="M13.5 10.5a3.5 3.5 0 00-5 0l-3 3a3.5 3.5 0 005 5l1-1"
                     fill="none"
                     stroke="currentColor"
@@ -1200,7 +1202,17 @@ export default async function LandingPage() {
                     strokeLinejoin="round"
                   />
                   <path
-                    d="M13.5 3.5V8H18M9 12.5h6M9 16h4"
+                    d="M13.5 3.5V8H18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {/* Split off the fold, so only the writing writes itself. */}
+                  <path
+                    className="ac-draw"
+                    d="M9 12.5h6M9 16h4"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.7"
@@ -1217,15 +1229,17 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
-                  <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" strokeWidth="1.7" />
-                  <path
-                    d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                  />
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 overflow-visible" aria-hidden>
+                  <g className="ac-pop">
+                    <circle cx="12" cy="8.5" r="3.6" fill="none" stroke="currentColor" strokeWidth="1.7" />
+                    <path
+                      d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                    />
+                  </g>
                 </svg>
                 Book a call
               </a>
@@ -1239,7 +1253,7 @@ export default async function LandingPage() {
               */}
               <a
                 href={`mailto:${EMAIL}`}
-                className="flex items-start gap-2 break-all text-[13px] text-muted transition-colors hover:text-ink"
+                className="rv-motion flex items-start gap-2 break-all text-[13px] text-muted transition-colors hover:text-ink"
               >
                 <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden>
                   <path
@@ -1250,6 +1264,7 @@ export default async function LandingPage() {
                     strokeLinejoin="round"
                   />
                   <path
+                    className="ac-flap"
                     d="M3.5 7.5l8.5 6 8.5-6"
                     fill="none"
                     stroke="currentColor"
@@ -1267,9 +1282,23 @@ export default async function LandingPage() {
 
               {signedIn ? (
                 <Link href="/chat/hub" className={FOOTER_LINK}>
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 shrink-0 overflow-visible"
+                    aria-hidden
+                  >
                     <path
-                      d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                      d="M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {/* Split from the door: the arrow is what goes in. */}
+                    <path
+                      className="ac-travel"
+                      d="M10 17l5-5-5-5M15 12H3"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
@@ -1281,9 +1310,23 @@ export default async function LandingPage() {
                 </Link>
               ) : (
                 <Link href="/sign-in" className={FOOTER_LINK}>
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 shrink-0 overflow-visible"
+                    aria-hidden
+                  >
                     <path
-                      d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                      d="M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {/* Split from the door: the arrow is what goes in. */}
+                    <path
+                      className="ac-travel"
+                      d="M10 17l5-5-5-5M15 12H3"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.7"
@@ -1301,7 +1344,7 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <SocialIcon provider="github" className="h-4 w-4 shrink-0" />
+                <SocialIcon provider="github" className="ac-pop h-4 w-4 shrink-0" />
                 Sponsor
               </a>
             </nav>
