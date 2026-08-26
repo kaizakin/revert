@@ -17,6 +17,8 @@ type Props = {
   onOpenProfile: (username: string) => void;
   onReply: (message: MessageRow) => void;
   onJumpTo: (messageId: string) => void;
+  /** Opens the list of who reacted. The picker stays on the hover bar. */
+  onOpenReactions: (messageId: string) => void;
   /** Undefined for anyone without permission, so the button simply is not shown. */
   onTogglePin?: (messageId: string) => void;
   isPinned?: boolean;
@@ -55,6 +57,7 @@ export function MessageBubble({
   onOpenProfile,
   onReply,
   onJumpTo,
+  onOpenReactions,
   onTogglePin,
   isPinned,
 }: Props) {
@@ -211,10 +214,11 @@ export function MessageBubble({
           >
             <button
               type="button"
-              onClick={() => setPickerOpen((open) => !open)}
+              onClick={() => onOpenReactions(message.id)}
               aria-label={`${reactionSummary.total} ${
                 reactionSummary.total === 1 ? "reaction" : "reactions"
-              }. Change yours`}
+              }. See who reacted`}
+              title="See who reacted"
               className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shadow-sm transition-all duration-150 active:scale-95 ${
                 reactionSummary.mine
                   ? "bg-accent/15 ring-1 ring-accent/40"

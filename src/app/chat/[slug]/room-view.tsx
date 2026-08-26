@@ -12,9 +12,11 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import type { MessageRow, PinnedMessage, RoomSummary } from "@/server/messaging/queries";
-import type { ReactionSummary } from "@/lib/reactions";
+import { applyOwnReaction } from "@/lib/reactions";
 
 import {
   syncPresence,
@@ -30,6 +32,7 @@ import {
 import { GroupPanel } from "./group-panel";
 import { MemberPanel } from "./member-panel";
 import { MentionMenu, activeMentionQuery } from "./mention-menu";
+import { ReactorsPanel } from "./reactors-panel";
 import { SearchPanel } from "./search-panel";
 import { MessageBubble } from "./message-bubble";
 
@@ -49,6 +52,14 @@ type Props = {
   postDeniedReason?: string;
   initialMessages: MessageRow[];
 };
+
+/**
+ * How long a typing ping stands for. Comfortably longer than the interval
+ * between pings, so an ordinary pause between words does not flicker the name
+ * off and back on.
+ */
+const TYPING_TTL = 4000;
+const TYPING_PING_EVERY = 1000;
 
 /** Consecutive messages from the same person inside this window share a tail. */
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
@@ -132,6 +143,21 @@ export function RoomView({
 
   const history = loaded.slug === slug ? loaded : { slug, rows: [], reachedStart: false };
 
+  /** The live channel, for telling the room this person is typing. */
+  const typingChannel = useRef<RealtimeChannel | null>(null);
+
+  const pingTyping = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTypingPing.current < TYPING_PING_EVERY) return;
+
+    lastTypingPing.current = now;
+    void typingChannel.current?.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { username: meUsername },
+    });
+  }, [meUsername]);
+
   /** Guards against a second fetch while one is in flight. */
   const loadingOlder = useRef(false);
   /** The same fact as the ref, for rendering. A ref alone would not repaint. */
@@ -144,6 +170,18 @@ export function RoomView({
    * handler holding a stale copy is worse than the handler being rebuilt.
    */
   const timelineRef = useRef<MessageRow[]>([]);
+
+  /**
+   * Who is typing, and until when.
+   *
+   * Each keystroke broadcast renews an expiry rather than pairing a start with a
+   * stop, because a stop is the message that goes missing — someone closing the
+   * tab or losing signal never sends one, and their name would sit in the header
+   * forever. Nothing arriving for TYPING_TTL is what ends it.
+   */
+  const [typing, setTyping] = useState<{ username: string; until: number }[]>([]);
+  /** When we last told the room, so a fast typist sends one ping a second. */
+  const lastTypingPing = useRef(0);
 
   const [draft, setDraft] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
@@ -164,6 +202,7 @@ export function RoomView({
     | { kind: "member"; username: string }
     | { kind: "group" }
     | { kind: "search" }
+    | { kind: "reactions"; messageId: string }
     | null
   >(null);
 
@@ -329,35 +368,27 @@ export function RoomView({
 
   const handleReact = useCallback(
     async (messageId: string, emoji: string) => {
-      // Instant 0ms Optimistic reaction toggle
-      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) => {
-        return prev.map((msg) => {
-          if (msg.id !== messageId) return msg;
+      /*
+       * Applied in one pass so the swap never shows two reactions from the same
+       * person — see applyOwnReaction, which is the rule the server follows.
+       */
+      queryClient.setQueryData<MessageRow[]>(["chat", "messages", slug], (prev = []) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, reactions: applyOwnReaction(msg.reactions, emoji) }
+            : msg,
+        ),
+      );
 
-          const existing = msg.reactions.find((r) => r.emoji === emoji);
-          let updatedReactions: ReactionSummary[];
-
-          if (existing) {
-            if (existing.mine) {
-              if (existing.count <= 1) {
-                updatedReactions = msg.reactions.filter((r) => r.emoji !== emoji);
-              } else {
-                updatedReactions = msg.reactions.map((r) =>
-                  r.emoji === emoji ? { ...r, count: r.count - 1, mine: false } : r,
-                );
-              }
-            } else {
-              updatedReactions = msg.reactions.map((r) =>
-                r.emoji === emoji ? { ...r, count: r.count + 1, mine: true } : r,
-              );
-            }
-          } else {
-            updatedReactions = [...msg.reactions, { emoji, count: 1, mine: true }];
-          }
-
-          return { ...msg, reactions: updatedReactions };
-        });
-      });
+      /* History is held outside that cache, so it needs the same edit. */
+      setLoaded((current) => ({
+        ...current,
+        rows: current.rows.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, reactions: applyOwnReaction(msg.reactions, emoji) }
+            : msg,
+        ),
+      }));
 
       const result = await toggleReactionAction(slug, messageId, emoji);
       if (result.error) {
@@ -427,12 +458,47 @@ export function RoomView({
         },
       )
       .on("broadcast", { event: "reaction.changed" }, () => void reload())
+      .on(
+        "broadcast",
+        { event: "typing" },
+        (payload: { payload?: { username?: string } }) => {
+          const who = payload?.payload?.username;
+          /* Own keystrokes come back on the same channel. */
+          if (!who || who === meUsername) return;
+
+          setTyping((current) => [
+            ...current.filter((t) => t.username !== who),
+            { username: who, until: Date.now() + TYPING_TTL },
+          ]);
+        },
+      )
       .subscribe();
 
+    typingChannel.current = channel;
+
     return () => {
+      typingChannel.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, slug, catchUp, reload, queryClient]);
+  }, [conversationId, slug, catchUp, reload, queryClient, meUsername]);
+
+  /**
+   * Sweeps expired names. Runs only while somebody is typing, so an idle room
+   * has no timer at all — and the interval is short enough that a name leaves
+   * within a blink of its ping running out.
+   */
+  useEffect(() => {
+    if (typing.length === 0) return;
+
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setTyping((current) =>
+        current.some((t) => t.until <= now) ? current.filter((t) => t.until > now) : current,
+      );
+    }, 700);
+
+    return () => window.clearInterval(timer);
+  }, [typing.length]);
 
   /**
    * Prepending content pushes everything down by its height, so the reader would
@@ -585,6 +651,22 @@ export function RoomView({
     ],
   );
 
+  /**
+   * WhatsApp's phrasing, which is really three cases: one name, two names, and
+   * a count once it stops being worth reading them all out.
+   */
+  const typingLabel = useMemo(() => {
+    const names = typing.map((t) => `@${t.username}`);
+
+    if (names.length === 0) return null;
+    if (names.length === 1) return `${names[0]} is typing…`;
+    if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
+
+    return `${names[0]}, ${names[1]} and ${names.length - 2} other${
+      names.length - 2 === 1 ? "" : "s"
+    } are typing…`;
+  }, [typing]);
+
   /** Everything paged in, then the live page. */
   const timeline = useMemo(() => {
     if (history.rows.length === 0) return messages;
@@ -663,15 +745,24 @@ export function RoomView({
               <div className="flex items-center gap-2">
                 <h1 className="truncate text-[15px] font-bold text-ink tracking-tight">{name}</h1>
               </div>
-              <p className="truncate text-[12px] text-muted font-medium">
-                {stats.total} {stats.total === 1 ? "member" : "members"}
-                {stats.active > 0 && (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                    {` · ${stats.active} online`}
-                  </span>
-                )}
-                {note ? ` · ${note}` : ""}
-              </p>
+              {/*
+                Typing replaces the counts rather than sitting beside them. The
+                subtitle is one line, and while somebody is mid-sentence that is
+                the more useful thing for it to say.
+              */}
+              {typingLabel ? (
+                <p className="truncate text-[12px] font-medium text-accent">{typingLabel}</p>
+              ) : (
+                <p className="truncate text-[12px] text-muted font-medium">
+                  {stats.total} {stats.total === 1 ? "member" : "members"}
+                  {stats.active > 0 && (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                      {` · ${stats.active} online`}
+                    </span>
+                  )}
+                  {note ? ` · ${note}` : ""}
+                </p>
+              )}
             </div>
           </button>
 
@@ -825,6 +916,7 @@ export function RoomView({
                     onOpenProfile={(username) => setPanel({ kind: "member", username })}
                     onReply={setReplyingTo}
                     onJumpTo={jumpTo}
+                    onOpenReactions={(id) => setPanel({ kind: "reactions", messageId: id })}
                     onTogglePin={canPin ? togglePin : undefined}
                     isPinned={pinned?.id === message.id}
                   />
@@ -916,6 +1008,9 @@ export function RoomView({
                     value={draft}
                     onChange={(event) => {
                       setDraft(event.target.value);
+                      /* Only while there is something to type — clearing the box
+                         is not typing, and neither is tabbing through it. */
+                      if (event.target.value.trim()) pingTyping();
                       setMention(
                         activeMentionQuery(event.target.value, event.target.selectionStart ?? 0),
                       );
@@ -984,6 +1079,15 @@ export function RoomView({
 
       {panel?.kind === "search" && (
         <SearchPanel slug={slug} onClose={() => setPanel(null)} onJumpTo={jumpTo} />
+      )}
+
+      {panel?.kind === "reactions" && (
+        <ReactorsPanel
+          key={panel.messageId}
+          messageId={panel.messageId}
+          onClose={() => setPanel(null)}
+          onOpenMember={(username) => setPanel({ kind: "member", username })}
+        />
       )}
 
       {panel?.kind === "group" && (

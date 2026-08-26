@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { isAllowedEmoji, type ReactionSummary } from "@/lib/reactions";
 import { db } from "@/server/db";
@@ -111,3 +111,68 @@ export async function toggleReaction(
 
     return { ok: true, added: removed.length === 0 };
   }
+
+
+export type ReactorGroup = {
+  emoji: string;
+  people: { username: string; displayName: string | null; avatarUrl: string | null }[];
+};
+
+/**
+ * Who reacted to one message, grouped by what they picked.
+ *
+ * Fetched on demand rather than carried on every message. A room only ever
+ * needs this for the one message somebody tapped, and putting names on every
+ * reaction in the page payload would cost far more than it is worth — the
+ * summary already carries what the bubble draws.
+ *
+ * Membership is checked rather than trusted: a server action is a public
+ * endpoint and the message id comes from the client.
+ */
+export async function listReactors(
+  viewerId: string,
+  messageId: string,
+): Promise<ReactorGroup[]> {
+  const [target] = await db
+    .select({ id: messages.id })
+    .from(messages)
+    .innerJoin(
+      conversationMembers,
+      and(
+        eq(conversationMembers.conversationId, messages.conversationId),
+        eq(conversationMembers.userId, viewerId),
+      ),
+    )
+    .where(and(eq(messages.id, messageId), isNull(messages.deletedAt)))
+    .limit(1);
+
+  if (!target) return [];
+
+  const rows = await db
+    .select({
+      emoji: reactions.emoji,
+      username: users.username,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      reactedAt: reactions.createdAt,
+    })
+    .from(reactions)
+    .innerJoin(users, eq(users.id, reactions.userId))
+    .where(and(eq(reactions.messageId, messageId), isNull(users.deletedAt)))
+    .orderBy(asc(reactions.createdAt));
+
+  /* Grouped in order of first appearance, so the list reads as it happened. */
+  const groups = new Map<string, ReactorGroup>();
+
+  for (const row of rows) {
+    const group = groups.get(row.emoji) ?? { emoji: row.emoji, people: [] };
+    group.people.push({
+      username: row.username,
+      displayName: row.displayName,
+      avatarUrl: row.avatarUrl,
+    });
+    groups.set(row.emoji, group);
+  }
+
+  return [...groups.values()].sort((a, b) => b.people.length - a.people.length);
+}

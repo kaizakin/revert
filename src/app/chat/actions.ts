@@ -21,7 +21,11 @@ import {
   type RoomStats,
   type RoomSummary,
 } from "@/server/messaging/queries";
-import { toggleReaction } from "@/server/messaging/reactions";
+import {
+  listReactors,
+  toggleReaction,
+  type ReactorGroup,
+} from "@/server/messaging/reactions";
 import { sendMessage } from "@/server/messaging/send";
 import {
   applyReciprocity,
@@ -131,6 +135,16 @@ export async function refetchMessages(slug: string): Promise<MessageRow[]> {
   if (!room) return [];
 
   return listMessages(room.id, me.id);
+}
+
+export type { ReactorGroup };
+
+/** Who reacted to one message, for the sheet that opens on the pill. */
+export async function fetchReactors(messageId: string): Promise<ReactorGroup[]> {
+  const me = await getDbUser();
+  if (!me) return [];
+
+  return listReactors(me.id, messageId);
 }
 
 export type ReactState = { error?: string };
