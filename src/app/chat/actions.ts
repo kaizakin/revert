@@ -6,12 +6,14 @@ import {
   MESSAGE_PAGE_SIZE,
   listMessages,
   listRoomsForUser,
-  getPinnedMessage,
+  listPins,
   listRoomMembers,
   markRead,
   roomStats,
   searchMessages,
-  setPinned,
+  pinMessage,
+  unpinMessage,
+  type PinDuration,
   updateRoom,
   type PinnedMessage,
   type SearchHit,
@@ -262,9 +264,27 @@ export async function searchRoomMembers(
 }
 
 /** Pinning is a moderation action, so it is admin-only and re-checked here. */
-export async function setPinnedAction(
+export type PinState = { error?: string; replacedBody?: string | null };
+
+export async function pinMessageAction(
   slug: string,
-  messageId: string | null,
+  messageId: string,
+  duration: PinDuration,
+): Promise<PinState> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+  if (!me.isAdmin) return { error: "Only mods can pin messages." };
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return { error: "You are not in this room." };
+
+  const result = await pinMessage(room.id, messageId, me.id, duration);
+  return { replacedBody: result.replaced?.body ?? null };
+}
+
+export async function unpinMessageAction(
+  slug: string,
+  messageId: string,
 ): Promise<{ error?: string }> {
   const me = await getDbUser();
   if (!me) return { error: "You are signed out." };
@@ -273,18 +293,18 @@ export async function setPinnedAction(
   const room = await getRoomForUser(me.id, slug);
   if (!room) return { error: "You are not in this room." };
 
-  await setPinned(room.id, messageId, me.id);
+  await unpinMessage(room.id, messageId);
   return {};
 }
 
-export async function fetchPinned(slug: string): Promise<PinnedMessage | null> {
+export async function fetchPins(slug: string): Promise<PinnedMessage[]> {
   const me = await getDbUser();
-  if (!me) return null;
+  if (!me) return [];
 
   const room = await getRoomForUser(me.id, slug);
-  if (!room) return null;
+  if (!room) return [];
 
-  return getPinnedMessage(room.id);
+  return listPins(room.id);
 }
 
 export async function searchInRoom(slug: string, query: string): Promise<SearchHit[]> {

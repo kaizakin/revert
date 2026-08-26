@@ -11,6 +11,7 @@ import {
   spaces,
   users,
 } from "@/server/db/schema";
+import { MAX_PINS, type PinDuration } from "@/lib/pins";
 import { DEFAULT_SPACE_SLUG } from "@/server/users/onboard";
 
 import { loadReactions } from "./reactions";
@@ -568,15 +569,38 @@ export type PinnedMessage = {
   id: string;
   body: string | null;
   authorUsername: string | null;
+  pinnedAt: Date | null;
+  /** Null for a pin that stays until somebody takes it down. */
+  pinnedUntil: Date | null;
 };
 
-/** The pinned message for a room, if there is one. */
-export async function getPinnedMessage(conversationId: string): Promise<PinnedMessage | null> {
-  const [row] = await db
+
+/** Now plus the chosen span, or null for a pin nobody has to remember to remove. */
+function pinExpiry(duration: PinDuration): Date | null {
+  if (duration === "forever") return null;
+
+  const hours = duration === "24h" ? 24 : 24 * 7;
+  return new Date(Date.now() + hours * 60 * 60 * 1000);
+}
+
+/**
+ * The pins still standing, newest first.
+ *
+ * Expiry is applied in the read rather than by a sweep: a pin whose moment has
+ * passed simply stops matching, so nothing has to run on a schedule and a
+ * missed job cannot leave a stale banner up for a week.
+ */
+export { MAX_PINS };
+export type { PinDuration };
+
+export async function listPins(conversationId: string): Promise<PinnedMessage[]> {
+  return db
     .select({
       id: messages.id,
       body: messages.body,
       authorUsername: users.username,
+      pinnedAt: messages.pinnedAt,
+      pinnedUntil: messages.pinnedUntil,
     })
     .from(messages)
     .leftJoin(users, eq(users.id, messages.authorId))
@@ -585,37 +609,80 @@ export async function getPinnedMessage(conversationId: string): Promise<PinnedMe
         eq(messages.conversationId, conversationId),
         isNull(messages.deletedAt),
         sql`${messages.pinnedAt} is not null`,
+        sql`(${messages.pinnedUntil} is null or ${messages.pinnedUntil} > now())`,
       ),
     )
     .orderBy(desc(messages.pinnedAt))
-    .limit(1);
-
-  return row ?? null;
+    .limit(MAX_PINS);
 }
+
+export type PinResult = {
+  /** The pin pushed out to make room, if the room was already full. */
+  replaced: { id: string; body: string | null } | null;
+};
+
+/**
+ * Pin a message, dropping the oldest if the room is already full.
+ *
+ * The whole thing is one transaction: counting the pins and then adding one in
+ * separate statements lets two admins pinning at the same moment both see two
+ * and both add, leaving four up.
+ */
+export async function pinMessage(
+  conversationId: string,
+  messageId: string,
+  actorId: string,
+  duration: PinDuration,
+): Promise<PinResult> {
+  return db.transaction(async (tx) => {
+    const live = await tx
+      .select({ id: messages.id, body: messages.body, pinnedAt: messages.pinnedAt })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.conversationId, conversationId),
+          isNull(messages.deletedAt),
+          sql`${messages.pinnedAt} is not null`,
+          sql`(${messages.pinnedUntil} is null or ${messages.pinnedUntil} > now())`,
+        ),
+      )
+      .orderBy(desc(messages.pinnedAt));
+
+    /* Re-pinning something already up is a change of duration, not a fourth pin. */
+    const already = live.some((row) => row.id === messageId);
+    const oldest = !already && live.length >= MAX_PINS ? live[live.length - 1] : null;
+
+    if (oldest) {
+      await tx
+        .update(messages)
+        .set({ pinnedAt: null, pinnedBy: null, pinnedUntil: null })
+        .where(eq(messages.id, oldest.id));
+    }
+
+    await tx
+      .update(messages)
+      .set({ pinnedAt: new Date(), pinnedBy: actorId, pinnedUntil: pinExpiry(duration) })
+      .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)));
+
+    return { replaced: oldest ? { id: oldest.id, body: oldest.body } : null };
+  });
+}
+
+export async function unpinMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<void> {
+  await db
+    .update(messages)
+    .set({ pinnedAt: null, pinnedBy: null, pinnedUntil: null })
+    .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)));
+}
+
 
 /**
  * Only one pinned message per room, so pinning clears any previous one in the
  * same transaction. Two pinned messages would make the banner ambiguous.
  */
-export async function setPinned(
-  conversationId: string,
-  messageId: string | null,
-  actorId: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx
-      .update(messages)
-      .set({ pinnedAt: null, pinnedBy: null })
-      .where(eq(messages.conversationId, conversationId));
-
-    if (messageId) {
-      await tx
-        .update(messages)
-        .set({ pinnedAt: new Date(), pinnedBy: actorId })
-        .where(and(eq(messages.id, messageId), eq(messages.conversationId, conversationId)));
-    }
-  });
-}
 
 export type SearchHit = {
   id: string;

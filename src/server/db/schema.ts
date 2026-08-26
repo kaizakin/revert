@@ -221,6 +221,14 @@ export const messages = pgTable(
 
     pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     pinnedBy: uuid("pinned_by").references(() => users.id, { onDelete: "set null" }),
+    /**
+     * When the pin lapses. Null means it stays until somebody takes it down.
+     *
+     * Stored as the moment it ends rather than a duration, so a pin expires on
+     * its own without anything having to run — nothing sweeps the table, the
+     * read simply stops matching it.
+     */
+    pinnedUntil: timestamp("pinned_until", { withTimezone: true }),
 
     editedAt: timestamp("edited_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -229,6 +237,8 @@ export const messages = pgTable(
   (t) => [
     index("messages_conversation_created_idx").on(t.conversationId, t.createdAt),
     index("messages_author_idx").on(t.authorId),
+    /* The pin banner reads this on every room open. */
+    index("messages_pinned_idx").on(t.conversationId, t.pinnedAt),
   ],
 );
 

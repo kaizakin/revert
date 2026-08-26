@@ -7,7 +7,9 @@ import { renderRichText } from "@/lib/rich-text";
 import { Avatar } from "@/components/avatar";
 import type { MessageRow } from "@/server/messaging/queries";
 import { REACTION_EMOJI } from "@/lib/reactions";
+import type { PinDuration } from "@/lib/pins";
 
+import { PinMenu } from "./pin-menu";
 import { ReactionSheet } from "./reaction-sheet";
 
 type Props = {
@@ -20,8 +22,13 @@ type Props = {
   onReply: (message: MessageRow) => void;
   onJumpTo: (messageId: string) => void;
   /** Undefined for anyone without permission, so the button simply is not shown. */
-  onTogglePin?: (messageId: string) => void;
+  /** Only passed to mods. Absent means the control is not drawn at all. */
+  onPin?: (messageId: string, duration: PinDuration) => void;
+  onUnpin?: (messageId: string) => void;
   isPinned?: boolean;
+  /** So the menu can warn before a pin pushes another one out. */
+  pinsAtCapacity?: boolean;
+  oldestPinBody?: string | null;
 };
 
 /** Stable per-username colour for sender names, the way group chats do it. */
@@ -57,11 +64,15 @@ export function MessageBubble({
   onOpenProfile,
   onReply,
   onJumpTo,
-  onTogglePin,
+  onPin,
+  onUnpin,
   isPinned,
+  pinsAtCapacity,
+  oldestPinBody,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [pinMenuOpen, setPinMenuOpen] = useState(false);
 
   /**
    * Collapsed to what a pill can hold: the three most-used emoji and a total.
@@ -311,10 +322,12 @@ export function MessageBubble({
             </button>
 
             {/* Pin action (mods only) */}
-            {onTogglePin && (
+            {onPin && (
               <button
                 type="button"
-                onClick={() => onTogglePin(message.id)}
+                onClick={() =>
+                  isPinned ? onUnpin?.(message.id) : setPinMenuOpen((open) => !open)
+                }
                 aria-label={isPinned ? "Unpin message" : "Pin message"}
                 title={isPinned ? "Unpin" : "Pin message"}
                 className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors active:scale-90 ${
@@ -334,6 +347,19 @@ export function MessageBubble({
                   />
                 </svg>
               </button>
+            )}
+
+            {pinMenuOpen && onPin && (
+              <PinMenu
+                align={isMine ? "right" : "left"}
+                atCapacity={Boolean(pinsAtCapacity)}
+                replacing={oldestPinBody ?? null}
+                onPick={(duration) => {
+                  onPin(message.id, duration);
+                  setPinMenuOpen(false);
+                }}
+                onClose={() => setPinMenuOpen(false)}
+              />
             )}
           </div>
 

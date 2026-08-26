@@ -15,8 +15,10 @@ import { Avatar } from "@/components/avatar";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { MAX_PINS } from "@/lib/pins";
 import type {
   MessageRow,
+  PinDuration,
   PinnedMessage,
   RoomSummary,
   UnreadMarker,
@@ -29,8 +31,9 @@ import {
 
 import {
   syncPresence,
-  fetchPinned,
-  setPinnedAction,
+  fetchPins,
+  pinMessageAction,
+  unpinMessageAction,
   fetchNewMessages,
   fetchOlderMessages,
   markRoomRead,
@@ -133,9 +136,9 @@ export function RoomView({
     staleTime: 1000 * 30,
   });
 
-  const { data: pinned = null } = useQuery<PinnedMessage | null>({
-    queryKey: ["chat", "pinned", slug],
-    queryFn: () => fetchPinned(slug),
+  const { data: pins = [] } = useQuery<PinnedMessage[]>({
+    queryKey: ["chat", "pins", slug],
+    queryFn: () => fetchPins(slug),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -177,6 +180,15 @@ export function RoomView({
     () => ({ username: meUsername, avatarUrl: meAvatarUrl ?? null }),
     [meUsername, meAvatarUrl],
   );
+
+  /**
+   * Which pinned messages are on screen.
+   *
+   * The banner points at the pin you cannot see. Once you have scrolled to the
+   * newest one, continuing to advertise it is telling you about something you
+   * are already looking at — so it steps back to the one behind it.
+   */
+  const [visiblePins, setVisiblePins] = useState<string[]>([]);
 
   /** Guards against a second fetch while one is in flight. */
   const loadingOlder = useRef(false);
@@ -282,34 +294,35 @@ export function RoomView({
     if (el.scrollTop < 400) void loadOlder();
   }, [loadOlder]);
 
-  const togglePin = useCallback(
-    async (messageId: string) => {
-      const isCurrentPinned = pinned?.id === messageId;
-      const nextPinnedId = isCurrentPinned ? null : messageId;
+  const pinFor = useCallback(
+    async (messageId: string, duration: PinDuration) => {
+      const result = await pinMessageAction(slug, messageId, duration);
 
-      // Optimistic update for pin banner
-      const currentMsg = messages.find((m) => m.id === messageId);
-      const nextPinnedObj: PinnedMessage | null = isCurrentPinned
-        ? null
-        : currentMsg
-          ? {
-              id: currentMsg.id,
-              body: currentMsg.body,
-              authorUsername: currentMsg.authorUsername,
-            }
-          : null;
-
-      queryClient.setQueryData(["chat", "pinned", slug], nextPinnedObj);
-
-      const result = await setPinnedAction(slug, nextPinnedId);
       if (result.error) {
         setReactError(result.error);
-        void queryClient.invalidateQueries({ queryKey: ["chat", "pinned", slug] });
         return;
       }
+
       setReactError(null);
+      void queryClient.invalidateQueries({ queryKey: ["chat", "pins", slug] });
     },
-    [slug, pinned, messages, queryClient],
+    [slug, queryClient],
+  );
+
+  const unpin = useCallback(
+    async (messageId: string) => {
+      /* Taken off the banner first: an unpin that waits for the round trip
+         leaves the thing you just removed sitting at the top of the room. */
+      queryClient.setQueryData<PinnedMessage[]>(["chat", "pins", slug], (prev = []) =>
+        prev.filter((pin) => pin.id !== messageId),
+      );
+
+      const result = await unpinMessageAction(slug, messageId);
+      if (result.error) setReactError(result.error);
+
+      void queryClient.invalidateQueries({ queryKey: ["chat", "pins", slug] });
+    },
+    [slug, queryClient],
   );
 
   /**
@@ -714,6 +727,16 @@ export function RoomView({
     } are typing…`;
   }, [typing]);
 
+  /**
+   * The pin worth showing: the newest one not currently on screen. If they are
+   * all in view the newest stays up, because a bar that vanishes as you scroll
+   * is worse than one pointing at something already visible.
+   */
+  const shownPin = useMemo(
+    () => pins.find((pin) => !visiblePins.includes(pin.id)) ?? pins[0] ?? null,
+    [pins, visiblePins],
+  );
+
   /** Everything paged in, then the live page. */
   const timeline = useMemo(() => {
     if (history.rows.length === 0) return messages;
@@ -755,6 +778,48 @@ export function RoomView({
       }),
     [timeline, marker.firstUnreadId],
   );
+
+  /**
+   * Watches the pinned messages that are actually rendered, so the banner knows
+   * which one the reader can already see.
+   *
+   * Re-created whenever the set of pins changes, because an observer holds the
+   * elements it was given — a pin added after it was set up would never be
+   * watched, and the bar would keep pointing at something on screen.
+   */
+  useEffect(() => {
+    /* Nothing to watch. Whatever ids are left over cannot matter: the banner
+       only ever looks them up against the current pins. */
+    if (pins.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisiblePins((current) => {
+          const next = new Set(current);
+
+          for (const entry of entries) {
+            const id = entry.target.id.replace("msg-", "");
+            if (entry.isIntersecting) next.add(id);
+            else next.delete(id);
+          }
+
+          const list = [...next];
+          /* Same members means same array, so the memo below does not rerun. */
+          return list.length === current.length && list.every((id) => current.includes(id))
+            ? current
+            : list;
+        });
+      },
+      { threshold: 0.4 },
+    );
+
+    for (const pin of pins) {
+      const el = document.getElementById(`msg-${pin.id}`);
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [pins, timeline]);
 
   /**
    * Where the room opens, decided once.
@@ -865,12 +930,16 @@ export function RoomView({
           </button>
         </div>
 
-        {/* Pinned Message Banner */}
-        {pinned && (
+        {/*
+          One pin on the bar, never three. A room with three notices at the top
+          has no room left for the conversation — so the bar carries the one you
+          cannot currently see and says how many there are behind it.
+        */}
+        {shownPin && (
           <div className="flex w-full items-center justify-between border-b border-line bg-surface/95 px-4 py-2 text-left backdrop-blur-sm transition-colors hover:bg-raised/60">
             <button
               type="button"
-              onClick={() => jumpTo(pinned.id)}
+              onClick={() => jumpTo(shownPin.id)}
               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
@@ -885,15 +954,18 @@ export function RoomView({
                   />
                 </svg>
               </div>
+
               <span className="min-w-0 flex-1">
                 <span className="block text-[10.5px] font-bold uppercase tracking-wider text-accent">
-                  Pinned Message
+                  Pinned
+                  {pins.length > 1 &&
+                    ` · ${pins.indexOf(shownPin) + 1} of ${pins.length}`}
                 </span>
                 <span className="block truncate text-[12.5px] text-muted">
                   <span className="font-semibold text-ink">
-                    @{pinned.authorUsername ?? "deleted"}:
+                    @{shownPin.authorUsername ?? "deleted"}:
                   </span>{" "}
-                  {pinned.body}
+                  {shownPin.body}
                 </span>
               </span>
             </button>
@@ -901,8 +973,9 @@ export function RoomView({
             {canPin && (
               <button
                 type="button"
-                onClick={() => togglePin(pinned.id)}
+                onClick={() => unpin(shownPin.id)}
                 title="Unpin message"
+                aria-label="Unpin message"
                 className="ml-2 rounded p-1 text-muted hover:bg-raised hover:text-ink"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
@@ -1011,8 +1084,11 @@ export function RoomView({
                     onOpenProfile={(username) => setPanel({ kind: "member", username })}
                     onReply={setReplyingTo}
                     onJumpTo={jumpTo}
-                    onTogglePin={canPin ? togglePin : undefined}
-                    isPinned={pinned?.id === message.id}
+                    onPin={canPin ? pinFor : undefined}
+                    onUnpin={canPin ? unpin : undefined}
+                    isPinned={pins.some((pin) => pin.id === message.id)}
+                    pinsAtCapacity={pins.length >= MAX_PINS}
+                    oldestPinBody={pins.at(-1)?.body ?? null}
                   />
                 </div>
               );
