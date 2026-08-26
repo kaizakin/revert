@@ -1487,6 +1487,9 @@ export function RoomView({
         <MemberPanel
           key={panel.username}
           username={panel.username}
+          slug={slug}
+          canModerate={canModerate}
+          canManageRoles={canManageRoles}
           onClose={() => setPanel(null)}
         />
       )}

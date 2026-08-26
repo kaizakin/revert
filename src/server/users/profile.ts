@@ -8,6 +8,7 @@ import {
   type SocialKey,
   SOCIAL_PROVIDERS,
 } from "@/lib/profile";
+import type { MemberRole } from "@/lib/moderation";
 import { db } from "@/server/db";
 import { socialAccounts, users } from "@/server/db/schema";
 
@@ -27,6 +28,9 @@ export type PublicProfile = {
   lastActiveAt: Date | null;
   showLastActive: boolean;
   createdAt: Date;
+  role: MemberRole;
+  /** Null when they are free to post. Only meaningful to a mod. */
+  bannedUntil: Date | null;
   socials: { provider: SocialKey; handle: string }[];
 };
 
@@ -55,6 +59,8 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
 
   return {
     id: row.id,
+    role: row.role,
+    bannedUntil: row.bannedUntil,
     username: row.username,
     displayName: row.displayName,
     avatarUrl: row.avatarUrl,

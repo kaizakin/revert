@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { AvatarLightbox } from "@/components/avatar-lightbox";
 import { SocialIcon } from "@/components/social-icon";
@@ -11,9 +11,15 @@ import {
   SOCIAL_PROVIDERS,
   type SocialKey,
 } from "@/lib/profile";
+import { BAN_OPTIONS, describeBan } from "@/lib/moderation";
 import type { PublicProfile } from "@/server/users/profile";
 
-import { fetchProfile } from "../actions";
+import {
+  banUserAction,
+  fetchProfile,
+  setRoleAction,
+  unbanUserAction,
+} from "../actions";
 
 const STATUS_LABEL: Record<string, string> = {
   working: "Working",
@@ -33,11 +39,21 @@ function relative(value: Date | null) {
 
 export function MemberPanel({
   username,
+  slug,
+  canModerate,
+  canManageRoles,
   onClose,
 }: {
   username: string;
+  slug: string;
+  /** Deleting and banning. A moderator has these. */
+  canModerate: boolean;
+  /** Promoting and demoting, which only the admin has. */
+  canManageRoles: boolean;
   onClose: () => void;
 }) {
+  const queryClient = useQueryClient();
+
   const { data: profile = null, isLoading } = useQuery<PublicProfile | null>({
     queryKey: ["chat", "member-profile", username],
     queryFn: () => fetchProfile(username),
@@ -45,6 +61,29 @@ export function MemberPanel({
   });
 
   const state = isLoading ? "loading" : profile ? "ready" : "missing";
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /** Recomputed from the profile, so it clears itself when a ban lapses. */
+  const banNote = describeBan(profile?.bannedUntil);
+
+  /**
+   * Every control here does the same three things, so they share one runner:
+   * lock the panel, report what came back, and refetch. Refetching rather than
+   * patching, because a ban changes what the panel is allowed to offer next and
+   * guessing at that is how the buttons end up lying.
+   */
+  const run = async (action: () => Promise<{ error?: string }>) => {
+    setBusy(true);
+    setError(null);
+
+    const result = await action();
+    if (result.error) setError(result.error);
+
+    await queryClient.invalidateQueries({ queryKey: ["chat", "member-profile", username] });
+    setBusy(false);
+  };
 
   // Escape closes
   useEffect(() => {
@@ -213,6 +252,75 @@ export function MemberPanel({
                     );
                   })}
                 </ul>
+              </div>
+            )}
+
+            {/*
+              Below everything else, and only for the people who can use it. A
+              moderation panel above someone's profile makes every visit to a
+              member look like the start of a case.
+            */}
+            {(canModerate || canManageRoles) && profile.role !== "admin" && (
+              <div className="mt-2 flex flex-col gap-2 border-t border-line px-4 py-4">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-faint">
+                  Moderation
+                </span>
+
+                {banNote && (
+                  <p className="text-[12px] font-medium text-danger">{banNote}</p>
+                )}
+
+                {error && <p className="text-[12px] text-danger">{error}</p>}
+
+                {canModerate && (
+                  banNote ? (
+                    <button
+                      type="button"
+                      onClick={() => run(() => unbanUserAction(profile.username))}
+                      disabled={busy}
+                      className="w-fit rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-line-strong disabled:opacity-50"
+                    >
+                      Let them post again
+                    </button>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {BAN_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            run(() => banUserAction(slug, profile.username, option.value))
+                          }
+                          disabled={busy}
+                          className="rounded-full border border-line px-2.5 py-1 text-[11.5px] text-muted transition-colors hover:border-danger/50 hover:text-danger disabled:opacity-50"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                )}
+
+                {canManageRoles && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      run(() =>
+                        setRoleAction(
+                          slug,
+                          profile.username,
+                          profile.role === "moderator" ? "member" : "moderator",
+                        ),
+                      )
+                    }
+                    disabled={busy}
+                    className="w-fit rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-line-strong disabled:opacity-50"
+                  >
+                    {profile.role === "moderator"
+                      ? "Remove as moderator"
+                      : "Make moderator"}
+                  </button>
+                )}
               </div>
             )}
           </>

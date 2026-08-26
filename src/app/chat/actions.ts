@@ -38,10 +38,15 @@ import {
 import { uploadRoomAvatar } from "@/server/users/profile";
 import { eq, sql } from "drizzle-orm";
 
-import { isAdmin, type BanDuration } from "@/lib/moderation";
+import { isAdmin, type BanDuration, type MemberRole } from "@/lib/moderation";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
-import { banUser, deleteMessage, unbanUser } from "@/server/messaging/moderate";
+import {
+  banUser,
+  deleteMessage,
+  setRole,
+  unbanUser,
+} from "@/server/messaging/moderate";
 import { getDbUser } from "@/server/users/sync";
 
 export type SendActionResult =
@@ -171,11 +176,15 @@ export async function deleteMessageAction(
  * asking for it has — and it is the thing a mod is actually looking at.
  */
 export async function banUserAction(
+  slug: string,
   username: string,
   duration: BanDuration,
 ): Promise<{ error?: string }> {
   const me = await getDbUser();
   if (!me) return { error: "You are signed out." };
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return { error: "You are not in this room." };
 
   const [target] = await db
     .select({ id: users.id })
@@ -185,7 +194,7 @@ export async function banUserAction(
 
   if (!target) return { error: "No such member." };
 
-  const result = await banUser(me.id, target.id, duration);
+  const result = await banUser(me.id, target.id, duration, room.id);
   return result.ok ? {} : { error: result.error };
 }
 
@@ -202,6 +211,29 @@ export async function unbanUserAction(username: string): Promise<{ error?: strin
   if (!target) return { error: "No such member." };
 
   const result = await unbanUser(me.id, target.id);
+  return result.ok ? {} : { error: result.error };
+}
+
+export async function setRoleAction(
+  slug: string,
+  username: string,
+  role: MemberRole,
+): Promise<{ error?: string }> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return { error: "You are not in this room." };
+
+  const [target] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(sql`lower(${users.username})`, username.toLowerCase()))
+    .limit(1);
+
+  if (!target) return { error: "No such member." };
+
+  const result = await setRole(me.id, target.id, role, room.id);
   return result.ok ? {} : { error: result.error };
 }
 
