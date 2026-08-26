@@ -847,3 +847,32 @@ select:focus-visible {
     animation: ac-draw 0.5s var(--wyg-ease);
   }
 }
+
+/*
+ * The project marks in "Who runs this".
+ *
+ * These are other people's logos, loaded as <img> because at 18px the optimiser
+ * buys nothing — so there is nothing inside them to animate the way the claim
+ * icons animate their own paths. The motion has to be the mark itself.
+ *
+ * It leans the way the external arrow beside it points, so hovering the row
+ * makes one gesture toward the site it is about to open rather than two
+ * unrelated ones. Like the claim icons, it ends where it rests.
+ */
+@keyframes rv-mark-lean {
+  0% {
+    transform: none;
+  }
+  45% {
+    transform: translate(1.5px, -3px) scale(1.12);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .project-card:hover .project-mark {
+    animation: rv-mark-lean 0.55s var(--wyg-ease);
+  }
+}

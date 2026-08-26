@@ -885,7 +885,7 @@ export default async function LandingPage() {
                     href={project.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex h-full flex-col gap-1.5 p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+                    className="project-card group flex h-full flex-col gap-1.5 p-5 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
                   >
                     <span className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
                       {/*
@@ -904,7 +904,7 @@ export default async function LandingPage() {
                         alt=""
                         width={18}
                         height={18}
-                        className="h-[18px] w-[18px] shrink-0 rounded-sm"
+                        className="project-mark h-[18px] w-[18px] shrink-0 rounded-sm"
                       />
 
                       {project.name}
