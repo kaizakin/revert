@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   getRoomForUser,
+  MESSAGE_PAGE_SIZE,
   listMessages,
   listRoomsForUser,
   getPinnedMessage,
@@ -86,6 +87,39 @@ export async function fetchNewMessages(
   if (Number.isNaN(after.getTime())) return [];
 
   return listMessages(room.id, me.id, { after });
+}
+
+export type OlderPage = {
+  rows: MessageRow[];
+  /** No more history behind this page, so the client can stop asking. */
+  reachedStart: boolean;
+};
+
+/**
+ * A page of history, older than what is already on screen.
+ *
+ * Reports exhaustion itself rather than exporting the page size for the client
+ * to compare against — that constant lives in a module that imports the
+ * database driver, and pulling it into a client component would drag the server
+ * into the browser bundle.
+ */
+export async function fetchOlderMessages(
+  slug: string,
+  beforeIso: string,
+): Promise<OlderPage> {
+  const empty: OlderPage = { rows: [], reachedStart: true };
+
+  const me = await getDbUser();
+  if (!me) return empty;
+
+  const room = await getRoomForUser(me.id, slug);
+  if (!room) return empty;
+
+  const before = new Date(beforeIso);
+  if (Number.isNaN(before.getTime())) return empty;
+
+  const rows = await listMessages(room.id, me.id, { before });
+  return { rows, reachedStart: rows.length < MESSAGE_PAGE_SIZE };
 }
 
 /** Re-read the current page of messages, for when reactions change. */

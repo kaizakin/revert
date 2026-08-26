@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -20,6 +21,7 @@ import {
   fetchPinned,
   setPinnedAction,
   fetchNewMessages,
+  fetchOlderMessages,
   markRoomRead,
   refetchMessages,
   sendMessageAction,
@@ -112,6 +114,37 @@ export function RoomView({
     staleTime: 1000 * 60 * 5,
   });
 
+  /**
+   * History paged in by scrolling up.
+   *
+   * Deliberately not merged into the messages cache: that query re-reads the
+   * newest page every five seconds and replaces what it holds, so anything paged
+   * in would be wiped on the next tick. Tagged with the room it belongs to so
+   * changing rooms cannot show the previous room's history — the component stays
+   * mounted across that change, and clearing it in an effect would cost a second
+   * render before paint.
+   */
+  const [loaded, setLoaded] = useState<{
+    slug: string;
+    rows: MessageRow[];
+    reachedStart: boolean;
+  }>({ slug, rows: [], reachedStart: false });
+
+  const history = loaded.slug === slug ? loaded : { slug, rows: [], reachedStart: false };
+
+  /** Guards against a second fetch while one is in flight. */
+  const loadingOlder = useRef(false);
+  /** The same fact as the ref, for rendering. A ref alone would not repaint. */
+  const [fetchingOlder, setFetchingOlder] = useState(false);
+  /** Scroll height captured before a prepend, so the view can be pinned after it. */
+  const anchor = useRef<number | null>(null);
+  /**
+   * The current timeline, read by the loader without being a dependency of it.
+   * Taking it as one would rebuild the loader on every poll, and the scroll
+   * handler holding a stale copy is worse than the handler being rebuilt.
+   */
+  const timelineRef = useRef<MessageRow[]>([]);
+
   const [draft, setDraft] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
   const [reactError, setReactError] = useState<string | null>(null);
@@ -141,12 +174,53 @@ export function RoomView({
     });
   }, []);
 
+  const loadOlder = useCallback(async () => {
+    if (loadingOlder.current || history.reachedStart) return;
+
+    const oldest = timelineRef.current[0];
+    if (!oldest) return;
+
+    loadingOlder.current = true;
+    setFetchingOlder(true);
+
+    // Captured before the request so the pin below has something to measure
+    // against, whatever else changes the list while this is in flight.
+    const el = scrollContainerRef.current;
+    if (el) anchor.current = el.scrollHeight;
+
+    try {
+      const page = await fetchOlderMessages(slug, new Date(oldest.createdAt).toISOString());
+
+      setLoaded((current) => {
+        const base =
+          current.slug === slug ? current : { slug, rows: [], reachedStart: false };
+        const seen = new Set(base.rows.map((m) => m.id));
+
+        return {
+          slug,
+          rows: [...page.rows.filter((m) => !seen.has(m.id)), ...base.rows],
+          reachedStart: page.reachedStart,
+        };
+      });
+    } finally {
+      loadingOlder.current = false;
+      setFetchingOlder(false);
+    }
+  }, [slug, history.reachedStart]);
+
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     setShowScrollBottom(distanceFromBottom > 250);
-  }, []);
+
+    /*
+     * Fetches before the top is actually reached, so the next page is usually
+     * already in place by the time it would be needed. Waiting for scrollTop of
+     * zero means every reader hits a wall first and then waits.
+     */
+    if (el.scrollTop < 400) void loadOlder();
+  }, [loadOlder]);
 
   const togglePin = useCallback(
     async (messageId: string) => {
@@ -360,7 +434,33 @@ export function RoomView({
     };
   }, [conversationId, slug, catchUp, reload, queryClient]);
 
+  /**
+   * Prepending content pushes everything down by its height, so the reader would
+   * be thrown backwards by exactly one page every time one loads. Adding that
+   * height back leaves the same messages under the cursor.
+   *
+   * Layout effect rather than effect: this has to run before the browser paints,
+   * or the jump is visible as a flicker.
+   */
+  useLayoutEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || anchor.current === null) return;
+
+    const grew = el.scrollHeight - anchor.current;
+    anchor.current = null;
+    if (grew > 0) el.scrollTop += grew;
+  }, [history.rows.length]);
+
   useEffect(() => {
+    const el = scrollContainerRef.current;
+
+    /*
+     * Only follow the conversation for someone already at the end of it. Yanking
+     * a reader out of history because somebody posted is the fastest way to make
+     * history unusable — and it is now reachable, so this matters.
+     */
+    if (el && el.scrollHeight - el.scrollTop - el.clientHeight > 250) return;
+
     scrollToBottom(false);
   }, [messages.length, scrollToBottom]);
 
@@ -485,13 +585,24 @@ export function RoomView({
     ],
   );
 
+  /** Everything paged in, then the live page. */
+  const timeline = useMemo(() => {
+    if (history.rows.length === 0) return messages;
+    const seen = new Set(messages.map((m) => m.id));
+    return [...history.rows.filter((m) => !seen.has(m.id)), ...messages];
+  }, [history.rows, messages]);
+
+  useEffect(() => {
+    timelineRef.current = timeline;
+  }, [timeline]);
+
   /**
    * Day separators and bubble grouping are derived cleanly from message stream.
    */
   const rendered = useMemo(
     () =>
-      messages.map((message, index) => {
-        const previous = index > 0 ? messages[index - 1] : null;
+      timeline.map((message, index) => {
+        const previous = index > 0 ? timeline[index - 1] : null;
 
         const showDay = !previous || dayOf(message.createdAt) !== dayOf(previous.createdAt);
 
@@ -507,7 +618,7 @@ export function RoomView({
 
         return { message, showDay, startsRun };
       }),
-    [messages],
+    [timeline],
   );
 
   return (
@@ -661,6 +772,29 @@ export function RoomView({
                 <p className="mt-1 text-xs text-muted">
                   Be the first one to say hello in this group!
                 </p>
+              </div>
+            )}
+
+            {/*
+              Only speaks when there is something to say. In the common case the
+              next page has already arrived before the top is reached, and a
+              spinner that flashes on every page is worse than no spinner.
+            */}
+            {rendered.length > 0 && (fetchingOlder || history.reachedStart) && (
+              <div className="flex justify-center py-4">
+                {fetchingOlder ? (
+                  <span className="flex items-center gap-2 text-[11px] text-muted">
+                    <span
+                      aria-hidden
+                      className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-line-strong border-t-accent motion-reduce:animate-none"
+                    />
+                    Loading earlier messages
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-bubble-in px-3.5 py-1 text-[11px] font-medium text-bubble-meta shadow-sm border border-line/40">
+                    The beginning of {name}
+                  </span>
+                )}
               </div>
             )}
 

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 
 import type { ReactionSummary } from "@/lib/reactions";
 import { db } from "@/server/db";
@@ -216,7 +216,14 @@ export type MessageRow = {
 export async function listMessages(
   conversationId: string,
   viewerId: string,
-  opts: { limit?: number; after?: Date; showReadReceipts?: boolean } = {},
+  opts: {
+    limit?: number;
+    /** Newer than this — used to catch up on what arrived while polling. */
+    after?: Date;
+    /** Older than this — used to page backwards through history. */
+    before?: Date;
+    showReadReceipts?: boolean;
+  } = {},
 ): Promise<MessageRow[]> {
   const limit = Math.min(opts.limit ?? MESSAGE_PAGE_SIZE, 200);
 
@@ -234,25 +241,29 @@ export async function listMessages(
     .from(messages)
     .leftJoin(users, eq(users.id, messages.authorId));
 
-  const rows = opts.after
-    ? await base
-        .where(
-          and(
-            eq(messages.conversationId, conversationId),
-            isNull(messages.deletedAt),
-            gt(messages.createdAt, opts.after),
-          ),
+  /*
+   * Three windows, one shape. `after` walks forward from a known point and so
+   * reads in ascending order; the other two take the newest rows that qualify
+   * and flip them, because "the 50 before X" means the 50 nearest X, not the 50
+   * oldest in the room.
+   */
+  const window = opts.after
+    ? and(
+        eq(messages.conversationId, conversationId),
+        isNull(messages.deletedAt),
+        gt(messages.createdAt, opts.after),
+      )
+    : opts.before
+      ? and(
+          eq(messages.conversationId, conversationId),
+          isNull(messages.deletedAt),
+          lt(messages.createdAt, opts.before),
         )
-        .orderBy(asc(messages.createdAt))
-        .limit(limit)
-    : (
-        await base
-          .where(
-            and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt)),
-          )
-          .orderBy(desc(messages.createdAt))
-          .limit(limit)
-      ).reverse();
+      : and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt));
+
+  const rows = opts.after
+    ? await base.where(window).orderBy(asc(messages.createdAt)).limit(limit)
+    : (await base.where(window).orderBy(desc(messages.createdAt)).limit(limit)).reverse();
 
   const byMessage = await loadReactions(
     rows.map((row) => row.id),
