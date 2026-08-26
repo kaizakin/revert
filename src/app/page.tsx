@@ -107,7 +107,8 @@ const PHOTO: string | null = "/avatars/me.jpeg";
  * redirects to it and github.com itself is not on the allow-list.
  */
 const CONTRIBUTOR_URL = "https://github.com/kaizakin";
-const CONTRIBUTOR_PHOTO: string | null = "https://avatars.githubusercontent.com/u/143219880?v=4";
+const CONTRIBUTOR_PHOTO: string | null =
+  "https://avatars.githubusercontent.com/u/143219880?v=4";
 
 /** Size of the WhatsApp channel. Rounded down, because it moves. */
 const CHANNEL_SIZE = "2,000+";
@@ -168,7 +169,12 @@ const FAQ = [
  */
 function WhatsAppIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden focusable="false">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      focusable="false"
+    >
       <path
         fill="currentColor"
         d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 0 1 6.988 2.898 9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"
@@ -185,7 +191,12 @@ function WhatsAppIcon({ className = "h-4 w-4" }: { className?: string }) {
  */
 function YouTubeIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden focusable="false">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      focusable="false"
+    >
       <path
         fill="currentColor"
         d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"
@@ -264,7 +275,9 @@ const SOCIALS = [
   {
     label: "minianon.in",
     href: "https://www.minianon.in/",
-    icon: <SocialIcon provider="website" className="ac-turn h-4 w-4 shrink-0" />,
+    icon: (
+      <SocialIcon provider="website" className="ac-turn h-4 w-4 shrink-0" />
+    ),
   },
   {
     label: "GitHub",
@@ -405,7 +418,9 @@ function Section({
         id ? "scroll-mt-16" : ""
       }`}
     >
-      <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-3xl"}`}>{children}</div>
+      <div className={`mx-auto w-full ${wide ? "max-w-5xl" : "max-w-3xl"}`}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -446,7 +461,8 @@ const PROSE_LINK =
   "text-ink underline decoration-line-strong underline-offset-2 transition-colors hover:text-accent";
 
 /** Small caps label. Used in the footer columns and above the projects list. */
-const MICRO_LABEL = "text-[11px] font-semibold uppercase tracking-[0.12em] text-faint";
+const MICRO_LABEL =
+  "text-[11px] font-semibold uppercase tracking-[0.12em] text-faint";
 
 const FOOTER_LINK =
   "rv-motion flex w-fit items-center gap-2 text-[13px] text-muted transition-colors hover:text-ink";
@@ -521,9 +537,9 @@ export default async function LandingPage() {
               </h1>
 
               <p className="mt-6 max-w-lg text-[17px] leading-[1.6] text-muted">
-                Every opening from the channel, plus somewhere to ask about it — what the
-                interview was actually like, or who you already know inside. You join as a
-                username, and nothing scrolls away.
+                Every opening from the channel, plus somewhere to ask about it —
+                what the interview was actually like, or who you already know
+                inside. You join as a username, and nothing scrolls away.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -546,8 +562,8 @@ export default async function LandingPage() {
               </div>
 
               <p className="mt-4 text-[13px] text-faint">
-                Takes about twenty seconds, and the same button signs you back in. Google
-                or email — no phone number, ever.
+                Takes about twenty seconds, and the same button signs you back
+                in. Google or email — no phone number, ever.
               </p>
 
               {/*
@@ -586,7 +602,10 @@ export default async function LandingPage() {
                 <span className="flex items-center gap-2">
                   <WhatsAppIcon className="h-4 w-4 shrink-0 text-[#25D366]" />
                   <span>
-                    <span className="font-semibold text-ink">{CHANNEL_SIZE}</span> follow the{" "}
+                    <span className="font-semibold text-ink">
+                      {CHANNEL_SIZE}
+                    </span>{" "}
+                    follow the{" "}
                     <a
                       href={CHANNEL_URL}
                       target="_blank"
@@ -641,16 +660,16 @@ export default async function LandingPage() {
           <Heading>The channel ends where your questions start.</Heading>
 
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            The channel is how two thousand people hear about a role, and it is staying
-            exactly as it is. It just cannot do the other half — the asking, the
-            answering, and getting to the person who knows.
+            The channel is how two thousand people hear about a role, and it is
+            staying exactly as it is. It just cannot do the other half — the
+            asking, the answering, and getting to the person who knows.
           </p>
 
           <div className="mt-10 overflow-hidden rounded-md border border-line">
             <table className="w-full text-left">
               <caption className="sr-only">
-                The WhatsApp channel and Revert compared across six things people run
-                into.
+                The WhatsApp channel and Revert compared across six things
+                people run into.
               </caption>
 
               <thead className="hidden sm:table-header-group">
@@ -820,15 +839,15 @@ export default async function LandingPage() {
               </span>
 
               <p className="mt-3 text-[15px] leading-[1.7] text-muted">
-                I have been running the channel for a while now — posting openings,
-                answering the same questions at midnight, and watching good roles
-                scroll away before anyone saw them. Revert is the room that channel
-                never had.
+                I have been running the channel for a while now — posting
+                openings, answering the same questions at midnight, and watching
+                good roles scroll away before anyone saw them. Revert is the
+                room that channel never had.
               </p>
 
               <p className="mt-4 text-[15px] leading-[1.7] text-muted">
-                If you want to talk through a resume, a switch, or where to even start,
-                you can{" "}
+                If you want to talk through a resume, a switch, or where to even
+                start, you can{" "}
                 <a
                   href={BOOKING_URL}
                   target="_blank"
@@ -922,7 +941,9 @@ export default async function LandingPage() {
                   Kartik
                   <ExternalArrow />
                 </span>
-                <span className="text-[12px] text-faint">@kaizakin · contributor</span>
+                <span className="text-[12px] text-faint">
+                  @kaizakin · contributor
+                </span>
               </span>
             </a>
           </div>
@@ -933,8 +954,8 @@ export default async function LandingPage() {
           <Heading>What is coming</Heading>
 
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            One room today, on purpose — a quiet room full of people beats five empty
-            ones. Next, in roughly this order:
+            One room today, on purpose — a quiet room full of people beats five
+            empty ones. Next, in roughly this order:
           </p>
 
           <WhatsComing />
@@ -955,7 +976,9 @@ export default async function LandingPage() {
                     &ldquo;{item.quote}&rdquo;
                   </blockquote>
                   <div className="flex flex-col">
-                    <span className="text-[14px] font-semibold text-ink">{item.name}</span>
+                    <span className="text-[14px] font-semibold text-ink">
+                      {item.name}
+                    </span>
                     <span className="text-[13px] text-faint">{item.role}</span>
                   </div>
                 </li>
@@ -1004,7 +1027,9 @@ export default async function LandingPage() {
                   </svg>
                 </summary>
 
-                <p className="px-5 pb-5 text-[15px] leading-[1.7] text-muted">{item.a}</p>
+                <p className="px-5 pb-5 text-[15px] leading-[1.7] text-muted">
+                  {item.a}
+                </p>
               </details>
             ))}
           </div>
@@ -1041,10 +1066,10 @@ export default async function LandingPage() {
             </h2>
 
             <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-muted">
-              No ads, no data sold, nobody paying to reach you. It is one person and a
-              server bill. If it has been useful and you are in a position to, you can
-              chip in — and if you are not, ignore this and use it anyway. That is what
-              it is for.
+              No ads, no data sold, nobody paying to reach you. It is one person
+              and a server bill. If it has been useful and you are in a position
+              to, you can chip in — and if you are not, ignore this and use it
+              anyway. That is what it is for.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -1060,7 +1085,10 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={`${signedIn ? PRIMARY_BUTTON : SECONDARY_BUTTON} gap-2`}
               >
-                <SocialIcon provider="github" className="h-[18px] w-[18px] shrink-0" />
+                <SocialIcon
+                  provider="github"
+                  className="h-[18px] w-[18px] shrink-0"
+                />
                 Sponsor on GitHub
               </a>
             </div>
@@ -1081,8 +1109,8 @@ export default async function LandingPage() {
               <Logo size={28} />
 
               <p className="text-[13px] leading-[1.7] text-muted">
-                Job alerts, questions and referrals — where you are a username, not a phone
-                number.
+                Job alerts, questions and referrals — where you are a username,
+                not a phone number.
               </p>
 
               {/* The same two numbers as the strip up top, kept honest the same way. */}
@@ -1140,7 +1168,11 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 overflow-visible" aria-hidden>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0 overflow-visible"
+                  aria-hidden
+                >
                   <path
                     className="ac-connect-b"
                     d="M10.5 13.5a3.5 3.5 0 005 0l3-3a3.5 3.5 0 00-5-5l-1 1"
@@ -1167,7 +1199,11 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0"
+                  aria-hidden
+                >
                   <path
                     d="M6 3.5h7.5L18 8v12.5H6z"
                     fill="none"
@@ -1203,22 +1239,24 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 overflow-visible" aria-hidden>
-                  <circle
-                    className="ac-nod"
-                    cx="12"
-                    cy="8.5"
-                    r="3.6"
+                {/*
+                  A handset, not a person. The row books a call, and a person
+                  was the same glyph a member row uses for a member — it read as
+                  a profile link sitting in a list of places to go.
+                */}
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0 overflow-visible"
+                  aria-hidden
+                >
+                  <path
+                    className="ac-shake"
+                    d="M21.5 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 011.6 4.2 2 2 0 013.6 2h3a2 2 0 012 1.7c.1.9.4 1.8.7 2.7a2 2 0 01-.5 2.1L7.6 9.9a16 16 0 006 6l1.4-1.4a2 2 0 012.1-.5c.9.3 1.8.6 2.7.7a2 2 0 011.7 2z"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.7"
-                  />
-                    <path
-                      d="M4.5 20c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
                     strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                 </svg>
                 Book a call
@@ -1235,7 +1273,11 @@ export default async function LandingPage() {
                 href={`mailto:${EMAIL}`}
                 className="rv-motion flex items-start gap-2 break-all text-[13px] text-muted transition-colors hover:text-ink"
               >
-                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0" aria-hidden>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  aria-hidden
+                >
                   <path
                     d="M3.5 6.5h17v11h-17z"
                     fill="none"
@@ -1324,7 +1366,10 @@ export default async function LandingPage() {
                 rel="noopener noreferrer"
                 className={FOOTER_LINK}
               >
-                <SocialIcon provider="github" className="ac-spin h-4 w-4 shrink-0" />
+                <SocialIcon
+                  provider="github"
+                  className="ac-spin h-4 w-4 shrink-0"
+                />
                 Sponsor
               </a>
             </nav>
@@ -1337,8 +1382,9 @@ export default async function LandingPage() {
               and the promise is privacy.
             */}
             <p className="max-w-2xl text-[12px] leading-[1.7] text-faint">
-              Messages are private, not end-to-end encrypted. Reports get read and acted on,
-              because a job community without moderation fills up with fake recruiters fast.
+              Messages are private, not end-to-end encrypted. Reports get read
+              and acted on, because a job community without moderation fills up
+              with fake recruiters fast.
             </p>
 
             <p className="shrink-0 text-[12px] text-faint">

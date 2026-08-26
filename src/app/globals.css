@@ -869,14 +869,6 @@ svg [class^="ac-"] {
   100% { transform: none; }
 }
 
-/* A nod. Only the head moves, or it is a bow. */
-@keyframes ac-nod {
-  0% { transform: none; }
-  35% { transform: translateY(1.6px); }
-  70% { transform: translateY(-0.5px); }
-  100% { transform: none; }
-}
-
 /* Two beats, because one is a twitch and a heart does not twitch. */
 @keyframes ac-beat {
   0% { transform: none; }
@@ -926,6 +918,16 @@ svg [class^="ac-"] {
     animation: ac-ring 0.7s ease-in-out;
   }
 
+  /*
+   * A phone ringing. Same damped wobble as the bell — the difference is the
+   * pivot, and it is the whole difference: a bell hangs from its crown, a phone
+   * buzzes about its middle. Turning a handset from the top would swing it like
+   * something on a hook.
+   */
+  .rv-motion:hover .ac-shake {
+    animation: ac-ring 0.7s ease-in-out;
+  }
+
   /* The check writes itself onto the shield. */
   .rv-motion:hover .ac-draw {
     stroke-dasharray: 12;
@@ -956,10 +958,6 @@ svg [class^="ac-"] {
 
   .rv-motion:hover .ac-press {
     animation: ac-press 0.4s var(--wyg-ease);
-  }
-
-  .rv-motion:hover .ac-nod {
-    animation: ac-nod 0.5s var(--wyg-ease);
   }
 
   .rv-motion:hover .ac-beat {
