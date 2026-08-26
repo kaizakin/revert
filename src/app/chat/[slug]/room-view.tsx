@@ -14,6 +14,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/avatar";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+import { useRouter } from "next/navigation";
+
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { systemText } from "@/lib/moderation";
 import { MAX_PINS } from "@/lib/pins";
@@ -122,6 +124,7 @@ export function RoomView({
   marker,
 }: Props) {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data: messages = initialMessages } = useQuery<MessageRow[]>({
     queryKey: ["chat", "messages", slug],
@@ -251,7 +254,7 @@ export function RoomView({
    * mutually exclusive, so a single value avoids the state where both are set.
    */
   const [panel, setPanel] = useState<
-    | { kind: "member"; username: string }
+    | { kind: "member"; username: string; moderate?: boolean }
     | { kind: "group" }
     | { kind: "search" }
     | null
@@ -578,6 +581,27 @@ export function RoomView({
           }));
         },
       )
+      .on(
+        "broadcast",
+        { event: "member.changed" },
+        (payload: { payload?: { username?: string } }) => {
+          const who = payload?.payload?.username;
+          if (!who) return;
+
+          /* Everybody's copy of the member list and that profile is now wrong. */
+          void queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
+          void queryClient.invalidateQueries({
+            queryKey: ["chat", "member-profile", who],
+          });
+
+          /*
+           * If it was about you, what you are allowed to do changed — and that
+           * came from the server render, so only a re-render can update it.
+           * Nobody thinks to reload after being told they are a moderator.
+           */
+          if (who.toLowerCase() === meUsername.toLowerCase()) router.refresh();
+        },
+      )
       .on("broadcast", { event: "pin.changed" }, () => {
         void queryClient.invalidateQueries({
           queryKey: ["chat", "pins", slug],
@@ -611,7 +635,7 @@ export function RoomView({
       typingChannel.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, slug, catchUp, reload, queryClient, meUsername]);
+  }, [conversationId, slug, catchUp, reload, queryClient, meUsername, router]);
 
   /**
    * Sweeps expired names. Runs only while somebody is typing, so an idle room
@@ -1264,6 +1288,12 @@ export function RoomView({
                         onReply={setReplyingTo}
                         onJumpTo={jumpTo}
                         onDelete={canModerate ? removeMessage : undefined}
+                      onModerateAuthor={
+                        canModerate
+                          ? (username) =>
+                              setPanel({ kind: "member", username, moderate: true })
+                          : undefined
+                      }
                         onPin={canPin ? pinFor : undefined}
                         onUnpin={canPin ? unpin : undefined}
                         isPinned={pins.some((pin) => pin.id === message.id)}
@@ -1493,9 +1523,11 @@ export function RoomView({
         <MemberPanel
           key={panel.username}
           username={panel.username}
+          openModeration={panel.moderate ?? false}
           slug={slug}
           canModerate={canModerate}
           canManageRoles={canManageRoles}
+          meUsername={meUsername}
           onClose={() => setPanel(null)}
         />
       )}
@@ -1515,6 +1547,7 @@ export function RoomView({
           onOpenMember={(username) => setPanel({ kind: "member", username })}
           canModerate={canModerate}
           canManageRoles={canManageRoles}
+          meUsername={meUsername}
           refreshKey={stats.total}
         />
       )}

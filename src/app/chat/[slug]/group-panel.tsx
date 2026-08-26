@@ -76,7 +76,14 @@ function GroupPicture({
               strokeWidth="1.6"
               strokeLinejoin="round"
             />
-            <circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            <circle
+              cx="12"
+              cy="13"
+              r="3.2"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            />
           </svg>
         )}
       </button>
@@ -274,6 +281,7 @@ export function GroupPanel({
   slug,
   canModerate,
   canManageRoles,
+  meUsername,
   onClose,
   onOpenMember,
   refreshKey,
@@ -285,6 +293,8 @@ export function GroupPanel({
   canModerate: boolean;
   /** Promoting and demoting, which only the admin has. */
   canManageRoles: boolean;
+  /** So the shield never appears against your own name. */
+  meUsername: string;
   refreshKey?: number;
 }) {
   const queryClient = useQueryClient();
@@ -301,7 +311,9 @@ export function GroupPanel({
   const act = async (action: () => Promise<{ error?: string }>) => {
     setBusy(true);
     await action();
-    await queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
+    await queryClient.invalidateQueries({
+      queryKey: ["chat", "room-info", slug],
+    });
     setBusy(false);
     setModFor(null);
   };
@@ -315,7 +327,9 @@ export function GroupPanel({
   const state = isLoading ? "loading" : info ? "ready" : "missing";
 
   const reload = () => {
-    void queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
+    void queryClient.invalidateQueries({
+      queryKey: ["chat", "room-info", slug],
+    });
   };
 
   useEffect(() => {
@@ -348,14 +362,18 @@ export function GroupPanel({
             />
           </svg>
         </button>
-        <h2 className="text-[15px] font-bold text-ink tracking-tight">Group Info</h2>
+        <h2 className="text-[15px] font-bold text-ink tracking-tight">
+          Group Info
+        </h2>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {state === "loading" && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-            <p className="mt-3 text-xs font-medium text-faint">Loading group info…</p>
+            <p className="mt-3 text-xs font-medium text-faint">
+              Loading group info…
+            </p>
           </div>
         )}
 
@@ -377,7 +395,9 @@ export function GroupPanel({
                 onError={setError}
               />
 
-              {error && <p className="text-xs font-semibold text-danger">{error}</p>}
+              {error && (
+                <p className="text-xs font-semibold text-danger">{error}</p>
+              )}
 
               <div className="flex w-full flex-col items-center gap-0.5 text-center">
                 <EditableField
@@ -389,12 +409,15 @@ export function GroupPanel({
                   canEdit={info.canEdit}
                   onSaved={reload}
                   render={(value) => (
-                    <span className="text-[17px] font-bold text-ink tracking-tight">{value}</span>
+                    <span className="text-[17px] font-bold text-ink tracking-tight">
+                      {value}
+                    </span>
                   )}
                 />
 
                 <p className="text-[12.5px] font-medium text-muted">
-                  {info.stats.total} {info.stats.total === 1 ? "member" : "members"}
+                  {info.stats.total}{" "}
+                  {info.stats.total === 1 ? "member" : "members"}
                   {info.stats.active > 0 && (
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                       {` · ${info.stats.active} online`}
@@ -419,9 +442,13 @@ export function GroupPanel({
                 onSaved={reload}
                 render={(value) =>
                   value ? (
-                    <span className="text-[13px] leading-relaxed text-ink/90">{value}</span>
+                    <span className="text-[13px] leading-relaxed text-ink/90">
+                      {value}
+                    </span>
                   ) : (
-                    <span className="text-[13px] text-faint italic">No description yet.</span>
+                    <span className="text-[13px] text-faint italic">
+                      No description yet.
+                    </span>
                   )
                 }
               />
@@ -458,7 +485,9 @@ export function GroupPanel({
                           src={member.avatarUrl}
                           name={member.username}
                           size={38}
-                          className={member.isOnline ? "ring-2 ring-emerald-500" : ""}
+                          className={
+                            member.isOnline ? "ring-2 ring-emerald-500" : ""
+                          }
                         />
                         {member.isOnline && (
                           <span
@@ -482,7 +511,9 @@ export function GroupPanel({
                           )}
                         </div>
                         <span className="truncate text-[12px] text-muted">
-                          {member.headline ? member.headline : `@${member.username}`}
+                          {member.headline
+                            ? member.headline
+                            : `@${member.username}`}
                         </span>
                       </div>
                     </button>
@@ -493,39 +524,58 @@ export function GroupPanel({
                       member a coin flip between reading about them and acting
                       on them.
                     */}
-                    {member.role !== "admin" && (canModerate || canManageRoles) && (
-                      <div className="relative shrink-0">
-                        <ModerationButton
-                          open={modFor === member.username}
-                          username={member.username}
-                          onToggle={() =>
-                            setModFor((current) =>
-                              current === member.username ? null : member.username,
-                            )
-                          }
-                        />
-
-                        {modFor === member.username && (
-                          <ModerationMenu
+                    {/*
+                      Not against your own name. The server refuses a mod
+                      banning themselves either way, but a button that only
+                      exists to be refused is a button that should not be drawn.
+                    */}
+                    {member.username !== meUsername &&
+                      member.role !== "admin" &&
+                      (canModerate || canManageRoles) && (
+                        <div className="relative shrink-0">
+                          <ModerationButton
+                            open={modFor === member.username}
                             username={member.username}
-                            role={member.role}
-                            bannedUntil={member.bannedUntil}
-                            canModerate={canModerate}
-                            canManageRoles={canManageRoles}
-                            align="right"
-                            busy={busy}
-                            onBan={(duration) =>
-                              act(() => banUserAction(slug, member.username, duration))
+                            onToggle={() =>
+                              setModFor((current) =>
+                                current === member.username
+                                  ? null
+                                  : member.username,
+                              )
                             }
-                            onUnban={() => act(() => unbanUserAction(member.username))}
-                            onSetRole={(role) =>
-                              act(() => setRoleAction(slug, member.username, role))
-                            }
-                            onClose={() => setModFor(null)}
                           />
-                        )}
-                      </div>
-                    )}
+
+                          {modFor === member.username && (
+                            <ModerationMenu
+                              username={member.username}
+                              role={member.role}
+                              bannedUntil={member.bannedUntil}
+                              canModerate={canModerate}
+                              canManageRoles={canManageRoles}
+                              align="right"
+                              busy={busy}
+                              onBan={(duration) =>
+                                act(() =>
+                                  banUserAction(
+                                    slug,
+                                    member.username,
+                                    duration,
+                                  ),
+                                )
+                              }
+                              onUnban={() =>
+                                act(() => unbanUserAction(member.username))
+                              }
+                              onSetRole={(role) =>
+                                act(() =>
+                                  setRoleAction(slug, member.username, role),
+                                )
+                              }
+                              onClose={() => setModFor(null)}
+                            />
+                          )}
+                        </div>
+                      )}
                   </li>
                 ))}
               </ul>

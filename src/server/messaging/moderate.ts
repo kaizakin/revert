@@ -138,6 +138,8 @@ export async function banUser(
       actor: actorNamed?.username ?? "a moderator",
       until: duration === "forever" ? null : until.toISOString(),
     });
+
+    announceMember(conversationId, named?.username ?? "");
   }
 
   return { ok: true };
@@ -250,7 +252,23 @@ export async function setRole(
     actor: actorNamed?.username ?? "the admin",
   });
 
+  announceMember(conversationId, target.username);
+
   return { ok: true };
+}
+
+/**
+ * Tell the room somebody's standing changed.
+ *
+ * Without this a promotion only reaches the person who granted it: the new
+ * moderator's own page was rendered before they had the role, so their buttons
+ * stay hidden until they happen to reload. Nobody thinks to reload after being
+ * told they are a moderator.
+ */
+function announceMember(conversationId: string, username: string) {
+  void transport
+    .publish({ type: "member.changed", conversationId, username })
+    .catch((err: unknown) => console.error("[realtime] member publish error", err));
 }
 
 export { postSystemMessage };

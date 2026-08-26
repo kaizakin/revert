@@ -25,6 +25,8 @@ type Props = {
   /** Only passed to mods. Absent means the control is not drawn at all. */
   /** Mods only. Takes the message down for the whole room. */
   onDelete?: (messageId: string) => void;
+  /** Mods only. Opens the author's profile with the moderation menu already up. */
+  onModerateAuthor?: (username: string) => void;
   onPin?: (messageId: string, duration: PinDuration) => void;
   onUnpin?: (messageId: string) => void;
   isPinned?: boolean;
@@ -67,6 +69,7 @@ export function MessageBubble({
   onReply,
   onJumpTo,
   onDelete,
+  onModerateAuthor,
   onPin,
   onUnpin,
   isPinned,
@@ -347,6 +350,32 @@ export function MessageBubble({
                     stroke="currentColor"
                     strokeWidth="1.8"
                     strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/*
+              The author rather than the message. Deleting one line is often
+              not the thing that needs doing, and the alternative was closing
+              the hover bar, finding them in the member list and opening it
+              again — with the message that prompted it now off screen.
+            */}
+            {onModerateAuthor && message.authorUsername && !isMine && (
+              <button
+                type="button"
+                onClick={() => onModerateAuthor(message.authorUsername!)}
+                aria-label={`Moderate @${message.authorUsername}`}
+                title="Moderate this member"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-raised hover:text-ink active:scale-90"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                  <path
+                    d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
                     strokeLinejoin="round"
                   />
                 </svg>

@@ -40,17 +40,23 @@ function relative(value: Date | null) {
 
 export function MemberPanel({
   username,
+  openModeration = false,
   slug,
   canModerate,
   canManageRoles,
+  meUsername,
   onClose,
 }: {
   username: string;
+  /** Opened from a message, where the point was to moderate them. */
+  openModeration?: boolean;
   slug: string;
   /** Deleting and banning. A moderator has these. */
   canModerate: boolean;
   /** Promoting and demoting, which only the admin has. */
   canManageRoles: boolean;
+  /** So the shield never appears on your own profile. */
+  meUsername: string;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -63,7 +69,7 @@ export function MemberPanel({
 
   const state = isLoading ? "loading" : profile ? "ready" : "missing";
 
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(openModeration);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,7 +89,9 @@ export function MemberPanel({
     const result = await action();
     if (result.error) setError(result.error);
 
-    await queryClient.invalidateQueries({ queryKey: ["chat", "member-profile", username] });
+    await queryClient.invalidateQueries({
+      queryKey: ["chat", "member-profile", username],
+    });
     setBusy(false);
     setMenuOpen(false);
   };
@@ -131,33 +139,38 @@ export function MemberPanel({
           It is a control for looking at somebody, so it belongs with the other
           controls for this panel rather than in the middle of what it is about.
         */}
-        {profile && profile.role !== "admin" && (canModerate || canManageRoles) && (
-          <div className="relative shrink-0">
-            <ModerationButton
-              open={menuOpen}
-              username={profile.username}
-              onToggle={() => setMenuOpen((open) => !open)}
-            />
-
-            {menuOpen && (
-              <ModerationMenu
+        {profile &&
+          profile.username !== meUsername &&
+          profile.role !== "admin" &&
+          (canModerate || canManageRoles) && (
+            <div className="relative shrink-0">
+              <ModerationButton
+                open={menuOpen}
                 username={profile.username}
-                role={profile.role}
-                bannedUntil={profile.bannedUntil}
-                canModerate={canModerate}
-                canManageRoles={canManageRoles}
-                align="right"
-                busy={busy}
-                onBan={(duration) =>
-                  run(() => banUserAction(slug, profile.username, duration))
-                }
-                onUnban={() => run(() => unbanUserAction(profile.username))}
-                onSetRole={(role) => run(() => setRoleAction(slug, profile.username, role))}
-                onClose={() => setMenuOpen(false)}
+                onToggle={() => setMenuOpen((open) => !open)}
               />
-            )}
-          </div>
-        )}
+
+              {menuOpen && (
+                <ModerationMenu
+                  username={profile.username}
+                  role={profile.role}
+                  bannedUntil={profile.bannedUntil}
+                  canModerate={canModerate}
+                  canManageRoles={canManageRoles}
+                  align="right"
+                  busy={busy}
+                  onBan={(duration) =>
+                    run(() => banUserAction(slug, profile.username, duration))
+                  }
+                  onUnban={() => run(() => unbanUserAction(profile.username))}
+                  onSetRole={(role) =>
+                    run(() => setRoleAction(slug, profile.username, role))
+                  }
+                  onClose={() => setMenuOpen(false)}
+                />
+              )}
+            </div>
+          )}
       </div>
 
       {/* Said once, near the top, because it changes what the profile means. */}
@@ -171,7 +184,9 @@ export function MemberPanel({
         {state === "loading" && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-            <p className="mt-3 text-xs font-medium text-faint">Loading profile…</p>
+            <p className="mt-3 text-xs font-medium text-faint">
+              Loading profile…
+            </p>
           </div>
         )}
 
@@ -201,9 +216,13 @@ export function MemberPanel({
 
               <div className="flex flex-col items-center gap-0.5 text-center">
                 {profile.displayName && (
-                  <p className="text-[17px] font-bold text-ink">{profile.displayName}</p>
+                  <p className="text-[17px] font-bold text-ink">
+                    {profile.displayName}
+                  </p>
                 )}
-                <p className="text-[13px] font-medium text-accent">@{profile.username}</p>
+                <p className="text-[13px] font-medium text-accent">
+                  @{profile.username}
+                </p>
                 {seen && (
                   <span
                     className={`mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
@@ -212,7 +231,9 @@ export function MemberPanel({
                         : "bg-raised text-faint"
                     }`}
                   >
-                    {isOnline && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+                    {isOnline && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    )}
                     {seen}
                   </span>
                 )}
@@ -236,7 +257,10 @@ export function MemberPanel({
               </div>
             )}
 
-            {(profile.workStatus || profile.company || profile.college || profile.location) && (
+            {(profile.workStatus ||
+              profile.company ||
+              profile.college ||
+              profile.location) && (
               <dl className="border-t border-line px-5 py-4 text-[13px] space-y-2.5">
                 {profile.workStatus && (
                   <div className="flex justify-between items-center gap-3">
@@ -249,19 +273,25 @@ export function MemberPanel({
                 {profile.company && (
                   <div className="flex justify-between items-center gap-3">
                     <dt className="text-muted text-xs font-medium">Company</dt>
-                    <dd className="font-semibold text-ink">{profile.company}</dd>
+                    <dd className="font-semibold text-ink">
+                      {profile.company}
+                    </dd>
                   </div>
                 )}
                 {profile.college && (
                   <div className="flex justify-between items-center gap-3">
                     <dt className="text-muted text-xs font-medium">College</dt>
-                    <dd className="font-semibold text-ink">{profile.college}</dd>
+                    <dd className="font-semibold text-ink">
+                      {profile.college}
+                    </dd>
                   </div>
                 )}
                 {profile.location && (
                   <div className="flex justify-between items-center gap-3">
                     <dt className="text-muted text-xs font-medium">Location</dt>
-                    <dd className="font-semibold text-ink">{profile.location}</dd>
+                    <dd className="font-semibold text-ink">
+                      {profile.location}
+                    </dd>
                   </div>
                 )}
               </dl>
@@ -274,12 +304,17 @@ export function MemberPanel({
                 </p>
                 <ul className="flex flex-col gap-2">
                   {profile.socials.map((social) => {
-                    const meta = SOCIAL_PROVIDERS.find((p) => p.key === social.provider);
+                    const meta = SOCIAL_PROVIDERS.find(
+                      (p) => p.key === social.provider,
+                    );
 
                     return (
                       <li key={social.provider}>
                         <a
-                          href={profileUrl(social.provider as SocialKey, social.handle)}
+                          href={profileUrl(
+                            social.provider as SocialKey,
+                            social.handle,
+                          )}
                           target="_blank"
                           rel="noopener noreferrer nofollow"
                           className="flex items-center gap-2.5 rounded-xl bg-raised/50 px-3 py-2 text-[13px] font-medium text-ink transition-all hover:bg-raised hover:text-accent"
@@ -289,9 +324,14 @@ export function MemberPanel({
                             className="h-4 w-4 shrink-0 text-muted"
                           />
                           <span className="truncate">
-                            {profileLinkLabel(social.provider as SocialKey, social.handle)}
+                            {profileLinkLabel(
+                              social.provider as SocialKey,
+                              social.handle,
+                            )}
                           </span>
-                          <span className="sr-only">{meta?.label ?? social.provider}</span>
+                          <span className="sr-only">
+                            {meta?.label ?? social.provider}
+                          </span>
                         </a>
                       </li>
                     );
@@ -305,7 +345,6 @@ export function MemberPanel({
                 {error}
               </p>
             )}
-
           </>
         )}
       </div>

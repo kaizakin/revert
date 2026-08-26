@@ -13,7 +13,13 @@ export type RealtimeEvent =
   | { type: "message.deleted"; conversationId: string; messageId: string }
   | { type: "reaction.changed"; conversationId: string; messageId: string }
   /** A pin was added, replaced or taken down. Everyone's banner has to follow. */
-  | { type: "pin.changed"; conversationId: string; messageId: string };
+  | { type: "pin.changed"; conversationId: string; messageId: string }
+  /**
+   * Somebody's role or ban changed. Carries the username rather than an id
+   * because the client compares it against the name it already knows, and an id
+   * would have to be looked up to be useful to anyone.
+   */
+  | { type: "member.changed"; conversationId: string; username: string };
 
 export interface RealtimeTransport {
   /** Fan out an event to everyone subscribed to a conversation. Server-side only. */
