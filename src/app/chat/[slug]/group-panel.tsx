@@ -5,6 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Avatar } from "@/components/avatar";
 
+import { ModerationButton, ModerationMenu } from "./moderation-menu";
+import { banUserAction, setRoleAction, unbanUserAction } from "../actions";
+
 import { fetchRoomInfo, updateRoomAction, type RoomInfo } from "../actions";
 
 function PencilIcon() {
@@ -269,6 +272,8 @@ function EditableField({
 
 export function GroupPanel({
   slug,
+  canModerate,
+  canManageRoles,
   onClose,
   onOpenMember,
   refreshKey,
@@ -276,10 +281,30 @@ export function GroupPanel({
   slug: string;
   onClose: () => void;
   onOpenMember: (username: string) => void;
+  /** Deleting and banning. A moderator has these. */
+  canModerate: boolean;
+  /** Promoting and demoting, which only the admin has. */
+  canManageRoles: boolean;
   refreshKey?: number;
 }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
+
+  const [modFor, setModFor] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  /**
+   * Same three steps for every control: lock, run, refetch. The member list has
+   * to be re-read rather than patched, because a ban or a promotion changes
+   * what the menu should offer next.
+   */
+  const act = async (action: () => Promise<{ error?: string }>) => {
+    setBusy(true);
+    await action();
+    await queryClient.invalidateQueries({ queryKey: ["chat", "room-info", slug] });
+    setBusy(false);
+    setModFor(null);
+  };
 
   const { data: info = null, isLoading } = useQuery<RoomInfo | null>({
     queryKey: ["chat", "room-info", slug, refreshKey],
@@ -416,7 +441,7 @@ export function GroupPanel({
 
               <ul className="flex flex-col gap-1">
                 {info.members.map((member) => (
-                  <li key={member.id}>
+                  <li key={member.id} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => onOpenMember(member.username)}
@@ -448,9 +473,11 @@ export function GroupPanel({
                           <span className="truncate text-[13.5px] font-bold text-ink">
                             {member.displayName ?? `@${member.username}`}
                           </span>
+                          {/* The badge says which one they are, not merely that
+                              they are something. */}
                           {member.role !== "member" && (
                             <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-accent">
-                              admin
+                              {member.role === "admin" ? "admin" : "mod"}
                             </span>
                           )}
                         </div>
@@ -459,6 +486,46 @@ export function GroupPanel({
                         </span>
                       </div>
                     </button>
+
+                    {/*
+                      Beside the row rather than inside the button that opens
+                      the profile — nesting it there would make every tap on a
+                      member a coin flip between reading about them and acting
+                      on them.
+                    */}
+                    {member.role !== "admin" && (canModerate || canManageRoles) && (
+                      <div className="relative shrink-0">
+                        <ModerationButton
+                          open={modFor === member.username}
+                          username={member.username}
+                          onToggle={() =>
+                            setModFor((current) =>
+                              current === member.username ? null : member.username,
+                            )
+                          }
+                        />
+
+                        {modFor === member.username && (
+                          <ModerationMenu
+                            username={member.username}
+                            role={member.role}
+                            bannedUntil={member.bannedUntil}
+                            canModerate={canModerate}
+                            canManageRoles={canManageRoles}
+                            align="right"
+                            busy={busy}
+                            onBan={(duration) =>
+                              act(() => banUserAction(slug, member.username, duration))
+                            }
+                            onUnban={() => act(() => unbanUserAction(member.username))}
+                            onSetRole={(role) =>
+                              act(() => setRoleAction(slug, member.username, role))
+                            }
+                            onClose={() => setModFor(null)}
+                          />
+                        )}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

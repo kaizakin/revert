@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, gt, inArray, isNull, lt, ne, sql } from "dri
 import type { ReactionSummary } from "@/lib/reactions";
 import { db } from "@/server/db";
 import {
+  type SystemMeta,
   conversationMembers,
   conversations,
   mentions,
@@ -215,6 +216,8 @@ export type MessageRow = {
   id: string;
   /** "system" is the room speaking — a moderation note, not somebody's message. */
   kind: "text" | "system" | "job";
+  /** Set on system messages, so each reader can be told it their own way. */
+  meta: SystemMeta | null;
   body: string | null;
   createdAt: Date;
   editedAt: Date | null;
@@ -251,6 +254,7 @@ export async function listMessages(
     .select({
       id: messages.id,
       kind: messages.kind,
+      meta: messages.meta,
       body: messages.body,
       createdAt: messages.createdAt,
       editedAt: messages.editedAt,
@@ -526,6 +530,8 @@ export type RoomMember = {
   avatarUrl: string | null;
   headline: string | null;
   role: MemberRole;
+  /** Only meaningful to a mod, who is the only one shown the control. */
+  bannedUntil: Date | null;
   isOnline: boolean;
   joinedAt: Date;
 };
@@ -540,6 +546,7 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
       avatarUrl: users.avatarUrl,
       headline: users.headline,
       role: users.role,
+      bannedUntil: users.bannedUntil,
       isOnline: IS_ONLINE,
       joinedAt: conversationMembers.joinedAt,
     })

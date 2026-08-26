@@ -1,15 +1,20 @@
 import { and, eq, isNull } from "drizzle-orm";
 
+import { fallbackSystemText } from "@/lib/moderation";
 import {
   banExpiry,
   canModerate,
-  describeBan,
   isAdmin,
   type BanDuration,
   type MemberRole,
 } from "@/lib/moderation";
 import { db } from "@/server/db";
-import { conversationMembers, messages, users } from "@/server/db/schema";
+import {
+  conversationMembers,
+  messages,
+  users,
+  type SystemMeta,
+} from "@/server/db/schema";
 import { transport } from "@/server/realtime";
 
 export type ModerationResult = { ok: true } | { ok: false; error: string };
@@ -121,12 +126,18 @@ export async function banUser(
       .where(eq(users.id, targetUserId))
       .limit(1);
 
-    await postSystemMessage(
-      conversationId,
-      duration === "forever"
-        ? `@${named?.username ?? "someone"} was banned`
-        : `@${named?.username ?? "someone"} ${(describeBan(until) ?? "was muted").toLowerCase()}`,
-    );
+    const [actorNamed] = await db
+      .select({ username: users.username })
+      .from(users)
+      .where(eq(users.id, actorId))
+      .limit(1);
+
+    await postSystemMessage(conversationId, {
+      action: "ban",
+      target: named?.username ?? "someone",
+      actor: actorNamed?.username ?? "a moderator",
+      until: duration === "forever" ? null : until.toISOString(),
+    });
   }
 
   return { ok: true };
@@ -164,10 +175,17 @@ export async function unbanUser(
  * Author is null: this is the room speaking, not a person, and attributing it
  * to the mod would put their name on something they did not type.
  */
-async function postSystemMessage(conversationId: string, body: string) {
+async function postSystemMessage(conversationId: string, meta: SystemMeta) {
   const [row] = await db
     .insert(messages)
-    .values({ conversationId, authorId: null, kind: "system", body })
+    .values({
+      conversationId,
+      authorId: null,
+      kind: "system",
+      /* A readable fallback, for anything reading rows without the renderer. */
+      body: fallbackSystemText(meta),
+      meta,
+    })
     .returning({ id: messages.id });
 
   void transport
@@ -220,12 +238,17 @@ export async function setRole(
     .set({ role, updatedAt: new Date() })
     .where(eq(users.id, targetUserId));
 
-  await postSystemMessage(
-    conversationId,
-    role === "moderator"
-      ? `@${target.username} is now a moderator`
-      : `@${target.username} is no longer a moderator`,
-  );
+  const [actorNamed] = await db
+    .select({ username: users.username })
+    .from(users)
+    .where(eq(users.id, actorId))
+    .limit(1);
+
+  await postSystemMessage(conversationId, {
+    action: role === "moderator" ? "promote" : "demote",
+    target: target.username,
+    actor: actorNamed?.username ?? "the admin",
+  });
 
   return { ok: true };
 }

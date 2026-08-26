@@ -11,9 +11,10 @@ import {
   SOCIAL_PROVIDERS,
   type SocialKey,
 } from "@/lib/profile";
-import { BAN_OPTIONS, describeBan } from "@/lib/moderation";
+import { describeBan } from "@/lib/moderation";
 import type { PublicProfile } from "@/server/users/profile";
 
+import { ModerationButton, ModerationMenu } from "./moderation-menu";
 import {
   banUserAction,
   fetchProfile,
@@ -62,6 +63,7 @@ export function MemberPanel({
 
   const state = isLoading ? "loading" : profile ? "ready" : "missing";
 
+  const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,6 +85,7 @@ export function MemberPanel({
 
     await queryClient.invalidateQueries({ queryKey: ["chat", "member-profile", username] });
     setBusy(false);
+    setMenuOpen(false);
   };
 
   // Escape closes
@@ -119,8 +122,50 @@ export function MemberPanel({
             />
           </svg>
         </button>
-        <h2 className="text-[15px] font-bold text-ink tracking-tight">Member Profile</h2>
+        <h2 className="flex-1 text-[15px] font-bold text-ink tracking-tight">
+          Member Profile
+        </h2>
+
+        {/*
+          In the header beside the close button, not stacked under the profile.
+          It is a control for looking at somebody, so it belongs with the other
+          controls for this panel rather than in the middle of what it is about.
+        */}
+        {profile && profile.role !== "admin" && (canModerate || canManageRoles) && (
+          <div className="relative shrink-0">
+            <ModerationButton
+              open={menuOpen}
+              username={profile.username}
+              onToggle={() => setMenuOpen((open) => !open)}
+            />
+
+            {menuOpen && (
+              <ModerationMenu
+                username={profile.username}
+                role={profile.role}
+                bannedUntil={profile.bannedUntil}
+                canModerate={canModerate}
+                canManageRoles={canManageRoles}
+                align="right"
+                busy={busy}
+                onBan={(duration) =>
+                  run(() => banUserAction(slug, profile.username, duration))
+                }
+                onUnban={() => run(() => unbanUserAction(profile.username))}
+                onSetRole={(role) => run(() => setRoleAction(slug, profile.username, role))}
+                onClose={() => setMenuOpen(false)}
+              />
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Said once, near the top, because it changes what the profile means. */}
+      {banNote && (
+        <p className="border-b border-line bg-danger/5 px-4 py-2 text-[12px] font-medium text-danger">
+          {banNote}
+        </p>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         {state === "loading" && (
@@ -255,74 +300,12 @@ export function MemberPanel({
               </div>
             )}
 
-            {/*
-              Below everything else, and only for the people who can use it. A
-              moderation panel above someone's profile makes every visit to a
-              member look like the start of a case.
-            */}
-            {(canModerate || canManageRoles) && profile.role !== "admin" && (
-              <div className="mt-2 flex flex-col gap-2 border-t border-line px-4 py-4">
-                <span className="text-[10.5px] font-bold uppercase tracking-wider text-faint">
-                  Moderation
-                </span>
-
-                {banNote && (
-                  <p className="text-[12px] font-medium text-danger">{banNote}</p>
-                )}
-
-                {error && <p className="text-[12px] text-danger">{error}</p>}
-
-                {canModerate && (
-                  banNote ? (
-                    <button
-                      type="button"
-                      onClick={() => run(() => unbanUserAction(profile.username))}
-                      disabled={busy}
-                      className="w-fit rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-line-strong disabled:opacity-50"
-                    >
-                      Let them post again
-                    </button>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {BAN_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() =>
-                            run(() => banUserAction(slug, profile.username, option.value))
-                          }
-                          disabled={busy}
-                          className="rounded-full border border-line px-2.5 py-1 text-[11.5px] text-muted transition-colors hover:border-danger/50 hover:text-danger disabled:opacity-50"
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )
-                )}
-
-                {canManageRoles && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      run(() =>
-                        setRoleAction(
-                          slug,
-                          profile.username,
-                          profile.role === "moderator" ? "member" : "moderator",
-                        ),
-                      )
-                    }
-                    disabled={busy}
-                    className="w-fit rounded-lg border border-line px-3 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-line-strong disabled:opacity-50"
-                  >
-                    {profile.role === "moderator"
-                      ? "Remove as moderator"
-                      : "Make moderator"}
-                  </button>
-                )}
-              </div>
+            {error && (
+              <p className="px-4 pb-3 text-[12px] text-danger" role="alert">
+                {error}
+              </p>
             )}
+
           </>
         )}
       </div>

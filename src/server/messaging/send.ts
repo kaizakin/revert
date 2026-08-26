@@ -2,7 +2,12 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { conversations, messages, users } from "@/server/db/schema";
-import { isAdmin, type MemberRole } from "@/lib/moderation";
+import {
+  isAdmin,
+  isPermanentBan,
+  remainingBan,
+  type MemberRole,
+} from "@/lib/moderation";
 import { transport } from "@/server/realtime";
 
 import { getRoomForUser, type MessageRow } from "./queries";
@@ -55,7 +60,19 @@ export async function sendMessage(
   }
 
   if (author.bannedUntil && author.bannedUntil > new Date()) {
-    return { ok: false, error: "You cannot post right now." };
+    /*
+     * Say what happened and when it ends. "You cannot post right now" reads
+     * like a fault in the app, so the first thing somebody does is try again,
+     * then reload, then assume it is broken.
+     */
+    return {
+      ok: false,
+      error: isPermanentBan(author.bannedUntil)
+        ? "You are banned from sending messages in this room."
+        : `You are banned from sending messages. You can post again in ${remainingBan(
+            author.bannedUntil,
+          )}.`,
+    };
   }
 
   // Run room membership check, rate limiting, and parent reply lookup in parallel
@@ -104,6 +121,7 @@ export async function sendMessage(
   const messageRow: MessageRow = {
     id: messageId,
     kind: "text",
+    meta: null,
     body,
     createdAt,
     editedAt: null,

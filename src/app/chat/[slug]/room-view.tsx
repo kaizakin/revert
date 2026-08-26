@@ -15,6 +15,7 @@ import { Avatar } from "@/components/avatar";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { systemText } from "@/lib/moderation";
 import { MAX_PINS } from "@/lib/pins";
 import type {
   MessageRow,
@@ -685,6 +686,7 @@ export function RoomView({
       const optimisticMessage: MessageRow = {
         id: tempId,
         kind: "text" as const,
+        meta: null,
         body: text,
         createdAt: new Date(),
         editedAt: null,
@@ -1242,7 +1244,11 @@ export function RoomView({
                     {message.kind === "system" ? (
                       <div className="flex justify-center py-1.5">
                         <span className="max-w-[80%] rounded-full bg-bubble-in px-3.5 py-1 text-center text-[11.5px] leading-relaxed text-bubble-meta shadow-sm ring-1 ring-line/40">
-                          {message.body}
+                          {/* Told to the person it is about in the second person;
+                              body is the fallback for rows written before meta. */}
+                          {message.meta
+                            ? systemText(message.meta, meUsername)
+                            : message.body}
                         </span>
                       </div>
                     ) : (
@@ -1507,6 +1513,8 @@ export function RoomView({
           slug={slug}
           onClose={() => setPanel(null)}
           onOpenMember={(username) => setPanel({ kind: "member", username })}
+          canModerate={canModerate}
+          canManageRoles={canManageRoles}
           refreshKey={stats.total}
         />
       )}

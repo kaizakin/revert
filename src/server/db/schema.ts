@@ -29,6 +29,14 @@ export const socialProvider = pgEnum("social_provider", [
 export const conversationKind = pgEnum("conversation_kind", ["room", "dm", "group_dm"]);
 export const conversationType = pgEnum("conversation_type", ["chat", "announce", "ama"]);
 export const messageKind = pgEnum("message_kind", ["text", "system", "job"]);
+
+/** What a system message is reporting. `until` is an ISO string, for a ban. */
+export type SystemMeta = {
+  action: "ban" | "unban" | "promote" | "demote";
+  target: string;
+  actor: string;
+  until?: string | null;
+};
 /**
  * What someone is allowed to do.
  *
@@ -227,6 +235,16 @@ export const messages = pgTable(
     authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
     kind: messageKind("kind").notNull().default("text"),
     body: text("body"),
+    /**
+     * Structure behind a system message.
+     *
+     * The sentence cannot be baked into `body`, because it is not the same
+     * sentence for everybody: the person a ban is about should read "you were
+     * banned", and everyone else should read their name. Storing who did what
+     * to whom lets each reader be told it their own way — and lets the wording
+     * change later without rewriting history.
+     */
+    meta: jsonb("meta").$type<SystemMeta>(),
     replyToId: uuid("reply_to_id"),
 
     pinnedAt: timestamp("pinned_at", { withTimezone: true }),
