@@ -64,10 +64,6 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
     .innerJoin(conversations, eq(conversations.id, conversationMembers.conversationId))
     .innerJoin(spaces, eq(spaces.id, conversations.spaceId))
     .leftJoin(
-      mentions,
-      and(eq(mentions.messageId, messages.id), eq(mentions.userId, userId)),
-    )
-    .leftJoin(
       messageReads,
       and(
         eq(messageReads.conversationId, conversations.id),
@@ -102,6 +98,10 @@ export async function listRoomsForUser(userId: string): Promise<RoomSummary[]> {
         eq(conversationMembers.conversationId, messages.conversationId),
         eq(conversationMembers.userId, userId),
       ),
+    )
+    .leftJoin(
+      mentions,
+      and(eq(mentions.messageId, messages.id), eq(mentions.userId, userId)),
     )
     .leftJoin(
       messageReads,
