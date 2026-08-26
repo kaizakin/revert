@@ -97,7 +97,7 @@ const SPONSOR_URL = "https://github.com/sponsors/minianon";
 const PHOTO: string | null = "/people/me.jpeg";
 
 /**
- * Kartik, who has been sending pull requests. Credited by name and face rather
+ * Karthik, who has been sending pull requests. Credited by name and face rather
  * than in a commit log nobody reads.
  *
  * The photo comes from GitHub rather than a file in the repo, so it follows
@@ -123,7 +123,7 @@ const TESTIMONIALS: { quote: string; name: string; role: string }[] = [];
 const STEPS = [
   {
     title: "Pick a username",
-    body: "Sign in with Google or an email address. Choose the name people will know you by — that is the only identity anyone here sees.",
+    body: "Sign in with Google or an email address. Choose the name people will know you by. That is the only identity anyone here sees.",
   },
   {
     title: "You are already in",
@@ -138,7 +138,7 @@ const STEPS = [
 const FAQ = [
   {
     q: "Is the WhatsApp channel going away?",
-    a: "No. The channel stays exactly where it is, and it is still the fastest way to hear that a role exists. Revert is where you can do something about it — ask what the interview was like, or find the person who already works there. Use both. Nothing is being taken away.",
+    a: "No. The channel stays exactly where it is, and it is still the fastest way to hear that a role exists. Revert is where you can do something about it: ask what the interview was like, or find the person who already works there. Use both. Nothing is being taken away.",
   },
   {
     q: "Does it cost anything?",
@@ -146,7 +146,7 @@ const FAQ = [
   },
   {
     q: "Who can see my details?",
-    a: "Other members see your username, and whatever you choose to put on your profile. They never see your email, and there is no phone number to see — we never ask for one.",
+    a: "Other members see your username, and whatever you choose to put on your profile. They never see your email, and there is no phone number to see because we never ask for one.",
   },
   {
     q: "What if I already have a job?",
@@ -154,7 +154,7 @@ const FAQ = [
   },
   {
     q: "Can I post an opening myself?",
-    a: "Yes, anyone can. If you know about a role, post it — and unlike a forward, it stays searchable for the person who starts looking next month.",
+    a: "Yes, anyone can. If you know about a role, post it. Unlike a forward, it stays searchable for the person who starts looking next month.",
   },
   {
     q: "What happens to fake recruiters?",
@@ -318,7 +318,7 @@ const SOCIALS = [
 const COMPARISON = [
   {
     row: "Asking a doubt",
-    channel: "You cannot — only the owner can post",
+    channel: "You cannot, only the owner can post",
     revert: "Ask in the room, and get answers",
   },
   {
@@ -537,9 +537,9 @@ export default async function LandingPage() {
               </h1>
 
               <p className="mt-6 max-w-lg text-[17px] leading-[1.6] text-muted">
-                Every opening from the channel, plus somewhere to ask about it —
-                what the interview was actually like, or who you already know
-                inside. You join as a username, and nothing scrolls away.
+                Every opening from the WhatsApp channel, plus somewhere to ask about it: what the
+                interview was actually like, or who you already know inside. You join as a
+                username, and nothing scrolls away.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -562,8 +562,7 @@ export default async function LandingPage() {
               </div>
 
               <p className="mt-4 text-[13px] text-faint">
-                Takes about twenty seconds, and the same button signs you back
-                in. Google or email — no phone number, ever.
+                Takes about twenty seconds. Google or email. No phone number, ever.
               </p>
 
               {/*
@@ -660,9 +659,9 @@ export default async function LandingPage() {
           <Heading>The channel ends where your questions start.</Heading>
 
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            The channel is how two thousand people hear about a role, and it is
-            staying exactly as it is. It just cannot do the other half — the
-            asking, the answering, and getting to the person who knows.
+            The channel is how two thousand people hear about a role, and it is staying
+            exactly as it is. It just cannot do the other half: the asking, the
+            answering, and getting to the person who knows.
           </p>
 
           <div className="mt-10 overflow-hidden rounded-md border border-line">
@@ -839,15 +838,14 @@ export default async function LandingPage() {
               </span>
 
               <p className="mt-3 text-[15px] leading-[1.7] text-muted">
-                I have been running the channel for a while now — posting
-                openings, answering the same questions at midnight, and watching
-                good roles scroll away before anyone saw them. Revert is the
-                room that channel never had.
+                I have been running the channel for a while now, posting openings,
+                answering the same questions at midnight, and watching good roles scroll
+                away before anyone saw them. Revert is the room that channel never had.
               </p>
 
               <p className="mt-4 text-[15px] leading-[1.7] text-muted">
-                If you want to talk through a resume, a switch, or where to even
-                start, you can{" "}
+                If you want to talk through a resume, a switch, or where to even start, you
+                can{" "}
                 <a
                   href={BOOKING_URL}
                   target="_blank"
@@ -860,7 +858,6 @@ export default async function LandingPage() {
               </p>
             </div>
           </div>
-
           <div className="mt-12">
             <span className={MICRO_LABEL}>Also built</span>
 
@@ -931,14 +928,14 @@ export default async function LandingPage() {
             >
               <Avatar
                 src={CONTRIBUTOR_PHOTO}
-                name="Kartik"
+                name="Karthik"
                 size={36}
                 className="shrink-0 ring-1 ring-line"
               />
 
               <span className="flex min-w-0 flex-col">
                 <span className="flex items-center gap-1.5 font-display text-[15px] font-semibold text-ink transition-colors group-hover:text-accent">
-                  Kartik
+                  Karthik
                   <ExternalArrow />
                 </span>
                 <span className="text-[12px] text-faint">
@@ -954,8 +951,8 @@ export default async function LandingPage() {
           <Heading>What is coming</Heading>
 
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-muted">
-            One room today, on purpose — a quiet room full of people beats five
-            empty ones. Next, in roughly this order:
+            One room today, on purpose. A quiet room full of people beats five empty
+            ones. Next, in roughly this order:
           </p>
 
           <WhatsComing />
@@ -1066,10 +1063,10 @@ export default async function LandingPage() {
             </h2>
 
             <p className="mt-6 max-w-xl text-[16px] leading-[1.7] text-muted">
-              No ads, no data sold, nobody paying to reach you. It is one person
-              and a server bill. If it has been useful and you are in a position
-              to, you can chip in — and if you are not, ignore this and use it
-              anyway. That is what it is for.
+              No ads, no data sold, nobody paying to reach you. It is one person and a
+              server bill. If it has been useful and you are in a position to, you can
+              chip in. If you are not, ignore this and use it anyway. That is what
+              it is for.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -1109,8 +1106,8 @@ export default async function LandingPage() {
               <Logo size={28} />
 
               <p className="text-[13px] leading-[1.7] text-muted">
-                Job alerts, questions and referrals — where you are a username,
-                not a phone number.
+                Job alerts, questions and referrals where you are a username, not a phone
+                number.
               </p>
 
               {/* The same two numbers as the strip up top, kept honest the same way. */}

@@ -123,7 +123,7 @@ function ReplyPanel() {
         </span>
 
         <span className="wyg-reply ml-auto max-w-[88%] rounded-md rounded-tr-sm bg-bubble-out px-2.5 py-1.5 text-[12px] leading-[1.45] text-bubble-out-ink">
-          System design. Say your tradeoffs out loud — that is what they score.
+          System design. Say your tradeoffs out loud. That is what they score.
         </span>
       </div>
     </Panel>

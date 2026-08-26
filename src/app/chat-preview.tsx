@@ -41,7 +41,7 @@ const SCENES: Line[][] = [
       reaction: "🙏",
     },
     {
-      body: "System design. Say your tradeoffs out loud — that is what they score.",
+      body: "System design. Say your tradeoffs out loud. That is what they score.",
       time: "9:46 am",
       mine: true,
       read: true,
@@ -93,7 +93,7 @@ const SCENES: Line[][] = [
       reaction: "🎉",
     },
     {
-      body: "Well earned. Post the rounds when you get a minute — it helps the next person.",
+      body: "Well earned. Post the rounds when you get a minute. It helps the next person.",
       time: "6:22 pm",
       mine: true,
       read: true,

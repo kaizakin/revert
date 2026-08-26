@@ -71,7 +71,7 @@ function DirectPanel() {
         </span>
 
         <span className="ml-auto max-w-[88%] rounded-md rounded-tr-sm bg-bubble-out px-2 py-1 text-[11px] leading-[1.4] text-bubble-out-ink">
-          Yes — send me your resume
+          Yes, send me your resume
         </span>
       </span>
     </Panel>

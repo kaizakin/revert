@@ -153,7 +153,7 @@
   --color-chat-bg: var(--rv-chat-bg);
   --color-bubble-meta: var(--rv-bubble-meta);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
 
   /* Headings only. `font-display` in markup; body text never opts in. */
@@ -202,15 +202,10 @@
   --clerk-color-shadow: transparent;
 }
 
-/**
- * create-next-app ships `font-family: Arial` here, which silently overrides the
- * Geist font the root layout loads. That one line is most of why a fresh app
- * looks cheap.
- */
 body {
   background: var(--rv-canvas);
   color: var(--rv-ink);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
