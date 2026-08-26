@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { Avatar } from "@/components/avatar";
 import { Logo, LogoMark } from "@/components/logo";
+import { Highlighted } from "@/components/highlighted";
 import { SocialIcon } from "@/components/social-icon";
 import { publicMemberCount } from "@/server/messaging/queries";
 
@@ -189,25 +190,6 @@ function YouTubeIcon({ className = "h-4 w-4" }: { className?: string }) {
         d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"
       />
     </svg>
-  );
-}
-
-/**
- * A phrase in the accent with a highlighter bar under it.
- *
- * Colour alone was carrying the hero's promise, and colour alone is the emphasis
- * a skimming reader misses. Shared so the two places that lean on a phrase mark
- * it the same way rather than drifting apart.
- */
-function Highlighted({ children }: { children: ReactNode }) {
-  return (
-    <span className="relative inline-block text-accent">
-      {children}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 -bottom-[0.04em] h-[0.09em] rounded-full bg-accent/40"
-      />
-    </span>
   );
 }
 

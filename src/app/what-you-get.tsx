@@ -243,43 +243,55 @@ function ProfilePanel() {
 }
 
 /**
- * Copy lives beside its panel rather than in a data array, because each panel is
- * bespoke markup anyway — an array of {title, body, panel} would just be a
- * lookup table with one entry per branch.
+ * The claims themselves, apart from the panels that illustrate them.
+ *
+ * Split out because the auth page makes three of these same six claims, and it
+ * has to make them in the same words: someone clicks "Join the room" under one
+ * of these headings and lands on the form still holding the sentence they just
+ * read. Two copies of that sentence in two files is a promise kept by nobody —
+ * this way the auth page cannot drift, because it has no copy of its own.
+ */
+export const CLAIMS = {
+  findable: {
+    title: "Openings stay findable",
+    body: "Every post is searchable later. Nothing scrolls away at 2am while you are asleep.",
+  },
+  answered: {
+    title: "Ask, and get answered",
+    body: "Reply to any message, mention anyone, and find the answer again next week.",
+  },
+  referral: {
+    title: "Ask for a referral",
+    body: "Find who is already inside a company and ask them directly, instead of firing off one more cold application.",
+  },
+  people: {
+    title: "People, not just posts",
+    body: "See who else is here, what they work on, and who is actually worth asking.",
+  },
+  notifications: {
+    title: "Notifications you control",
+    body: "Mute the room and still get mentions. A live QnA will not blow up your phone any more.",
+  },
+  username: {
+    title: "A username, not a number",
+    body: "You join as a name you pick. There is no number to leak, because we never ask you for one.",
+  },
+} as const;
+
+/**
+ * Panels stay beside their claim rather than in the data, because each one is
+ * bespoke markup anyway — a {claim, panel} array would just be a lookup table
+ * with one entry per branch.
  *
  * Ordered as what you can do first, then how the room treats you.
  */
 const CARDS = [
-  {
-    title: "Openings stay findable",
-    body: "Every post is searchable later. Nothing scrolls away at 2am while you are asleep.",
-    panel: <SearchPanel />,
-  },
-  {
-    title: "Ask, and get answered",
-    body: "Reply to any message, mention anyone, and find the answer again next week.",
-    panel: <ReplyPanel />,
-  },
-  {
-    title: "Ask for a referral",
-    body: "Find who is already inside a company and ask them directly, instead of firing off one more cold application.",
-    panel: <ReferralPanel />,
-  },
-  {
-    title: "People, not just posts",
-    body: "See who else is here, what they work on, and who is actually worth asking.",
-    panel: <MembersPanel />,
-  },
-  {
-    title: "Notifications you control",
-    body: "Mute the room and still get mentions. A live QnA will not blow up your phone any more.",
-    panel: <NotificationsPanel />,
-  },
-  {
-    title: "A username, not a number",
-    body: "You join as a name you pick. There is no number to leak, because we never ask you for one.",
-    panel: <ProfilePanel />,
-  },
+  { ...CLAIMS.findable, panel: <SearchPanel /> },
+  { ...CLAIMS.answered, panel: <ReplyPanel /> },
+  { ...CLAIMS.referral, panel: <ReferralPanel /> },
+  { ...CLAIMS.people, panel: <MembersPanel /> },
+  { ...CLAIMS.notifications, panel: <NotificationsPanel /> },
+  { ...CLAIMS.username, panel: <ProfilePanel /> },
 ];
 
 /**

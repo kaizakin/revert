@@ -1,33 +1,39 @@
 import Link from "next/link";
 
 import { AuthCard } from "@/components/auth-card";
+import { Highlighted } from "@/components/highlighted";
 import { LogoMark } from "@/components/logo";
 import { BackButton } from "@/components/back-button";
+
+import { CLAIMS } from "@/app/what-you-get";
 
 /**
  * The same three claims the landing page makes, in the same words.
  *
- * These used to lead on the phone number, which the landing page dropped once
- * it was clear the source is a WhatsApp *channel*: a channel already hides a
- * follower's number, so it was never the difference. Someone clicks "Join the
- * room" under "Now you can reply" and arrives here — the moment they are
- * deciding whether to trust the form is the worst place for the two pages to
- * disagree about what this is.
+ * The words come from CLAIMS rather than being retyped here, so they cannot
+ * drift: someone clicks "Join the room" under one of these headings and arrives
+ * holding the sentence they just read, and the moment they are deciding whether
+ * to trust the form is the worst place for the two pages to disagree about what
+ * this is.
+ *
+ * These used to lead on the phone number, which the landing page dropped once it
+ * was clear the source is a WhatsApp *channel*: a channel already hides a
+ * follower's number, so it was never the difference.
+ *
+ * Only the icon is local, because the landing page illustrates each claim with a
+ * panel and there is no room for three of those in a column this tall. An icon
+ * is the compact stand-in — which makes it matter that it is the right icon: the
+ * shield belonged to "Ask, and get answered" and a notifications bell to the
+ * username claim, so two of the three were arguing for a neighbour.
  */
 const FEATURES = [
   {
-    title: "Ask, and get answered",
-    body: "Reply to any message, mention anyone, and find the answer again next week.",
-    icon: (
-      <>
-        <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
-        <path d="M9.5 12.5l1.8 1.8 3.4-3.6" />
-      </>
-    ),
+    ...CLAIMS.answered,
+    // A reply, which is the whole claim.
+    icon: <path d="M21 12a8 8 0 01-11.6 7.1L4 21l1.9-5.4A8 8 0 1121 12z" />,
   },
   {
-    title: "Openings stay findable",
-    body: "Every post is searchable later. Nothing scrolls away at 2am while you are asleep.",
+    ...CLAIMS.findable,
     icon: (
       <>
         <circle cx="11" cy="11" r="6.5" />
@@ -36,12 +42,12 @@ const FEATURES = [
     ),
   },
   {
-    title: "A username, not a number",
-    body: "You join as a name you pick. There is no number to leak, because we never ask you for one.",
+    ...CLAIMS.username,
+    // The shield belongs here: this is the claim about being protected.
     icon: (
       <>
-        <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
-        <path d="M10 19a2 2 0 004 0" />
+        <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
+        <path d="M9.5 12.5l1.8 1.8 3.4-3.6" />
       </>
     ),
   },
@@ -73,37 +79,55 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
 
         <div className="relative flex flex-col gap-10">
           <div className="flex flex-col gap-5">
-            <span className="w-fit rounded-full border border-line bg-canvas px-3 py-1 text-[12px] font-medium text-muted">
-              by{" "}
+            {/* The accent eyebrow the landing page puts above every heading. */}
+            <p className="text-[13px] font-medium uppercase tracking-[0.07em] text-accent">
+              By{" "}
               <a
                 href="https://link.minianon.in/tusharbhardwaj"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-ink underline decoration-line underline-offset-2 transition-colors hover:decoration-ink"
+                className="underline decoration-accent/40 underline-offset-2 transition-colors hover:text-ink"
               >
                 minianon
-              </a>
-            </span>
+              </a>{" "}
+              · for my community
+            </p>
 
             {/*
-              The headline the visitor just clicked, in the display face the
-              rest of the product uses. Tracking is looser than the landing
-              page's 52px setting because "alerts" carries an "rt", the tightest
-              pair in Space Grotesk, and it closes up at smaller sizes.
+              The headline the visitor just clicked, set exactly as the hero
+              sets it at this size. The hero's own note calls -0.01em at 38px a
+              measured floor for these words — "alerts" carries an "rt", the
+              tightest pair in Space Grotesk — and this was running -0.02em at
+              36px, which is past it. Same words, same face, same size: there
+              was nothing for the two screens to disagree about.
             */}
-            <h1 className="font-display text-4xl font-normal leading-[1.1] tracking-[-0.02em] text-ink">
+            <h1 className="font-display text-[38px] font-normal leading-[1.1] tracking-[-0.01em] text-ink">
               Same alerts.
               <br />
-              <span className="text-accent">Now you can reply.</span>
+              <Highlighted>Now you can reply.</Highlighted>
             </h1>
           </div>
 
-          <ul className="flex flex-col gap-5">
+          {/*
+            The bordered field the landing page uses for a set of things, rather
+            than three items floating in a column. Hairlines are the grid's own
+            background showing through a 1px gap, so the cells have to be opaque
+            and match this column's surface.
+          */}
+          <ul className="grid gap-px overflow-hidden rounded-md border border-line bg-line">
             {FEATURES.map((feature) => (
-              <li key={feature.title} className="flex items-start gap-3.5">
+              <li
+                key={feature.title}
+                className="group flex items-start gap-3.5 bg-surface p-6 transition-shadow hover:shadow-[inset_0_0_0_1px_var(--rv-accent)] motion-reduce:transition-none"
+              >
+                {/*
+                  Same tile as a landing panel, down to the border lifting on
+                  hover — it stands in for one, so it should answer to the
+                  pointer the way one does.
+                */}
                 <span
                   aria-hidden
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-line bg-canvas text-accent"
+                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-raised text-accent transition-colors duration-200 group-hover:border-line-strong"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -117,9 +141,11 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
                     {feature.icon}
                   </svg>
                 </span>
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-[14px] font-semibold text-ink">{feature.title}</span>
-                  <span className="text-[13px] leading-relaxed text-muted">{feature.body}</span>
+                <span className="flex flex-col gap-1.5">
+                  <span className="font-display text-[16px] font-semibold text-ink">
+                    {feature.title}
+                  </span>
+                  <span className="text-[15px] leading-[1.6] text-muted">{feature.body}</span>
                 </span>
               </li>
             ))}
