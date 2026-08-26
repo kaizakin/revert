@@ -15,6 +15,17 @@ function labelFor(filename: string) {
 }
 
 /**
+ * Only files named avatarN.
+ *
+ * This folder is a menu offered to every member, and it used to be whatever
+ * happened to be in it. A photo of a real person dropped in here for the
+ * landing page was quietly listed as a face anyone could adopt — nobody put it
+ * there for that, and nothing said they had. The name is the opt-in now: a file
+ * has to say it is a preset to become one.
+ */
+const PRESET_NAME = /^avatar\d+$/i;
+
+/**
  * Read once at module load, which on a server build means build time. Files in
  * public/ are served by the CDN and are not guaranteed to exist on a
  * serverless filesystem at request time, so reading per-request would work
@@ -28,12 +39,18 @@ function readPresets(): AvatarPreset[] {
 
     return readdirSync(dir)
       .filter((name) => IMAGE_EXTENSIONS.has(name.slice(name.lastIndexOf(".")).toLowerCase()))
-      .sort()
+      .filter((name) => PRESET_NAME.test(name.replace(/\.[^.]+$/, "")))
+      .sort((a, b) => presetNumber(a) - presetNumber(b))
       .map((name) => ({ url: `/avatars/${name}`, label: labelFor(name) }));
   } catch {
     // Folder missing or unreadable is not an error — it just means no presets.
     return [];
   }
+}
+
+/** So avatar2 comes before avatar10, which a plain sort gets backwards. */
+function presetNumber(filename: string): number {
+  return Number(filename.replace(/\D+/g, "")) || 0;
 }
 
 export const AVATAR_PRESETS: AvatarPreset[] = readPresets();

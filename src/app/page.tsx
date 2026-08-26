@@ -94,7 +94,7 @@ const SPONSOR_URL = "https://github.com/sponsors/minianon";
  * Set back to null if the file ever moves: a missing image 404s, where the
  * initials fallback looks deliberate.
  */
-const PHOTO: string | null = "/avatars/me.jpeg";
+const PHOTO: string | null = "/people/me.jpeg";
 
 /**
  * Kartik, who has been sending pull requests. Credited by name and face rather

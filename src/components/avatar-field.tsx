@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import Image from "next/image";
 
+import { PhotoViewer } from "@/components/avatar-lightbox";
 import { avatarColour, initials } from "@/lib/avatar";
 import type { AvatarPreset } from "@/server/users/avatar-presets";
 
@@ -34,21 +35,42 @@ export function AvatarField({ seed, currentUrl, presets, compact }: Props) {
     };
   }, [filePreview]);
 
+  const [viewing, setViewing] = useState(false);
+
   const shown = filePreview ?? preset;
   const size = compact ? "h-16 w-16" : "h-18 w-18";
 
   return (
     <div className="flex flex-col gap-4">
+      {viewing && shown && (
+        <PhotoViewer
+          url={shown}
+          username={seed}
+          displayName="Your picture"
+          onClose={() => setViewing(false)}
+        />
+      )}
+
       <input type="hidden" name="avatarPreset" value={preset ?? ""} />
 
       <div className="flex items-center gap-4">
         {shown ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={shown}
-            alt="Your picture"
-            className={`${size} shrink-0 rounded-full object-cover`}
-          />
+          /*
+            Clickable, because the one picture nobody could open full screen was
+            their own — you can tap anybody else's in the room and see it the
+            size everybody else sees it, which is exactly when you want to check
+            your own. A blob URL from a file not yet saved opens the same way.
+          */
+          <button
+            type="button"
+            onClick={() => setViewing(true)}
+            aria-label="View your picture full screen"
+            title="View full screen"
+            className={`${size} shrink-0 overflow-hidden rounded-full transition-opacity hover:opacity-90`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={shown} alt="Your picture" className="h-full w-full object-cover" />
+          </button>
         ) : (
           <span
             className={`${size} flex shrink-0 items-center justify-center rounded-full text-lg font-semibold text-white`}
