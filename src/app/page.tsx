@@ -525,20 +525,17 @@ export default async function LandingPage() {
                 Open Revert
               </Link>
             ) : (
-              <>
-                <Link
-                  href="/sign-in"
-                  className="inline-flex h-9 items-center rounded-md px-3 text-[14px] text-muted transition-colors hover:text-ink"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/sign-up"
-                  className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-[14px] font-medium text-accent-ink transition-opacity hover:opacity-90"
-                >
-                  Join
-                </Link>
-              </>
+              /*
+                One button, now that one page handles both. Two side by side
+                pointing at the same URL is a choice that is not a choice, and
+                the page they land on no longer asks them to pick either.
+              */
+              <Link
+                href="/sign-in"
+                className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-[14px] font-medium text-accent-ink transition-opacity hover:opacity-90"
+              >
+                Join
+              </Link>
             )}
           </nav>
         </div>
@@ -579,19 +576,22 @@ export default async function LandingPage() {
                     Open Revert
                   </Link>
                 ) : (
-                  <>
-                    <Link href="/sign-up" className={PRIMARY_BUTTON}>
-                      Join the room
-                    </Link>
-                    <Link href="/sign-in" className={SECONDARY_BUTTON}>
-                      I already joined
-                    </Link>
-                  </>
+                  /*
+                    "I already joined" pointed at the same page as "Join the
+                    room" once the two merged, so it stopped being a second
+                    option and became a second button. What it was really doing
+                    was reassuring someone who already has an account, and the
+                    line underneath says that in fewer words.
+                  */
+                  <Link href="/sign-in" className={PRIMARY_BUTTON}>
+                    Join the room
+                  </Link>
                 )}
               </div>
 
               <p className="mt-4 text-[13px] text-faint">
-                Takes about twenty seconds. Google or email — no phone number, ever.
+                Takes about twenty seconds, and the same button signs you back in. Google
+                or email — no phone number, ever.
               </p>
 
               {/*
@@ -1093,7 +1093,7 @@ export default async function LandingPage() {
 
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               {!signedIn && (
-                <Link href="/sign-up" className={PRIMARY_BUTTON}>
+                <Link href="/sign-in" className={PRIMARY_BUTTON}>
                   Join the room
                 </Link>
               )}
@@ -1298,25 +1298,19 @@ export default async function LandingPage() {
                   Open the room
                 </Link>
               ) : (
-                <>
-                  <Link href="/sign-up" className={FOOTER_LINK}>
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
-                      <path
-                        d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Join the room
-                  </Link>
-
-                  <Link href="/sign-in" className={FOOTER_LINK}>
-                    Sign in
-                  </Link>
-                </>
+                <Link href="/sign-in" className={FOOTER_LINK}>
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                    <path
+                      d="M10 17l5-5-5-5M15 12H3M13 3h6a2 2 0 012 2v14a2 2 0 01-2 2h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Join the room
+                </Link>
               )}
 
               <a
