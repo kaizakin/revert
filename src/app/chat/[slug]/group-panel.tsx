@@ -210,21 +210,57 @@ function EditableField({
 
       {error && <span className="text-[11px] text-danger">{error}</span>}
 
-      <span className="flex items-center gap-2">
+      {/*
+        A tick and a cross rather than two words. The field is right above them
+        and already says what is being changed, so the words were repeating it —
+        and an inline edit inside a panel is not a form worth two labelled
+        buttons. Both keep an accessible name, which is what the words were
+        actually carrying.
+      */}
+      <span className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={save}
           disabled={pending}
-          className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-accent-ink disabled:opacity-50"
+          aria-label="Save"
+          title="Save"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save"}
+          {pending ? (
+            <span
+              aria-hidden
+              className="h-3.5 w-3.5 animate-spin rounded-full border-[1.5px] border-current/40 border-t-current motion-reduce:animate-none"
+            />
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+              <path
+                d="M5 12.5l4.5 4.5L19 7.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
         </button>
+
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="rounded-lg px-2 py-1.5 text-[12px] text-muted hover:text-ink"
+          aria-label="Cancel"
+          title="Cancel"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-line-strong hover:text-ink"
         >
-          Cancel
+          <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
       </span>
     </span>
@@ -386,12 +422,23 @@ export function GroupPanel({
                       onClick={() => onOpenMember(member.username)}
                       className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-all hover:bg-raised active:scale-[0.99]"
                     >
+                      {/*
+                        A ring and a steady dot. The dot used to pulse, which
+                        made a list of people look like a row of alerts — being
+                        online is a state, not an event, and nothing about it is
+                        urgent enough to move.
+                      */}
                       <div className="relative shrink-0">
-                        <Avatar src={member.avatarUrl} name={member.username} size={38} />
+                        <Avatar
+                          src={member.avatarUrl}
+                          name={member.username}
+                          size={38}
+                          className={member.isOnline ? "ring-2 ring-emerald-500" : ""}
+                        />
                         {member.isOnline && (
                           <span
                             title="Online"
-                            className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500 animate-pulse"
+                            className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500"
                           />
                         )}
                       </div>

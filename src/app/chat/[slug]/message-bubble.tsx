@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { BubbleTail, Tick } from "@/components/bubble-marks";
 import { renderRichText } from "@/lib/rich-text";
@@ -59,6 +59,26 @@ export function MessageBubble({
   isPinned,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  /**
+   * Collapsed to what a pill can hold: the three most-used emoji and a total.
+   * Sorted by count so the pill shows what the room actually chose, with the
+   * viewer's own kept in view — seeing your own reaction drop out of sight as
+   * others pile on reads as it having been lost.
+   */
+  const reactionSummary = useMemo(() => {
+    if (message.reactions.length === 0) return null;
+
+    const ranked = [...message.reactions].sort(
+      (a, b) => Number(b.mine) - Number(a.mine) || b.count - a.count,
+    );
+
+    return {
+      shown: ranked.slice(0, 3),
+      total: message.reactions.reduce((sum, r) => sum + r.count, 0),
+      mine: message.reactions.some((r) => r.mine),
+    };
+  }, [message.reactions]);
 
   return (
     <div
@@ -174,32 +194,50 @@ export function MessageBubble({
           </span>
         </div>
 
-        {/* Reaction badges */}
-        {message.reactions.length > 0 && (
+        {/*
+          One pill, not one per emoji.
+          
+          A badge each meant six readers picking six different emoji stretched
+          the message to fit them, so the bubble's width reported how popular it
+          was rather than how long it was. This shows the three most-used and a
+          total, which is a fixed width whatever the room does — and since a
+          person now gets one reaction, three covers almost everything.
+        */}
+        {reactionSummary && (
           <div
-            className={`relative z-10 -mt-2.5 flex flex-wrap gap-1 ${
+            className={`relative z-10 -mt-2.5 flex ${
               isMine ? "justify-end pr-1.5" : "justify-start pl-1.5"
             }`}
           >
-            {message.reactions.map((reaction) => (
-              <button
-                key={reaction.emoji}
-                type="button"
-                onClick={() => onReact(message.id, reaction.emoji)}
-                aria-pressed={reaction.mine}
-                title={reaction.mine ? "Remove reaction" : "React"}
-                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-medium shadow-sm transition-all duration-150 active:scale-95 ${
-                  reaction.mine
-                    ? "bg-accent/15 text-accent ring-1 ring-accent/40 font-semibold"
-                    : "bg-surface text-muted ring-1 ring-line hover:bg-raised hover:text-ink"
-                }`}
-              >
-                <span className="text-[13px] leading-none">{reaction.emoji}</span>
-                {reaction.count > 0 && (
-                  <span className="text-[11px] font-semibold">{reaction.count}</span>
-                )}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setPickerOpen((open) => !open)}
+              aria-label={`${reactionSummary.total} ${
+                reactionSummary.total === 1 ? "reaction" : "reactions"
+              }. Change yours`}
+              className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shadow-sm transition-all duration-150 active:scale-95 ${
+                reactionSummary.mine
+                  ? "bg-accent/15 ring-1 ring-accent/40"
+                  : "bg-surface ring-1 ring-line hover:bg-raised"
+              }`}
+            >
+              {reactionSummary.shown.map((reaction) => (
+                <span key={reaction.emoji} className="text-[13px] leading-none">
+                  {reaction.emoji}
+                </span>
+              ))}
+
+              {/* One reaction needs no number; the emoji already says one. */}
+              {reactionSummary.total > 1 && (
+                <span
+                  className={`ml-0.5 text-[11px] font-semibold leading-none ${
+                    reactionSummary.mine ? "text-accent" : "text-muted"
+                  }`}
+                >
+                  {reactionSummary.total}
+                </span>
+              )}
+            </button>
           </div>
         )}
       </div>

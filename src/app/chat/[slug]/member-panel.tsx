@@ -109,7 +109,7 @@ export function MemberPanel({
                 {isOnline && (
                   <span
                     title="Online"
-                    className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-surface bg-emerald-500 animate-pulse"
+                    className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-surface bg-emerald-500"
                   />
                 )}
               </div>

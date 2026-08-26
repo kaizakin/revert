@@ -654,7 +654,7 @@ export function RoomView({
               {stats.active > 0 && (
                 <span
                   title={`${stats.active} online`}
-                  className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500 animate-pulse"
+                  className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-surface bg-emerald-500"
                 />
               )}
             </div>

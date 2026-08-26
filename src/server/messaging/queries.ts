@@ -400,6 +400,20 @@ export async function roomMemberCount(conversationId: string): Promise<number> {
 /** Considered online if seen within this window. */
 export const ACTIVE_WINDOW_MINUTES = 5;
 
+/**
+ * Whether someone counts as here, as SQL.
+ *
+ * Shared by the header count and the member list because they used to disagree:
+ * one compared against `now()` in Postgres and the other against `Date.now()` in
+ * Node. Two clocks, drifting apart by however far the app server has slipped —
+ * which is why the header could say two online while the member list showed one.
+ */
+const IS_ONLINE = sql<boolean>`coalesce(
+  ${users.showLastActive}
+    and ${users.lastActiveAt} > now() - (${ACTIVE_WINDOW_MINUTES} * interval '1 minute'),
+  false
+)`;
+
 export type RoomStats = { total: number; active: number };
 
 /**
@@ -413,10 +427,7 @@ export async function roomStats(conversationId: string): Promise<RoomStats> {
   const [row] = await db
     .select({
       total: sql<number>`count(*)::int`,
-      active: sql<number>`count(*) filter (
-        where ${users.showLastActive}
-          and ${users.lastActiveAt} > now() - (${ACTIVE_WINDOW_MINUTES} * interval '1 minute')
-      )::int`,
+      active: sql<number>`count(*) filter (where ${IS_ONLINE})::int`,
     })
     .from(conversationMembers)
     .innerJoin(users, eq(users.id, conversationMembers.userId))
@@ -446,28 +457,23 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
       avatarUrl: users.avatarUrl,
       headline: users.headline,
       isAdmin: users.isAdmin,
-      showLastActive: users.showLastActive,
-      lastActiveAt: users.lastActiveAt,
+      isOnline: IS_ONLINE,
       joinedAt: conversationMembers.joinedAt,
     })
     .from(conversationMembers)
     .innerJoin(users, eq(users.id, conversationMembers.userId))
     .where(and(eq(conversationMembers.conversationId, conversationId), isNull(users.deletedAt)))
-    .orderBy(desc(users.isAdmin), asc(users.username));
+    /*
+     * Whoever is here now, then the people who run the room, then by name.
+     *
+     * The coalesce above is what makes this sort correctly: someone who has
+     * never been seen has a null last-active, `true and null` is null rather
+     * than false, and Postgres puts nulls first on a descending sort — so
+     * without it the members who had never once opened the room led the list.
+     */
+    .orderBy(desc(IS_ONLINE), desc(users.isAdmin), asc(users.username));
 
-  const cutoff = Date.now() - ACTIVE_WINDOW_MINUTES * 60_000;
-
-  return rows.map((row) => ({
-    id: row.id,
-    username: row.username,
-    displayName: row.displayName,
-    avatarUrl: row.avatarUrl,
-    headline: row.headline,
-    isAdmin: row.isAdmin,
-    isOnline:
-      row.showLastActive && row.lastActiveAt ? row.lastActiveAt.getTime() > cutoff : false,
-    joinedAt: row.joinedAt,
-  }));
+  return rows.map((row) => ({ ...row, isOnline: Boolean(row.isOnline) }));
 }
 
 /**

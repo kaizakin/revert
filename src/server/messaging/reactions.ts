@@ -79,18 +79,22 @@ export async function toggleReaction(
     return { ok: false, error: "You cannot react right now." };
   }
 
+  /*
+   * One reaction per person per message, the way every chat app people already
+   * use behaves. Clearing whatever they had before rather than the one emoji
+   * they tapped is what makes a second choice replace the first instead of
+   * stacking beside it — and it means a message can never be wider than the few
+   * distinct emoji its readers picked.
+   */
   const removed = await db
     .delete(reactions)
-    .where(
-      and(
-        eq(reactions.messageId, messageId),
-        eq(reactions.userId, viewerId),
-        eq(reactions.emoji, emoji),
-      ),
-    )
-    .returning({ id: reactions.id });
+    .where(and(eq(reactions.messageId, messageId), eq(reactions.userId, viewerId)))
+    .returning({ emoji: reactions.emoji });
 
-  if (removed.length === 0) {
+  /* Tapping the one already chosen means take it off; anything else replaces. */
+  const wasSame = removed.some((row) => row.emoji === emoji);
+
+  if (!wasSame) {
     await db
       .insert(reactions)
       .values({ messageId, userId: viewerId, emoji })
