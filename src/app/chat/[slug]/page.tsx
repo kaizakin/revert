@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
+import { canModerate, isAdmin } from "@/lib/moderation";
+
 import {
   getRoomForUser,
   listMessages,
@@ -40,7 +42,7 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
     unreadMarker(room.id, me.id),
   ]);
 
-  const canPost = room.type !== "announce" || me.isAdmin;
+  const canPost = room.type !== "announce" || isAdmin(me.role);
   const note = TYPE_NOTE[room.type];
   const name = room.name ?? slug;
 
@@ -54,7 +56,9 @@ export default async function ConversationPage({ params }: PageProps<"/chat/[slu
       meId={me.id}
       meUsername={me.username}
       canPost={canPost}
-      canPin={me.isAdmin}
+      canPin={isAdmin(me.role)}
+      canModerate={canModerate(me.role)}
+      canManageRoles={isAdmin(me.role)}
       avatarUrl={room.avatarUrl}
       meAvatarUrl={me.avatarUrl}
       postDeniedReason="Only mods post in this room."

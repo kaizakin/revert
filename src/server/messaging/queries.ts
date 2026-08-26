@@ -11,6 +11,7 @@ import {
   spaces,
   users,
 } from "@/server/db/schema";
+import type { MemberRole } from "@/lib/moderation";
 import { MAX_PINS, type PinDuration } from "@/lib/pins";
 import { transport } from "@/server/realtime";
 import { DEFAULT_SPACE_SLUG } from "@/server/users/onboard";
@@ -212,6 +213,8 @@ export async function getRoomForUser(userId: string, slug: string) {
 
 export type MessageRow = {
   id: string;
+  /** "system" is the room speaking — a moderation note, not somebody's message. */
+  kind: "text" | "system" | "job";
   body: string | null;
   createdAt: Date;
   editedAt: Date | null;
@@ -247,6 +250,7 @@ export async function listMessages(
   const base = db
     .select({
       id: messages.id,
+      kind: messages.kind,
       body: messages.body,
       createdAt: messages.createdAt,
       editedAt: messages.editedAt,
@@ -521,7 +525,7 @@ export type RoomMember = {
   displayName: string | null;
   avatarUrl: string | null;
   headline: string | null;
-  isAdmin: boolean;
+  role: MemberRole;
   isOnline: boolean;
   joinedAt: Date;
 };
@@ -535,7 +539,7 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
       displayName: users.displayName,
       avatarUrl: users.avatarUrl,
       headline: users.headline,
-      isAdmin: users.isAdmin,
+      role: users.role,
       isOnline: IS_ONLINE,
       joinedAt: conversationMembers.joinedAt,
     })
@@ -550,7 +554,8 @@ export async function listRoomMembers(conversationId: string): Promise<RoomMembe
      * than false, and Postgres puts nulls first on a descending sort — so
      * without it the members who had never once opened the room led the list.
      */
-    .orderBy(desc(IS_ONLINE), desc(users.isAdmin), asc(users.username));
+    /* Admins, then mods, then everybody else — the enum sorts that way already. */
+    .orderBy(desc(IS_ONLINE), desc(users.role), asc(users.username));
 
   return rows.map((row) => ({ ...row, isOnline: Boolean(row.isOnline) }));
 }

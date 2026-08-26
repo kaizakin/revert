@@ -448,7 +448,7 @@ export function GroupPanel({
                           <span className="truncate text-[13.5px] font-bold text-ink">
                             {member.displayName ?? `@${member.username}`}
                           </span>
-                          {member.isAdmin && (
+                          {member.role !== "member" && (
                             <span className="shrink-0 rounded-full bg-accent-soft px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-accent">
                               admin
                             </span>

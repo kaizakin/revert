@@ -36,6 +36,12 @@ import {
   type PublicProfile,
 } from "@/server/users/profile";
 import { uploadRoomAvatar } from "@/server/users/profile";
+import { eq, sql } from "drizzle-orm";
+
+import { isAdmin, type BanDuration } from "@/lib/moderation";
+import { db } from "@/server/db";
+import { users } from "@/server/db/schema";
+import { banUser, deleteMessage, unbanUser } from "@/server/messaging/moderate";
 import { getDbUser } from "@/server/users/sync";
 
 export type SendActionResult =
@@ -55,7 +61,7 @@ export async function sendMessageAction(
       id: me.id,
       username: me.username,
       avatarUrl: me.avatarUrl,
-      isAdmin: me.isAdmin,
+      role: me.role,
       bannedUntil: me.bannedUntil,
     },
     slug,
@@ -150,6 +156,55 @@ export async function fetchReactors(messageId: string): Promise<ReactorGroup[]> 
   return listReactors(me.id, messageId);
 }
 
+export async function deleteMessageAction(
+  messageId: string,
+): Promise<{ error?: string }> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+
+  const result = await deleteMessage(me.id, messageId);
+  return result.ok ? {} : { error: result.error };
+}
+
+/**
+ * Banning takes a username rather than an id, because that is what the panel
+ * asking for it has — and it is the thing a mod is actually looking at.
+ */
+export async function banUserAction(
+  username: string,
+  duration: BanDuration,
+): Promise<{ error?: string }> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+
+  const [target] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(sql`lower(${users.username})`, username.toLowerCase()))
+    .limit(1);
+
+  if (!target) return { error: "No such member." };
+
+  const result = await banUser(me.id, target.id, duration);
+  return result.ok ? {} : { error: result.error };
+}
+
+export async function unbanUserAction(username: string): Promise<{ error?: string }> {
+  const me = await getDbUser();
+  if (!me) return { error: "You are signed out." };
+
+  const [target] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(sql`lower(${users.username})`, username.toLowerCase()))
+    .limit(1);
+
+  if (!target) return { error: "No such member." };
+
+  const result = await unbanUser(me.id, target.id);
+  return result.ok ? {} : { error: result.error };
+}
+
 export type ReactState = { error?: string };
 
 export async function toggleReactionAction(
@@ -202,7 +257,7 @@ export async function fetchRoomInfo(slug: string): Promise<RoomInfo | null> {
     name: room.name ?? slug,
     topic: room.topic,
     avatarUrl: room.avatarUrl,
-    canEdit: me.isAdmin,
+    canEdit: isAdmin(me.role),
     stats,
     members,
   };
@@ -273,7 +328,7 @@ export async function pinMessageAction(
 ): Promise<PinState> {
   const me = await getDbUser();
   if (!me) return { error: "You are signed out." };
-  if (!me.isAdmin) return { error: "Only mods can pin messages." };
+  if (!isAdmin(me.role)) return { error: "Only the admin can pin messages." };
 
   const room = await getRoomForUser(me.id, slug);
   if (!room) return { error: "You are not in this room." };
@@ -288,7 +343,7 @@ export async function unpinMessageAction(
 ): Promise<{ error?: string }> {
   const me = await getDbUser();
   if (!me) return { error: "You are signed out." };
-  if (!me.isAdmin) return { error: "Only mods can pin messages." };
+  if (!isAdmin(me.role)) return { error: "Only the admin can pin messages." };
 
   const room = await getRoomForUser(me.id, slug);
   if (!room) return { error: "You are not in this room." };
@@ -351,7 +406,7 @@ export async function updateRoomAction(
 ): Promise<RoomEditState> {
   const me = await getDbUser();
   if (!me) return { error: "You are signed out." };
-  if (!me.isAdmin) return { error: "Only mods can edit the group." };
+  if (!isAdmin(me.role)) return { error: "Only the admin can edit the group." };
 
   const slug = String(formData.get("slug") ?? "");
   const room = await getRoomForUser(me.id, slug);

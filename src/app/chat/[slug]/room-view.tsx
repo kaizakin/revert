@@ -32,6 +32,7 @@ import {
 import {
   syncPresence,
   fetchPins,
+  deleteMessageAction,
   pinMessageAction,
   unpinMessageAction,
   fetchNewMessages,
@@ -58,7 +59,11 @@ type Props = {
   meId: string;
   meUsername: string;
   canPost: boolean;
-  /** Pinning is a moderation action, so only mods get the affordance. */
+  /** Deleting and banning. A moderator has these; only the admin has the rest. */
+  canModerate: boolean;
+  /** Promoting and demoting, which the admin keeps to themselves. */
+  canManageRoles: boolean;
+  /** Pinning is the admin's, not every moderator's. */
   canPin: boolean;
   postDeniedReason?: string;
   initialMessages: MessageRow[];
@@ -109,6 +114,8 @@ export function RoomView({
   meUsername,
   canPost,
   canPin,
+  canModerate,
+  canManageRoles,
   postDeniedReason,
   initialMessages,
   marker,
@@ -420,6 +427,28 @@ export function RoomView({
     }
   }, [slug, queryClient]);
 
+  const removeMessage = useCallback(
+    async (messageId: string) => {
+      /* Off the screen first. A delete that waits for the round trip leaves the
+         message the mod just took down sitting there while they wonder. */
+      const drop = (rows: MessageRow[]) =>
+        rows.filter((m) => m.id !== messageId);
+
+      queryClient.setQueryData<MessageRow[]>(
+        ["chat", "messages", slug],
+        (prev = []) => drop(prev),
+      );
+      setLoaded((current) => ({ ...current, rows: drop(current.rows) }));
+
+      const result = await deleteMessageAction(messageId);
+      if (result.error) {
+        setReactError(result.error);
+        void reload();
+      }
+    },
+    [slug, queryClient, reload],
+  );
+
   const handleReact = useCallback(
     async (messageId: string, emoji: string) => {
       /*
@@ -531,8 +560,27 @@ export function RoomView({
         },
       )
       .on("broadcast", { event: "reaction.changed" }, () => void reload())
+      .on(
+        "broadcast",
+        { event: "message.deleted" },
+        (payload: { payload?: { messageId?: string } }) => {
+          const gone = payload?.payload?.messageId;
+          if (!gone) return;
+
+          queryClient.setQueryData<MessageRow[]>(
+            ["chat", "messages", slug],
+            (prev = []) => prev.filter((m) => m.id !== gone),
+          );
+          setLoaded((current) => ({
+            ...current,
+            rows: current.rows.filter((m) => m.id !== gone),
+          }));
+        },
+      )
       .on("broadcast", { event: "pin.changed" }, () => {
-        void queryClient.invalidateQueries({ queryKey: ["chat", "pins", slug] });
+        void queryClient.invalidateQueries({
+          queryKey: ["chat", "pins", slug],
+        });
       })
       .on(
         "broadcast",
@@ -636,6 +684,7 @@ export function RoomView({
 
       const optimisticMessage: MessageRow = {
         id: tempId,
+        kind: "text" as const,
         body: text,
         createdAt: new Date(),
         editedAt: null,
@@ -870,7 +919,8 @@ export function RoomView({
 
           const list = [...next];
           /* Same members means the same array, so the memo does not rerun. */
-          return list.length === current.length && list.every((id) => current.includes(id))
+          return list.length === current.length &&
+            list.every((id) => current.includes(id))
             ? current
             : list;
         });
@@ -1038,7 +1088,10 @@ export function RoomView({
               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
               {/* One segment per pin, lit for the one on the bar. */}
-              <span aria-hidden className="flex h-7 shrink-0 flex-col justify-center gap-0.5">
+              <span
+                aria-hidden
+                className="flex h-7 shrink-0 flex-col justify-center gap-0.5"
+              >
                 {pins.map((pin, index) => (
                   <span
                     key={pin.id}
@@ -1180,23 +1233,38 @@ export function RoomView({
                       </div>
                     )}
 
-                    <MessageBubble
-                      message={message}
-                      isMine={isMine}
-                      isPending={isPending}
-                      startsRun={startsRun}
-                      onReact={handleReact}
-                      onOpenProfile={(username) =>
-                        setPanel({ kind: "member", username })
-                      }
-                      onReply={setReplyingTo}
-                      onJumpTo={jumpTo}
-                      onPin={canPin ? pinFor : undefined}
-                      onUnpin={canPin ? unpin : undefined}
-                      isPinned={pins.some((pin) => pin.id === message.id)}
-                      pinsAtCapacity={pins.length >= MAX_PINS}
-                      oldestPinBody={pins.at(-1)?.body ?? null}
-                    />
+                    {/*
+                      The room speaking rather than a person. Centred and plain,
+                      with none of the bubble's furniture — no avatar, no reply,
+                      no reactions, because nobody said it and there is nobody
+                      to answer.
+                    */}
+                    {message.kind === "system" ? (
+                      <div className="flex justify-center py-1.5">
+                        <span className="max-w-[80%] rounded-full bg-bubble-in px-3.5 py-1 text-center text-[11.5px] leading-relaxed text-bubble-meta shadow-sm ring-1 ring-line/40">
+                          {message.body}
+                        </span>
+                      </div>
+                    ) : (
+                      <MessageBubble
+                        message={message}
+                        isMine={isMine}
+                        isPending={isPending}
+                        startsRun={startsRun}
+                        onReact={handleReact}
+                        onOpenProfile={(username) =>
+                          setPanel({ kind: "member", username })
+                        }
+                        onReply={setReplyingTo}
+                        onJumpTo={jumpTo}
+                        onDelete={canModerate ? removeMessage : undefined}
+                        onPin={canPin ? pinFor : undefined}
+                        onUnpin={canPin ? unpin : undefined}
+                        isPinned={pins.some((pin) => pin.id === message.id)}
+                        pinsAtCapacity={pins.length >= MAX_PINS}
+                        oldestPinBody={pins.at(-1)?.body ?? null}
+                      />
+                    )}
                   </div>
                 );
               })}

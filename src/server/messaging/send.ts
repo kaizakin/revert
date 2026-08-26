@@ -2,6 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { conversations, messages, users } from "@/server/db/schema";
+import { isAdmin, type MemberRole } from "@/lib/moderation";
 import { transport } from "@/server/realtime";
 
 import { getRoomForUser, type MessageRow } from "./queries";
@@ -32,7 +33,7 @@ type Author = {
   id: string;
   username: string | null;
   avatarUrl: string | null;
-  isAdmin: boolean;
+  role: MemberRole;
   bannedUntil: Date | null;
 };
 
@@ -78,7 +79,7 @@ export async function sendMessage(
 
   if (!room) return { ok: false, error: "You are not in this room." };
 
-  if (room.type === "announce" && !author.isAdmin) {
+  if (room.type === "announce" && !isAdmin(author.role)) {
     return { ok: false, error: "Only mods post in this room." };
   }
 
@@ -102,6 +103,7 @@ export async function sendMessage(
 
   const messageRow: MessageRow = {
     id: messageId,
+    kind: "text",
     body,
     createdAt,
     editedAt: null,
@@ -146,7 +148,7 @@ export async function loadAuthor(userId: string): Promise<Author | null> {
       id: users.id,
       username: users.username,
       avatarUrl: users.avatarUrl,
-      isAdmin: users.isAdmin,
+      role: users.role,
       bannedUntil: users.bannedUntil,
     })
     .from(users)

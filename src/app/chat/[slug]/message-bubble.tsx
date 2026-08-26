@@ -23,6 +23,8 @@ type Props = {
   onJumpTo: (messageId: string) => void;
   /** Undefined for anyone without permission, so the button simply is not shown. */
   /** Only passed to mods. Absent means the control is not drawn at all. */
+  /** Mods only. Takes the message down for the whole room. */
+  onDelete?: (messageId: string) => void;
   onPin?: (messageId: string, duration: PinDuration) => void;
   onUnpin?: (messageId: string) => void;
   isPinned?: boolean;
@@ -64,6 +66,7 @@ export function MessageBubble({
   onOpenProfile,
   onReply,
   onJumpTo,
+  onDelete,
   onPin,
   onUnpin,
   isPinned,
@@ -73,6 +76,7 @@ export function MessageBubble({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pinMenuOpen, setPinMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   /**
    * Collapsed to what a pill can hold: the three most-used emoji and a total.
@@ -346,6 +350,41 @@ export function MessageBubble({
                     strokeLinejoin="round"
                   />
                 </svg>
+              </button>
+            )}
+
+            {/*
+              Two taps, because this cannot be undone for anybody. The second
+              tap is the confirmation — a dialog for one destructive button on a
+              hover bar is more ceremony than the action needs, and an accidental
+              first tap costs nothing.
+            */}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => (confirmDelete ? onDelete(message.id) : setConfirmDelete(true))}
+                onBlur={() => setConfirmDelete(false)}
+                aria-label={confirmDelete ? "Confirm delete for everyone" : "Delete message"}
+                title={confirmDelete ? "Tap again to delete for everyone" : "Delete message"}
+                className={`flex h-7 items-center justify-center gap-1 rounded-full px-1.5 transition-colors active:scale-90 ${
+                  confirmDelete
+                    ? "bg-danger/15 text-danger"
+                    : "w-7 text-muted hover:bg-raised hover:text-danger"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" aria-hidden>
+                  <path
+                    d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M11 11v5M13 11v5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {confirmDelete && (
+                  <span className="whitespace-nowrap text-[11px] font-semibold">Sure?</span>
+                )}
               </button>
             )}
 

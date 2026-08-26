@@ -29,6 +29,16 @@ export const socialProvider = pgEnum("social_provider", [
 export const conversationKind = pgEnum("conversation_kind", ["room", "dm", "group_dm"]);
 export const conversationType = pgEnum("conversation_type", ["chat", "announce", "ama"]);
 export const messageKind = pgEnum("message_kind", ["text", "system", "job"]);
+/**
+ * What someone is allowed to do.
+ *
+ * One ladder rather than a set of flags, because the powers are nested: a mod
+ * can do everything a member can, an admin everything a mod can. Flags would
+ * let a mod exist who can ban but not delete, which is not a role anybody
+ * needs and is a state every check would have to handle.
+ */
+export const memberRole = pgEnum("member_role", ["member", "moderator", "admin"]);
+
 export const notifyLevel = pgEnum("notify_level", ["all", "mentions", "muted"]);
 export const workMode = pgEnum("work_mode", ["remote", "hybrid", "onsite"]);
 export const reportTarget = pgEnum("report_target", ["message", "user"]);
@@ -70,7 +80,7 @@ export const users = pgTable(
     showLastActive: boolean("show_last_active").notNull().default(true),
     showReadReceipts: boolean("show_read_receipts").notNull().default(true),
 
-    isAdmin: boolean("is_admin").notNull().default(false),
+    role: memberRole("role").notNull().default("member"),
     bannedUntil: timestamp("banned_until", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
 
