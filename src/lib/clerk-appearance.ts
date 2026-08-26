@@ -60,14 +60,14 @@ export const clerkAppearance: Appearance = {
      * only the focused one showed, because the accent focus ring was the one
      * edge with any contrast.
      *
-     * `faint` rather than `line-strong` because the ramp has a gap exactly
-     * where this needs a value: line-strong reaches 1.72:1, still under the 3:1
-     * that WCAG asks of a control's boundary, and the next step up is faint at
-     * 5.43:1 dark and 4.93:1 light. It is nominally a text token, but it is the
-     * only one that clears the bar, and an input you have to find is precisely
-     * the case that rule exists for.
+     * `line-input` exists for this. The ramp had a gap where this needed a
+     * value — line-strong reaches 1.72:1, under the 3:1 WCAG asks of a
+     * control's boundary — and the first fix reached for `faint`, the next step
+     * up, which cleared the bar at 5.43:1 and read as a stark white box against
+     * a black card. The token sits between them at 3.52:1: findable without
+     * shouting.
      */
-    otpCodeFieldInput: "rounded-lg border border-faint bg-canvas",
+    otpCodeFieldInput: "rounded-lg border border-line-input bg-canvas",
 
     /**
      * Explicit padding, because the hidden footerItem below was what provided

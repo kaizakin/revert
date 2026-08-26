@@ -4,10 +4,20 @@ import { AuthCard } from "@/components/auth-card";
 import { LogoMark } from "@/components/logo";
 import { BackButton } from "@/components/back-button";
 
+/**
+ * The same three claims the landing page makes, in the same words.
+ *
+ * These used to lead on the phone number, which the landing page dropped once
+ * it was clear the source is a WhatsApp *channel*: a channel already hides a
+ * follower's number, so it was never the difference. Someone clicks "Join the
+ * room" under "Now you can reply" and arrives here — the moment they are
+ * deciding whether to trust the form is the worst place for the two pages to
+ * disagree about what this is.
+ */
 const FEATURES = [
   {
-    title: "Private by default",
-    body: "Your phone number is never shared, because we never ask for it.",
+    title: "Ask, and get answered",
+    body: "Reply to any message, mention anyone, and find the answer again next week.",
     icon: (
       <>
         <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" />
@@ -16,8 +26,8 @@ const FEATURES = [
     ),
   },
   {
-    title: "Jobs that stay findable",
-    body: "Openings stay searchable instead of scrolling away in twenty minutes.",
+    title: "Openings stay findable",
+    body: "Every post is searchable later. Nothing scrolls away at 2am while you are asleep.",
     icon: (
       <>
         <circle cx="11" cy="11" r="6.5" />
@@ -26,8 +36,8 @@ const FEATURES = [
     ),
   },
   {
-    title: "Quiet when you need it",
-    body: "Mute any room. During a session only the host and mentions reach you.",
+    title: "A username, not a number",
+    body: "You join as a name you pick. There is no number to leak, because we never ask you for one.",
     icon: (
       <>
         <path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" />
@@ -75,10 +85,16 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
               </a>
             </span>
 
-            <h1 className="text-4xl font-semibold leading-[1.1] tracking-tight text-ink">
-              One username.
+            {/*
+              The headline the visitor just clicked, in the display face the
+              rest of the product uses. Tracking is looser than the landing
+              page's 52px setting because "alerts" carries an "rt", the tightest
+              pair in Space Grotesk, and it closes up at smaller sizes.
+            */}
+            <h1 className="font-display text-4xl font-normal leading-[1.1] tracking-[-0.02em] text-ink">
+              Same alerts.
               <br />
-              <span className="text-accent">No phone number.</span>
+              <span className="text-accent">Now you can reply.</span>
             </h1>
           </div>
 

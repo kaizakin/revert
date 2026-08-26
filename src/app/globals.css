@@ -61,6 +61,15 @@
    */
   --rv-gold: #b58a2b;
 
+  /*
+   * The edge of a control you have to find, which the rest of the ramp cannot
+   * draw: `line` sits at 1.3:1 against a card and `line-strong` at 1.6:1, both
+   * under the 3:1 WCAG asks of a control's boundary, and the next step up is a
+   * text colour that reads as stark. This lands just over the bar — warm here
+   * to match the rest of the light ramp.
+   */
+  --rv-line-input: #9c8d78;
+
   /* Mentions read as links inside a bubble, on both bubble colours. */
   --rv-mention: #1d74c4;
   --rv-mention-soft: rgba(29, 116, 196, 0.12);
@@ -104,6 +113,9 @@
     /* Brighter here: on black the light-mode gold reads as mud, not metal. */
     --rv-gold: #e9c46a;
 
+    /* 3.5:1 on the card here, where the old value shouted at 5.4:1. */
+    --rv-line-input: #6b6b6b;
+
     --rv-mention: #7cc4ff;
     --rv-mention-soft: rgba(124, 196, 255, 0.14);
 
@@ -123,6 +135,7 @@
   --color-raised: var(--rv-raised);
   --color-line: var(--rv-line);
   --color-line-strong: var(--rv-line-strong);
+  --color-line-input: var(--rv-line-input);
   --color-ink: var(--rv-ink);
   --color-muted: var(--rv-muted);
   --color-faint: var(--rv-faint);
