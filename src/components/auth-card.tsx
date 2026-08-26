@@ -37,9 +37,19 @@ export function AuthCard({ children }: { children: React.ReactNode }) {
     const href = anchor.getAttribute("href");
     if (!href) return;
 
+    /*
+      Resolved against the current URL, not the origin.
+
+      A relative href like "factor-one" resolves against the origin as
+      "/factor-one", which fails the test below and falls through to the browser
+      — which resolves it against the path instead, giving /sign-in/factor-one,
+      then /sign-in/factor-one/factor-one on the next step. Using the full
+      current URL as the base is how the browser does it, so what this checks is
+      what would actually be navigated to.
+    */
     let url: URL;
     try {
-      url = new URL(href, window.location.origin);
+      url = new URL(href, window.location.href);
     } catch {
       return;
     }
