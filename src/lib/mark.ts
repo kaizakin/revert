@@ -43,11 +43,19 @@ export const MARK_STROKE = 2;
 export const MARK_RADIUS = 0.28;
 
 /**
- * The mark inverts between themes: white on deep green in light, dark ink on
- * mint in dark. The component gets this from the theme tokens; the icon files
- * cannot read tokens, so they carry the same values literally.
+ * One mark, the same in both themes.
+ *
+ * It used to follow the accent token, which meant it inverted: white on deep
+ * green in light, near-black on mint in dark. A white arrow is the one people
+ * picture when they picture this logo, and white on the mint measures 2.0:1 —
+ * under the 3:1 floor for a graphical object, and at a 1px stroke it washes out
+ * exactly the way the old sub-pixel stroke did. On the deep green it is 5.5:1.
+ *
+ * So the tile stops following the accent. That is normal for a logo and it buys
+ * three things: one drawing instead of two, a favicon that needs no media query,
+ * and a homescreen tile that finally matches the header.
  */
 export const MARK_COLOURS = {
-  light: { tile: "#17784f", glyph: "#ffffff" },
-  dark: { tile: "#35cf93", glyph: "#05241a" },
+  tile: "#17784f",
+  glyph: "#ffffff",
 } as const;

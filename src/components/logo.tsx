@@ -1,4 +1,5 @@
 import {
+  MARK_COLOURS,
   MARK_PATHS,
   MARK_RADIUS,
   MARK_STROKE,
@@ -11,9 +12,9 @@ import {
  * Geometry lives in @/lib/mark, which the favicon and the touch icon are also
  * generated from — the drawing exists once.
  *
- * The tile uses the accent token and the arrow uses accent-ink, so the mark
- * follows the theme without a second asset for dark mode. It inverts on the way
- * through: white on deep green in light, dark ink on mint in dark.
+ * Its colours are fixed rather than taken from the accent token. Following the
+ * accent meant the arrow turned near-black in dark mode, and a logo that is a
+ * different colour depending on the reader's OS is two logos.
  */
 export function LogoMark({
   size = 32,
@@ -24,8 +25,14 @@ export function LogoMark({
 }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden bg-accent text-accent-ink ${className}`}
-      style={{ width: size, height: size, borderRadius: size * MARK_RADIUS }}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * MARK_RADIUS,
+        backgroundColor: MARK_COLOURS.tile,
+        color: MARK_COLOURS.glyph,
+      }}
       aria-hidden
     >
       {/*
